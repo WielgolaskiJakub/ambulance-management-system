@@ -1,0 +1,103 @@
+package pl.jakub.ambulancemanagement.exception;
+
+import lombok.Getter;
+import org.springframework.http.HttpStatus;
+
+@Getter
+
+public enum ErrorCode {
+    USER_NOT_FOUND("USER_NOT_FOUND",
+            "error.user.not_found", HttpStatus.NOT_FOUND),
+    EMAIL_ALREADY_EXISTS("EMAIL_ALREADY_EXISTS",
+            "error.email.already_exists", HttpStatus.CONFLICT),
+    INVALID_OLD_PASSWORD("INVALID_OLD_PASSWORD",
+            "error.invalid.old_password", HttpStatus.BAD_REQUEST),
+    PASSWORD_CHANGE_NOT_REQUIRED("PASSWORD_CHANGE_NOT_REQUIRED",
+            "error.password.change.not_required", HttpStatus.BAD_REQUEST),
+    PASSWORD_CHANGE_REQUIRED("PASSWORD_CHANGE_REQUIRED",
+            "error.password.change_required", HttpStatus.BAD_REQUEST),
+    AMBULANCE_NOT_FOUND("AMBULANCE_NOT_FOUND",
+            "error.ambulance.not_found", HttpStatus.NOT_FOUND),
+    AMBULANCE_ALREADY_EXIST("AMBULANCE_ALREADY_EXIST",
+            "error.ambulance.already_exist", HttpStatus.CONFLICT),
+    AMBULANCE_INVALID_REQUEST("AMBULANCE_INVALID_REQUEST",
+            "error.ambulance.invalid.request", HttpStatus.CONFLICT),
+    SHIFT_NOT_FOUND("SHIFT_NOT_FOUND",
+            "error.shift.not_found", HttpStatus.NOT_FOUND),
+    INVALID_SHIFT_TIME("INVALID_SHIFT_TIME",
+            "error.invalid.shift.time", HttpStatus.BAD_REQUEST),
+    SHIFT_NOT_ACTIVE("SHIFT_NOT_ACTIVE",
+            "error.shift.not_active", HttpStatus.BAD_REQUEST),
+    INVALID_SHIFT_TEAM("INVALID_SHIFT_TEAM",
+            "error.invalid.shift.team", HttpStatus.BAD_REQUEST),
+    DRIVER_ALREADY_HAS_ACTIVE_SHIFT("DRIVER_ALREADY_HAS_ACTIVE_SHIFT",
+            "error.driver.already_active_shift", HttpStatus.CONFLICT),
+    AMBULANCE_ALREADY_IN_ACTIVE_SHIFT("AMBULANCE_ALREADY_IN_ACTIVE_SHIFT",
+            "error.ambulance.already_in_active_shift", HttpStatus.CONFLICT),
+    AMBULANCE_NOT_ACTIVE("AMBULANCE_NOT_ACTIVE",
+            "error.ambulance.not_active", HttpStatus.BAD_REQUEST),
+    AMBULANCE_CURRENTLY_IN_USE("AMBULANCE_CURRENTLY_IN_USE",
+            "error.ambulance.currently_in_use", HttpStatus.BAD_REQUEST),
+    AMBULANCE_NOT_AVAILABLE("AMBULANCE_NOT_AVAILABLE",
+            "error.ambulance.not_available", HttpStatus.BAD_REQUEST),
+    SHIFT_ALREADY_FINISHED("SHIFT_ALREADY_FINISHED",
+            "error.shift.already_finished", HttpStatus.CONFLICT),
+    USER_NOT_ACTIVE("USER_NOT_ACTIVE",
+            "error.user.not_active", HttpStatus.BAD_REQUEST),
+    SHIFT_ALREADY_CANCELLED("SHIFT_ALREADY_CANCELLED",
+            "error.shift.already_cancelled", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_ALREADY_EXIST("SHIFT_DEFAULT_MEMBER_ALREADY_EXIST",
+            "error.shift.already_exist", HttpStatus.CONFLICT),
+    TRANSPORT_ORDER_NOT_FOUND("TRANSPORT_ORDER_NOT_FOUND",
+            "error.transport.order.not_found", HttpStatus.NOT_FOUND),
+    ORDER_NUMBER_ALREADY_EXIST("ORDER_NUMBER_ALREADY_EXIST",
+            "error.transport.order.number_already_exist", HttpStatus.CONFLICT),
+    TRANSPORT_ORDER_ALREADY_CANCELLED("TRANSPORT_ORDER_ALREADY_CANCELLED",
+            "error.transport.order.already_cancelled", HttpStatus.CONFLICT),
+    TRANSPORT_ORDER_ALREADY_COMPLETED("TRANSPORT_ORDER_ALREADY_COMPLETED",
+            "error.transport.order.already_completed", HttpStatus.CONFLICT),
+    TRANSPORT_ORDER_INVALID_REQUEST("TRANSPORT_ORDER_INVALID_REQUEST",
+            "error.transport.order.invalid_request", HttpStatus.BAD_REQUEST),
+    ROUTE_NOT_FOUND("ROUTE_NOT_FOUND",
+            "error.route.not_found", HttpStatus.NOT_FOUND),
+    BOTH_ADDRESS_REQUIRED("BOTH_ADDRESS_REQUIRED",
+            "error.both_address.required", HttpStatus.BAD_REQUEST),
+    ORDER_NUMBER_ALREADY_ASSIGNED("ORDER_NUMBER_ALREADY_ASSIGNED",
+            "error.order_number_already_assigned", HttpStatus.CONFLICT),
+    PATIENT_NOT_FOUND("PATIENT_NOT_FOUND",
+            "error.patient.not_found", HttpStatus.NOT_FOUND),
+    ROUTE_MEMBER_NOT_FOUND("ROUTE_MEMBER_NOT_FOUND",
+            "error.route_member.not_found", HttpStatus.NOT_FOUND),
+    ROUTE_MEMBER_INVALID_REQUEST("ROUTE_MEMBER_INVALID_REQUEST",
+            "error.route_member.invalid_request", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_NOT_AVAILABLE("TRANSPORT_ORDER_NOT_AVAILABLE",
+            "error.transport.order.not_available", HttpStatus.BAD_REQUEST),
+    ROUTE_CANNOT_BE_STARTED("ROUTE_CANNOT_BE_STARTED",
+            "error.route.cannot_be_started", HttpStatus.BAD_REQUEST),
+    ROUTE_CANNOT_BE_FINISHED("ROUTE_CANNOT_BE_FINISHED",
+            "error.route.cannot_be_finished", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_CANNOT_BE_FINISHED("TRANSPORT_ORDER_CANNOT_BE_FINISHED",
+            "error.transport.order.cannot_be_finished", HttpStatus.BAD_REQUEST),
+    INVALID_DRIVER_ROLE("INVALID_DRIVER_ROLE",
+            "error.invalid_driver_role", HttpStatus.BAD_REQUEST),
+    SHIFT_TIME_REQUIRED("SHIFT_TIME_REQUIRED",
+            "error.shift.time_required", HttpStatus.BAD_REQUEST),
+    SHIFT_DATE_REQUIRED("SHIFT_DATE_REQUIRED",
+            "error.shift_date_required", HttpStatus.BAD_REQUEST),
+    INVALID_SHIFT_TYPE("INVALID_SHIFT_TYPE",
+            "error.invalid_shift_type", HttpStatus.BAD_REQUEST),
+    USERNAME_ALREADY_EXISTS("USERNAME_ALREADY_EXISTS",
+            "error.username_already_exist",  HttpStatus.CONFLICT),
+
+    ;
+
+    private final String code;
+    private final String messageKey;
+    private final HttpStatus httpStatus;
+
+    ErrorCode(String code, String messageKey, HttpStatus httpStatus) {
+        this.code = code;
+        this.messageKey = messageKey;
+        this.httpStatus = httpStatus;
+    }
+}
