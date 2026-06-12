@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.routes.dto.RouteCreateRequest;
+import pl.jakub.ambulancemanagement.routes.dto.RouteDetailsResponse;
 import pl.jakub.ambulancemanagement.routes.dto.RouteFinishRequest;
 import pl.jakub.ambulancemanagement.routes.dto.RouteResponse;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
@@ -29,6 +30,11 @@ public class RouteController {
     @GetMapping("/{id}")
     public RouteResponse getRouteById(@PathVariable Long id) {
         return RouteResponse.fromEntity(routeService.getRouteById(id));
+    }
+
+    @GetMapping("/{id}/details")
+    public RouteDetailsResponse getRouteDetailsById(@PathVariable Long id) {
+        return routeService.getRouteDetailsById(id);
     }
 
     @PostMapping

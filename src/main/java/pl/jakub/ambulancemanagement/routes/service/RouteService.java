@@ -9,13 +9,17 @@ import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.RouteCreateRequest;
+import pl.jakub.ambulancemanagement.routes.dto.RouteDetailsResponse;
 import pl.jakub.ambulancemanagement.routes.dto.RouteFinishRequest;
+import pl.jakub.ambulancemanagement.routes.dto.RouteTransportOrderSummaryResponse;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
@@ -32,7 +36,7 @@ public class RouteService {
     private final TransportOrderRepository transportOrderRepository;
     private final ShiftRepository shiftRepository;
     private final RouteOrderRepository routeOrderRepository;
-
+    private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
 
     public List<Route> getAllRoutes() {
         return routeRepository.findAll();
@@ -187,6 +191,25 @@ public class RouteService {
         return routeRepository.save(route);
     }
 
+    public RouteDetailsResponse getRouteDetailsById(Long id) {
+        Route route = getRouteById(id);
+
+        List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
+
+        List<RouteTransportOrderSummaryResponse> transportOrders = routeOrders.stream()
+                .map(routeOrder -> {
+                    TransportOrder order = routeOrder.getTransportOrder();
+
+                    List<TransportOrderPatientDataResponse> patients =
+                            transportOrderPatientDataRepository.findByTransportOrderId(order.getId())
+                                    .stream().map(TransportOrderPatientDataResponse::fromEntity)
+                                    .toList();
+
+                    return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
+                }).toList();
+
+        return RouteDetailsResponse.fromEntity(route, transportOrders);
+    }
     private String normalizeNullableText(String value) {
 
         if (value == null || value.isBlank()) {
