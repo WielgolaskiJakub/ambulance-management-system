@@ -4,10 +4,11 @@ import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record RouteResponse(
         Long id,
-        Long transportOrderId,
+        List<Long> transportOrderIds,
         Long shiftId,
         String startAddress,
         String actualDestinationAddress,
@@ -17,10 +18,19 @@ public record RouteResponse(
         String notes,
         RouteStatus status
 ) {
+
+
     public static RouteResponse fromEntity(Route route) {
+        List<Long> transportOrderIds =
+                route.getRouteOrders() == null
+                        ? List.of()
+                        : route.getRouteOrders()
+                        .stream()
+                        .map(routeOrder -> routeOrder.getTransportOrder().getId())
+                        .toList();
         return new RouteResponse(
                 route.getId(),
-                route.getTransportOrder().getId(),
+                transportOrderIds,
                 route.getShift().getId(),
                 route.getStartAddress(),
                 route.getActualDestinationAddress(),

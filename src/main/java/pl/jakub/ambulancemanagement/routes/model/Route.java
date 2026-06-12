@@ -6,10 +6,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
-import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,10 +22,6 @@ public class Route {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transport_order_id", nullable = false)
-    private TransportOrder transportOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shift_id", nullable = false)
@@ -56,4 +53,7 @@ public class Route {
     @CreationTimestamp
     @Column(name = "created_at",  nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "route")
+    private List<RouteOrder> routeOrders;
 }

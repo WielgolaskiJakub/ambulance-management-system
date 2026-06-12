@@ -88,6 +88,8 @@ public enum ErrorCode {
             "error.invalid_shift_type", HttpStatus.BAD_REQUEST),
     USERNAME_ALREADY_EXISTS("USERNAME_ALREADY_EXISTS",
             "error.username_already_exist",  HttpStatus.CONFLICT),
+    ROUTE_HAS_NO_TRANSPORT_ORDERS("ROUTE_HAS_NO_TRANSPORT_ORDERS",
+            "error.route_has_no_transport_orders", HttpStatus.BAD_REQUEST),
 
     ;
 
