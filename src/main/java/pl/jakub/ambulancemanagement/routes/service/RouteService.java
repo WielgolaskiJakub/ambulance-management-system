@@ -71,6 +71,14 @@ public class RouteService {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_AVAILABLE);
             }
 
+            boolean alreadyAssignedToActiveRoute=
+                    routeOrderRepository.existsByTransportOrderIdAndRouteStatusIn(transportOrderId,
+                            List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING));
+
+            if (alreadyAssignedToActiveRoute) {
+                throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
+            }
+
             RouteOrder routeOrder = new RouteOrder();
             routeOrder.setRoute(savedRoute);
             routeOrder.setTransportOrder(transportOrder);

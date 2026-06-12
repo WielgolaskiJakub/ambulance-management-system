@@ -94,6 +94,8 @@ public enum ErrorCode {
             "error.route.cannot_be_marked_as_waiting", HttpStatus.BAD_REQUEST),
     ROUTE_CANNOT_BE_RESUMED("ROUTE_CANNOT_BE_RESUMED",
             "error.route.cannot_be_resumed", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE("TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE",
+            "transport.order.already.assigned.to.active.route", HttpStatus.BAD_REQUEST),
 
     ;
 
