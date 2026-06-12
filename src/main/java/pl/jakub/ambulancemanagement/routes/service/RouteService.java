@@ -98,11 +98,11 @@ public class RouteService {
             throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
         }
 
-        for(RouteOrder routeOrder : routeOrders) {
+        for (RouteOrder routeOrder : routeOrders) {
             TransportOrder transportOrder = routeOrder.getTransportOrder();
 
-            if(transportOrder.getStatus() == TransportStatus.CANCELLED ||
-            transportOrder.getStatus() == TransportStatus.COMPLETED) {
+            if (transportOrder.getStatus() == TransportStatus.CANCELLED ||
+                    transportOrder.getStatus() == TransportStatus.COMPLETED) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_AVAILABLE);
             }
 
@@ -122,8 +122,31 @@ public class RouteService {
         if (route.getStatus() != RouteStatus.IN_PROGRESS) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_FINISHED);
         }
+        List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
+
+        if(routeOrders.isEmpty()) {
+            throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
+        }
 
         LocalDateTime now = LocalDateTime.now();
+
+        for (RouteOrder routeOrder : routeOrders) {
+            TransportOrder transportOrder = routeOrder.getTransportOrder();
+
+            switch (request.getOrderAction()) {
+
+                case KEEP_ACTIVE -> transportOrder.setStatus(TransportStatus.IN_PROGRESS);
+
+                case WAITING_FOR_PICKUP -> transportOrder.setStatus(TransportStatus.WAITING_FOR_PICKUP);
+
+                case COMPLETE -> {
+                    transportOrder.setStatus(TransportStatus.COMPLETED);
+                    transportOrder.setCompletedAt(now);
+                }
+            }
+        }
+
+
 
         route.setFinishedAt(now);
         route.setStatus(RouteStatus.COMPLETED);

@@ -1,5 +1,6 @@
 package pl.jakub.ambulancemanagement.transport_orders.dto;
 
+import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportPriority;
@@ -23,11 +24,13 @@ public record TransportOrderDetailsResponse(
         LocalDateTime createdAt,
         LocalDateTime completedAt,
         LocalDateTime cancelledAt,
-        List<TransportOrderPatientDataResponse> patients
+        List<TransportOrderPatientDataResponse> patients,
+        List<RouteSummaryResponse> routes
 ) {
     public static TransportOrderDetailsResponse fromEntity(
             TransportOrder transportOrder,
-            List<TransportOrderPatientDataResponse> patients
+            List<TransportOrderPatientDataResponse> patients,
+            List<RouteSummaryResponse> routes
     ) {
         return new TransportOrderDetailsResponse(
                 transportOrder.getId(),
@@ -42,7 +45,8 @@ public record TransportOrderDetailsResponse(
                 transportOrder.getCreatedAt(),
                 transportOrder.getCompletedAt(),
                 transportOrder.getCancelledAt(),
-                patients
+                patients,
+                routes
         );
     }
 }

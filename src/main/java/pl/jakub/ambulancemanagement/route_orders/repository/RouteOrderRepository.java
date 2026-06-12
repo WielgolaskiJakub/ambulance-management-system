@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
     List<RouteOrder> findByRouteId(Long routeId);
+    List<RouteOrder> findByTransportOrderId(Long transportOrderId);
 }
