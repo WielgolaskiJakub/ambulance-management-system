@@ -42,6 +42,16 @@ public class RouteController {
         return RouteResponse.fromEntity(routeService.startRoute(id));
     }
 
+    @PatchMapping("/{id}/waiting")
+    public RouteResponse markRouteAsWaiting(@PathVariable Long id) {
+        return RouteResponse.fromEntity(routeService.markRouteAsWaiting(id));
+    }
+
+    @PatchMapping("/{id}/resume")
+    public RouteResponse resumeRoute(@PathVariable Long id) {
+        return RouteResponse.fromEntity(routeService.resumeRoute(id));
+    }
+
     @PatchMapping("/{id}/finish")
     public RouteResponse finishRoute(
             @PathVariable Long id,

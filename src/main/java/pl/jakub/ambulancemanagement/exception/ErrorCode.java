@@ -90,6 +90,10 @@ public enum ErrorCode {
             "error.username_already_exist",  HttpStatus.CONFLICT),
     ROUTE_HAS_NO_TRANSPORT_ORDERS("ROUTE_HAS_NO_TRANSPORT_ORDERS",
             "error.route_has_no_transport_orders", HttpStatus.BAD_REQUEST),
+    ROUTE_CANNOT_BE_MARKED_AS_WAITING("ROUTE_CANNOT_BE_MARKED_AS_WAITING",
+            "error.route.cannot_be_marked_as_waiting", HttpStatus.BAD_REQUEST),
+    ROUTE_CANNOT_BE_RESUMED("ROUTE_CANNOT_BE_RESUMED",
+            "error.route.cannot_be_resumed", HttpStatus.BAD_REQUEST),
 
     ;
 

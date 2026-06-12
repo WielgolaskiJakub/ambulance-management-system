@@ -116,6 +116,27 @@ public class RouteService {
     }
 
     @Transactional
+    public Route markRouteAsWaiting(Long id) {
+        Route route = getRouteById(id);
+        if(route.getStatus() != RouteStatus.IN_PROGRESS) {
+            throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_MARKED_AS_WAITING);
+        }
+
+        route.setStatus(RouteStatus.WAITING);
+        return routeRepository.save(route);
+    }
+
+    @Transactional
+    public Route resumeRoute(Long id) {
+        Route route = getRouteById(id);
+        if(route.getStatus() != RouteStatus.WAITING) {
+            throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_RESUMED);
+        }
+        route.setStatus(RouteStatus.IN_PROGRESS);
+        return routeRepository.save(route);
+    }
+
+    @Transactional
     public Route finishRoute(Long id, RouteFinishRequest request) {
         Route route = getRouteById(id);
 
@@ -124,7 +145,7 @@ public class RouteService {
         }
         List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
 
-        if(routeOrders.isEmpty()) {
+        if (routeOrders.isEmpty()) {
             throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
         }
 
@@ -145,8 +166,6 @@ public class RouteService {
                 }
             }
         }
-
-
 
         route.setFinishedAt(now);
         route.setStatus(RouteStatus.COMPLETED);
