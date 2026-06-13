@@ -8,6 +8,7 @@ import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOr
 import pl.jakub.ambulancemanagement.transport_order_patient_data.service.TransportOrderPatientDataService;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
+import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.service.TransportOrderService;
 
 import java.util.List;
@@ -34,6 +35,14 @@ public class TransportOrderController {
     @GetMapping("/{id}/details")
     public TransportOrderDetailsResponse getTransportOrderDetailsById(@PathVariable Long id) {
         return transportOrderService.getTransportOrderDetailsById(id);
+    }
+
+    @GetMapping("/queue")
+    public List<TransportOrderResponse> getTransportOrdersByStatus(@RequestParam TransportStatus status) {
+        return transportOrderService.getOrderByStatus(status)
+                .stream()
+                .map(TransportOrderResponse::fromEntity)
+                .toList();
     }
 
     @GetMapping("/{transportOrderId}/patients")

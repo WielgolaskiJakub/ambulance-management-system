@@ -182,6 +182,10 @@ public class TransportOrderService {
         return transportOrderRepository.save(transportOrder);
     }
 
+    public List<TransportOrder> getOrderByStatus(TransportStatus status) {
+        return transportOrderRepository.findByStatus(status);
+    }
+
     public TransportOrderDetailsResponse getTransportOrderDetailsById(Long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
 
