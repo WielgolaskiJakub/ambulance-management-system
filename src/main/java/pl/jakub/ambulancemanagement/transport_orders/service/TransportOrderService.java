@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
+import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
@@ -25,7 +27,7 @@ public class TransportOrderService {
     private final TransportOrderRepository transportOrderRepository;
     private final UserRepository userRepository;
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
-
+    private final RouteOrderRepository routeOrderRepository;
 
     public List<TransportOrder> getAllTransportOrders() {
         return transportOrderRepository.findAll();
@@ -180,8 +182,18 @@ public class TransportOrderService {
         return transportOrderRepository.save(transportOrder);
     }
 
+    public List<TransportOrder> getOrderByStatus(TransportStatus status) {
+        return transportOrderRepository.findByStatusOrderByCreatedAtAsc(status);
+    }
+
     public TransportOrderDetailsResponse getTransportOrderDetailsById(Long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
+
+        List<RouteSummaryResponse> routes =
+                routeOrderRepository.findByTransportOrder_Id(id)
+                        .stream()
+                        .map(routeOrder -> RouteSummaryResponse.fromEntity(routeOrder.getRoute()))
+                        .toList();
 
         List<TransportOrderPatientDataResponse> patients =
                 transportOrderPatientDataRepository.findByTransportOrderId(id)
@@ -189,7 +201,7 @@ public class TransportOrderService {
                         .map(TransportOrderPatientDataResponse::fromEntity)
                         .toList();
 
-        return TransportOrderDetailsResponse.fromEntity(transportOrder, patients);
+        return TransportOrderDetailsResponse.fromEntity(transportOrder, patients, routes);
     }
 
     private TransportOrder buildTransportOrder(CreateTransportOrderByManagerRequest request,

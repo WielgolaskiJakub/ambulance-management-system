@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.routes.dto.RouteCreateRequest;
+import pl.jakub.ambulancemanagement.routes.dto.RouteDetailsResponse;
 import pl.jakub.ambulancemanagement.routes.dto.RouteFinishRequest;
 import pl.jakub.ambulancemanagement.routes.dto.RouteResponse;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
@@ -31,6 +32,11 @@ public class RouteController {
         return RouteResponse.fromEntity(routeService.getRouteById(id));
     }
 
+    @GetMapping("/{id}/details")
+    public RouteDetailsResponse getRouteDetailsById(@PathVariable Long id) {
+        return routeService.getRouteDetailsById(id);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@Valid @RequestBody RouteCreateRequest request) {
@@ -40,6 +46,16 @@ public class RouteController {
     @PatchMapping("/{id}/start")
     public RouteResponse startRoute(@PathVariable Long id) {
         return RouteResponse.fromEntity(routeService.startRoute(id));
+    }
+
+    @PatchMapping("/{id}/waiting")
+    public RouteResponse markRouteAsWaiting(@PathVariable Long id) {
+        return RouteResponse.fromEntity(routeService.markRouteAsWaiting(id));
+    }
+
+    @PatchMapping("/{id}/resume")
+    public RouteResponse resumeRoute(@PathVariable Long id) {
+        return RouteResponse.fromEntity(routeService.resumeRoute(id));
     }
 
     @PatchMapping("/{id}/finish")

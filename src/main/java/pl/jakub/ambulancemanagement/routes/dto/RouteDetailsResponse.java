@@ -3,12 +3,12 @@ package pl.jakub.ambulancemanagement.routes.dto;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 
+
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record RouteResponse(
+public record RouteDetailsResponse(
         Long id,
-        List<Long> transportOrderIds,
         Long shiftId,
         String startAddress,
         String actualDestinationAddress,
@@ -16,21 +16,12 @@ public record RouteResponse(
         LocalDateTime startedAt,
         LocalDateTime finishedAt,
         String notes,
-        RouteStatus status
+        RouteStatus status,
+        List<RouteTransportOrderSummaryResponse> transportOrders
 ) {
-
-
-    public static RouteResponse fromEntity(Route route) {
-        List<Long> transportOrderIds =
-                route.getRouteOrders() == null
-                        ? List.of()
-                        : route.getRouteOrders()
-                        .stream()
-                        .map(routeOrder -> routeOrder.getTransportOrder().getId())
-                        .toList();
-        return new RouteResponse(
+    public static RouteDetailsResponse fromEntity(Route route, List<RouteTransportOrderSummaryResponse> transportOrders){
+        return new RouteDetailsResponse(
                 route.getId(),
-                transportOrderIds,
                 route.getShift().getId(),
                 route.getStartAddress(),
                 route.getActualDestinationAddress(),
@@ -38,7 +29,8 @@ public record RouteResponse(
                 route.getStartedAt(),
                 route.getFinishedAt(),
                 route.getNotes(),
-                route.getStatus()
+                route.getStatus(),
+                transportOrders
         );
     }
 }

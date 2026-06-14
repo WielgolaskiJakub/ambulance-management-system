@@ -1,23 +1,24 @@
 package pl.jakub.ambulancemanagement.routes.dto;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PositiveOrZero;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 public class RouteFinishRequest {
 
     @NotNull
-    @PositiveOrZero
-    private Integer distanceKm;
+    @Min(0)
+    @Max(999)
+    private Integer finishOdometerLastThree;
 
     @Size(max = 1000)
     private String notes;
+
+    @NotEmpty
+    private List<RouteFinishOrderItemRequest> orders;
 
 }
