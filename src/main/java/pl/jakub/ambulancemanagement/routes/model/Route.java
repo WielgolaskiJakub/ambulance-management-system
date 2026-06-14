@@ -50,6 +50,12 @@ public class Route {
     @Enumerated(EnumType.STRING)
     private RouteStatus status;
 
+    @Column(name = "start_odometer_km")
+    private Integer startOdometerKm;
+
+    @Column(name = "finish_odometer_km")
+    private Integer finishOdometerKm;
+
     @CreationTimestamp
     @Column(name = "created_at",  nullable = false, updatable = false)
     private LocalDateTime createdAt;

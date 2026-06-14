@@ -9,5 +9,5 @@ import java.util.List;
 public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
     List<RouteOrder> findByRouteId(Long routeId);
     List<RouteOrder> findByTransportOrderId(Long transportOrderId);
-    Boolean existsByTransportOrderIdAndRouteStatusIn(Long transportOrderId, List<RouteStatus> statuses);
+    Boolean existsByTransportOrder_IdAndRoute_StatusIn(Long transportOrderId, List<RouteStatus> statuses);
 }

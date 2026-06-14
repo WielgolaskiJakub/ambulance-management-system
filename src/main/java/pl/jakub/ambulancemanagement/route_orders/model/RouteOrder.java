@@ -13,7 +13,15 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Entity
-@Table(name = "route_orders")
+@Table(
+        name = "route_orders",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uq_route_order",
+                        columnNames = {"route_id", "transport_order_id"}
+                )
+        }
+)
 public class RouteOrder {
 
     @Id

@@ -96,6 +96,12 @@ public enum ErrorCode {
             "error.route.cannot_be_resumed", HttpStatus.BAD_REQUEST),
     TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE("TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE",
             "transport.order.already.assigned.to.active.route", HttpStatus.BAD_REQUEST),
+    ODOMETER_BASE_VALUE_REQUIRED("ODOMETER_BASE_VALUE_REQUIRED",
+            "error.odometer_base_value_required", HttpStatus.BAD_REQUEST),
+    INVALID_FINISH_ODOMETER("INVALID_FINISH_ODOMETER",
+            "error.finish_odometer", HttpStatus.BAD_REQUEST),
+    AMBULANCE_MILEAGE_REQUIRED("AMBULANCE_MILEAGE_REQUIRED",
+            "error.ambulance_mileage_required", HttpStatus.BAD_REQUEST),
 
     ;
 
