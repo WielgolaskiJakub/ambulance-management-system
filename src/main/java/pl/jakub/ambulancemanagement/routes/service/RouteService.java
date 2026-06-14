@@ -186,12 +186,12 @@ public class RouteService {
 
         for (Long requestedTransportOrderId : actionsByOrderId.keySet()) {
             if (!routeTransportOrderIds.contains(requestedTransportOrderId)) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+                throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE);
             }
         }
         for (Long routeTransportOrderId : routeTransportOrderIds) {
             if (!actionsByOrderId.containsKey(routeTransportOrderId)) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+                throw new ApiException(ErrorCode.ROUTE_FINISH_ACTION_MISSING);
             }
         }
         LocalDateTime now = LocalDateTime.now();

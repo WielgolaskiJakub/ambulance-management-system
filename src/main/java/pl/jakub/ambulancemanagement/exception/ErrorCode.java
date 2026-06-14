@@ -102,6 +102,10 @@ public enum ErrorCode {
             "error.finish_odometer", HttpStatus.BAD_REQUEST),
     AMBULANCE_MILEAGE_REQUIRED("AMBULANCE_MILEAGE_REQUIRED",
             "error.ambulance_mileage_required", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_NOT_IN_ROUTE("TRANSPORT_ORDER_NOT_IN_ROUTE",
+            "error.transport_order_not_in_route", HttpStatus.BAD_REQUEST),
+    ROUTE_FINISH_ACTION_MISSING("ROUTE_FINISH_ACTION_MISSING",
+            "error.route_finish_action_missing", HttpStatus.BAD_REQUEST),
 
     ;
 
