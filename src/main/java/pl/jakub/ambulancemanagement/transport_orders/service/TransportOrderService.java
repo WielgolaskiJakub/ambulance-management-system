@@ -183,14 +183,14 @@ public class TransportOrderService {
     }
 
     public List<TransportOrder> getOrderByStatus(TransportStatus status) {
-        return transportOrderRepository.findByStatus(status);
+        return transportOrderRepository.findByStatusOrderByCreatedAtAsc(status);
     }
 
     public TransportOrderDetailsResponse getTransportOrderDetailsById(Long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
 
         List<RouteSummaryResponse> routes =
-                routeOrderRepository.findByTransportOrderId(id)
+                routeOrderRepository.findByTransportOrder_Id(id)
                         .stream()
                         .map(routeOrder -> RouteSummaryResponse.fromEntity(routeOrder.getRoute()))
                         .toList();

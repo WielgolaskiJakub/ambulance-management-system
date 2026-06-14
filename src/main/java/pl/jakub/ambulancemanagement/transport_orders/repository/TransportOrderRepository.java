@@ -11,5 +11,5 @@ import java.util.List;
 public interface TransportOrderRepository extends JpaRepository<TransportOrder, java.lang.Long> {
 
     boolean existsByOrderNumber(String orderNumber);
-    List<TransportOrder> findByStatus(TransportStatus status);
+    List<TransportOrder> findByStatusOrderByCreatedAtAsc(TransportStatus status);
 }

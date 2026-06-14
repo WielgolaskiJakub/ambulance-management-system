@@ -11,7 +11,7 @@ import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.*;
 import pl.jakub.ambulancemanagement.routes.model.Route;
-import pl.jakub.ambulancemanagement.routes.model.RouteFinishOrderAction;
+import pl.jakub.ambulancemanagement.routes.model.RouteOrderFinishAction;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
@@ -42,7 +42,8 @@ public class RouteService {
     }
 
     public Route getRouteById(java.lang.Long id) {
-        return routeRepository.findById(id).orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
+        return routeRepository.findById(id)
+                .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
     }
 
     @Transactional
@@ -69,14 +70,13 @@ public class RouteService {
             TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
                     .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
 
-            if (transportOrder.getStatus() != TransportStatus.NEW &&
-                    transportOrder.getStatus() != TransportStatus.WAITING_FOR_PICKUP) {
+            if (transportOrder.getStatus() != TransportStatus.NEW
+                    && transportOrder.getStatus() != TransportStatus.WAITING_FOR_PICKUP) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_AVAILABLE);
             }
 
-            boolean alreadyAssignedToActiveRoute =
-                    routeOrderRepository.existsByTransportOrder_IdAndRoute_StatusIn(transportOrderId,
-                            List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING));
+            boolean alreadyAssignedToActiveRoute = routeOrderRepository.existsByTransportOrder_IdAndRoute_StatusIn(
+                    transportOrderId, List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING));
 
             if (alreadyAssignedToActiveRoute) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
@@ -103,7 +103,7 @@ public class RouteService {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_STARTED);
         }
 
-        List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
+        List<RouteOrder> routeOrders = routeOrderRepository.findByRoute_Id(route.getId());
 
         if (routeOrders.isEmpty()) {
             throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
@@ -112,8 +112,8 @@ public class RouteService {
         for (RouteOrder routeOrder : routeOrders) {
             TransportOrder transportOrder = routeOrder.getTransportOrder();
 
-            if (transportOrder.getStatus() == TransportStatus.CANCELLED ||
-                    transportOrder.getStatus() == TransportStatus.COMPLETED) {
+            if (transportOrder.getStatus() == TransportStatus.CANCELLED
+                    || transportOrder.getStatus() == TransportStatus.COMPLETED) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_AVAILABLE);
             }
 
@@ -123,7 +123,7 @@ public class RouteService {
         Ambulance ambulance = route.getShift().getAmbulance();
 
         Integer ambulanceMileage = route.getShift().getAmbulance().getMileage();
-        if(ambulanceMileage == null) {
+        if (ambulanceMileage == null) {
             throw new ApiException(ErrorCode.AMBULANCE_MILEAGE_REQUIRED);
         }
 
@@ -162,13 +162,13 @@ public class RouteService {
         if (route.getStatus() != RouteStatus.IN_PROGRESS) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_FINISHED);
         }
-        List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
+        List<RouteOrder> routeOrders = routeOrderRepository.findByRoute_Id(route.getId());
 
         if (routeOrders.isEmpty()) {
             throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
         }
 
-        Map<Long, RouteFinishOrderAction> actionsByOrderId = new HashMap<>();
+        Map<Long, RouteOrderFinishAction> actionsByOrderId = new HashMap<>();
 
         for (RouteFinishOrderItemRequest orderItem : request.getOrders()) {
             Long transportOrderId = orderItem.getTransportOrderId();
@@ -180,16 +180,34 @@ public class RouteService {
             actionsByOrderId.put(transportOrderId, orderItem.getAction());
         }
 
-        Set<Long> routeTransportOrderIds = routeOrders.stream()
-                .map(routeOrder -> routeOrder.getTransportOrder().getId())
-                .collect(Collectors.toSet());
+        Set<Long> allRouteTransportOrderIds = routeOrders
+                .stream()
+                .map(routeOrder ->
+                        routeOrder.getTransportOrder().getId()).
+                collect(Collectors.toSet());
+
+        Set<Long> ordersRequiringActionIds = routeOrders
+                .stream()
+                .map(RouteOrder::getTransportOrder)
+                .filter(transportOrder ->
+                        transportOrder.getStatus() != TransportStatus.CANCELLED)
+                .map(TransportOrder::getId).collect(Collectors.toSet());
 
         for (Long requestedTransportOrderId : actionsByOrderId.keySet()) {
-            if (!routeTransportOrderIds.contains(requestedTransportOrderId)) {
+            if (!allRouteTransportOrderIds.contains(requestedTransportOrderId)) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE);
             }
         }
-        for (Long routeTransportOrderId : routeTransportOrderIds) {
+        for (RouteOrder routeOrder : routeOrders) {
+            TransportOrder transportOrder = routeOrder.getTransportOrder();
+
+            if (transportOrder.getStatus() == TransportStatus.CANCELLED
+                    && actionsByOrderId.containsKey(transportOrder.getId())) {
+                throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
+            }
+        }
+
+        for (Long routeTransportOrderId : ordersRequiringActionIds) {
             if (!actionsByOrderId.containsKey(routeTransportOrderId)) {
                 throw new ApiException(ErrorCode.ROUTE_FINISH_ACTION_MISSING);
             }
@@ -200,14 +218,14 @@ public class RouteService {
             TransportOrder transportOrder = routeOrder.getTransportOrder();
 
             if (transportOrder.getStatus() == TransportStatus.CANCELLED) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
+                continue;
             }
 
             if (transportOrder.getStatus() == TransportStatus.COMPLETED) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_COMPLETED);
             }
 
-            RouteFinishOrderAction action = actionsByOrderId.get(transportOrder.getId());
+            RouteOrderFinishAction action = actionsByOrderId.get(transportOrder.getId());
 
             switch (action) {
 
@@ -226,8 +244,7 @@ public class RouteService {
         }
 
         int finishOdometerKm = calculateFullOdometerFromLastThreeDigits(
-                startOdometerKm, request.getFinishOdometerLastThree()
-        );
+                startOdometerKm, request.getFinishOdometerLastThree());
         int distanceKM = finishOdometerKm - startOdometerKm;
 
         route.setFinishOdometerKm(finishOdometerKm);
@@ -250,19 +267,18 @@ public class RouteService {
     public RouteDetailsResponse getRouteDetailsById(Long id) {
         Route route = getRouteById(id);
 
-        List<RouteOrder> routeOrders = routeOrderRepository.findByRouteId(route.getId());
+        List<RouteOrder> routeOrders = routeOrderRepository.findByRoute_Id(route.getId());
 
         List<RouteTransportOrderSummaryResponse> transportOrders = routeOrders.stream()
                 .map(routeOrder -> {
-                    TransportOrder order = routeOrder.getTransportOrder();
+            TransportOrder order = routeOrder.getTransportOrder();
 
-                    List<TransportOrderPatientDataResponse> patients =
-                            transportOrderPatientDataRepository.findByTransportOrderId(order.getId())
-                                    .stream().map(TransportOrderPatientDataResponse::fromEntity)
-                                    .toList();
+            List<TransportOrderPatientDataResponse> patients = transportOrderPatientDataRepository.
+                    findByTransportOrderId(order.getId()).stream()
+                    .map(TransportOrderPatientDataResponse::fromEntity).toList();
 
-                    return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
-                }).toList();
+            return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
+        }).toList();
 
         return RouteDetailsResponse.fromEntity(route, transportOrders);
     }

@@ -7,7 +7,7 @@ import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import java.util.List;
 
 public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
-    List<RouteOrder> findByRouteId(Long routeId);
-    List<RouteOrder> findByTransportOrderId(Long transportOrderId);
+    List<RouteOrder> findByRoute_Id(Long routeId);
+    List<RouteOrder> findByTransportOrder_Id(Long transportOrderId);
     Boolean existsByTransportOrder_IdAndRoute_StatusIn(Long transportOrderId, List<RouteStatus> statuses);
 }
