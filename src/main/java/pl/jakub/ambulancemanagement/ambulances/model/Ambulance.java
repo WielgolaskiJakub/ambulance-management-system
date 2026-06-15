@@ -63,7 +63,7 @@ public class Ambulance {
     private Boolean active = true;
 
     @Column(name = "estimated_fuel_liters")
-    private BigDecimal fuelEstimateLiters;
+    private BigDecimal estimatedFuelLiters;
 
     @Column(name = "fuel_estimate_updated_at")
     private LocalDateTime fuelEstimateUpdatedAt;

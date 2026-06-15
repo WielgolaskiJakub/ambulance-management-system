@@ -18,6 +18,7 @@ public class RouteFinishRequest {
     @Size(max = 1000)
     private String notes;
 
+    @NotNull
     @NotEmpty
     private List<RouteFinishOrderItemRequest> orders;
 

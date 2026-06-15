@@ -23,7 +23,11 @@ import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -120,7 +124,6 @@ public class RouteService {
             transportOrder.setStatus(TransportStatus.IN_PROGRESS);
 
         }
-        Ambulance ambulance = route.getShift().getAmbulance();
 
         Integer ambulanceMileage = route.getShift().getAmbulance().getMileage();
         if (ambulanceMileage == null) {
@@ -238,22 +241,37 @@ public class RouteService {
             }
         }
 
+
         Integer startOdometerKm = route.getStartOdometerKm();
         if (startOdometerKm == null) {
             throw new ApiException(ErrorCode.ODOMETER_BASE_VALUE_REQUIRED);
         }
 
+        validateLastThreeDigits(request.getFinishOdometerLastThree());
+
         int finishOdometerKm = calculateFullOdometerFromLastThreeDigits(
                 startOdometerKm, request.getFinishOdometerLastThree());
+
         int distanceKM = finishOdometerKm - startOdometerKm;
 
+        if (distanceKM < 0) {
+            throw new ApiException(ErrorCode.INVALID_FINISH_ODOMETER);
+        }
         route.setFinishOdometerKm(finishOdometerKm);
         route.setDistanceKm(distanceKM);
         route.setFinishedAt(now);
         route.setStatus(RouteStatus.COMPLETED);
 
         Ambulance ambulance = route.getShift().getAmbulance();
+
+        BigDecimal fuelConsumptionNorm = getCurrentFuelConsumptionNorm(ambulance);
+        BigDecimal estimatedFuelConsumed = calculateEstimatedFuelConsumed(distanceKM, fuelConsumptionNorm);
+
+        route.setFuelConsumptionNormUsed(fuelConsumptionNorm);
+        route.setEstimatedFuelConsumedLiters(estimatedFuelConsumed);
+
         ambulance.setMileage(finishOdometerKm);
+        subtractEstimatedFuelAfterRoute(ambulance, estimatedFuelConsumed);
 
 
         if (request.getNotes() != null) {
@@ -271,14 +289,14 @@ public class RouteService {
 
         List<RouteTransportOrderSummaryResponse> transportOrders = routeOrders.stream()
                 .map(routeOrder -> {
-            TransportOrder order = routeOrder.getTransportOrder();
+                    TransportOrder order = routeOrder.getTransportOrder();
 
-            List<TransportOrderPatientDataResponse> patients = transportOrderPatientDataRepository.
-                    findByTransportOrderId(order.getId()).stream()
-                    .map(TransportOrderPatientDataResponse::fromEntity).toList();
+                    List<TransportOrderPatientDataResponse> patients = transportOrderPatientDataRepository.
+                            findByTransportOrderId(order.getId()).stream()
+                            .map(TransportOrderPatientDataResponse::fromEntity).toList();
 
-            return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
-        }).toList();
+                    return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
+                }).toList();
 
         return RouteDetailsResponse.fromEntity(route, transportOrders);
     }
@@ -304,4 +322,51 @@ public class RouteService {
         return calculateOdometerKm;
     }
 
+    private void validateLastThreeDigits(Integer lastThreeDigits) {
+        if (lastThreeDigits == null || lastThreeDigits < 0 || lastThreeDigits > 999) {
+            throw new ApiException(ErrorCode.INVALID_ODOMETER_LAST_DIGITS);
+        }
+    }
+
+
+    private BigDecimal getCurrentFuelConsumptionNorm(Ambulance ambulance) {
+        Month currentMonth = LocalDate.now().getMonth();
+
+        boolean winterSeason = currentMonth == Month.OCTOBER
+                || currentMonth == Month.NOVEMBER
+                || currentMonth == Month.DECEMBER
+                || currentMonth == Month.JANUARY
+                || currentMonth == Month.FEBRUARY
+                || currentMonth == Month.MARCH;
+
+        BigDecimal fuelConsumptionNorm = winterSeason
+                ? ambulance.getWinterFuelConsumptionNorm()
+                : ambulance.getSummerFuelConsumptionNorm();
+
+        if (fuelConsumptionNorm == null) {
+            throw new ApiException(ErrorCode.FUEL_CONSUMPTION_NORM_REQUIRED);
+        }
+
+        return fuelConsumptionNorm;
+    }
+
+    private BigDecimal calculateEstimatedFuelConsumed(int distanceKm, BigDecimal fuelConsumptionNorm) {
+        return BigDecimal.valueOf(distanceKm)
+                .multiply(fuelConsumptionNorm)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+    }
+    private void subtractEstimatedFuelAfterRoute(Ambulance ambulance, BigDecimal estimatedFuelConsumed) {
+        if (ambulance.getEstimatedFuelLiters() == null) {
+            return;
+        }
+
+        BigDecimal newEstimatedFuel = ambulance.getEstimatedFuelLiters().subtract(estimatedFuelConsumed);
+
+        if (newEstimatedFuel.compareTo(BigDecimal.ZERO) < 0) {
+            newEstimatedFuel = BigDecimal.ZERO;
+        }
+
+        ambulance.setEstimatedFuelLiters(newEstimatedFuel);
+        ambulance.setFuelEstimateUpdatedAt(LocalDateTime.now());
+    }
 }

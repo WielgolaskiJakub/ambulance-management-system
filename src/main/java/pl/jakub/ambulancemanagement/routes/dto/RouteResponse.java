@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.routes.dto;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -16,7 +17,9 @@ public record RouteResponse(
         LocalDateTime startedAt,
         LocalDateTime finishedAt,
         String notes,
-        RouteStatus status
+        RouteStatus status,
+        BigDecimal fuelConsumptionNormUsed,
+        BigDecimal estimatedFuelConsumedLiters
 ) {
 
 
@@ -38,7 +41,9 @@ public record RouteResponse(
                 route.getStartedAt(),
                 route.getFinishedAt(),
                 route.getNotes(),
-                route.getStatus()
+                route.getStatus(),
+                route.getFuelConsumptionNormUsed(),
+                route.getEstimatedFuelConsumedLiters()
         );
     }
 }

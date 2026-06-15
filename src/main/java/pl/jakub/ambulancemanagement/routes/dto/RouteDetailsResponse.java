@@ -4,6 +4,7 @@ import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -17,9 +18,11 @@ public record RouteDetailsResponse(
         LocalDateTime finishedAt,
         String notes,
         RouteStatus status,
+        BigDecimal fuelConsumptionNormUsed,
+        BigDecimal estimatedFuelConsumedLiters,
         List<RouteTransportOrderSummaryResponse> transportOrders
 ) {
-    public static RouteDetailsResponse fromEntity(Route route, List<RouteTransportOrderSummaryResponse> transportOrders){
+    public static RouteDetailsResponse fromEntity(Route route, List<RouteTransportOrderSummaryResponse> transportOrders) {
         return new RouteDetailsResponse(
                 route.getId(),
                 route.getShift().getId(),
@@ -30,6 +33,8 @@ public record RouteDetailsResponse(
                 route.getFinishedAt(),
                 route.getNotes(),
                 route.getStatus(),
+                route.getFuelConsumptionNormUsed(),
+                route.getEstimatedFuelConsumedLiters(),
                 transportOrders
         );
     }

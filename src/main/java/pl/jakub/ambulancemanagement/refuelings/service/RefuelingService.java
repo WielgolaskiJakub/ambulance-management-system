@@ -71,7 +71,7 @@ public class RefuelingService {
       refueling.setStatus(RefuelingStatus.REPORTED);
       refueling.setRefuelingAt(LocalDateTime.now());
 
-      ambulance.setFuelEstimateLiters((ambulance.getTankCapacityLiters()));
+      ambulance.setEstimatedFuelLiters((ambulance.getTankCapacityLiters()));
       ambulance.setFuelEstimateUpdatedAt(LocalDateTime.now());
 
       return  refuelingRepository.save(refueling);

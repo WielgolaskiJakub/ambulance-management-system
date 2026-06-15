@@ -1,15 +1,17 @@
 package pl.jakub.ambulancemanagement.ambulances.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
 import pl.jakub.ambulancemanagement.ambulances.model.AmbulanceStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
-@AllArgsConstructor
+@Setter
 public class AmbulanceResponse {
+
     private Long id;
     private String carBrand;
     private String model;
@@ -18,21 +20,27 @@ public class AmbulanceResponse {
     private BigDecimal summerFuelConsumptionNorm;
     private BigDecimal winterFuelConsumptionNorm;
     private BigDecimal tankCapacityLiters;
+    private BigDecimal estimatedFuelLiters;
+    private LocalDateTime fuelEstimateUpdatedAt;
     private AmbulanceStatus status;
     private Boolean active;
 
     public static AmbulanceResponse fromEntity(Ambulance ambulance) {
-        return new AmbulanceResponse(
-                ambulance.getId(),
-                ambulance.getCarBrand(),
-                ambulance.getModel(),
-                ambulance.getRegistrationPlates(),
-                ambulance.getMileage(),
-                ambulance.getSummerFuelConsumptionNorm(),
-                ambulance.getWinterFuelConsumptionNorm(),
-                ambulance.getTankCapacityLiters(),
-                ambulance.getStatus(),
-                ambulance.getActive()
-        );
+        AmbulanceResponse response = new AmbulanceResponse();
+
+        response.setId(ambulance.getId());
+        response.setCarBrand(ambulance.getCarBrand());
+        response.setModel(ambulance.getModel());
+        response.setRegistrationPlates(ambulance.getRegistrationPlates());
+        response.setMileage(ambulance.getMileage());
+        response.setSummerFuelConsumptionNorm(ambulance.getSummerFuelConsumptionNorm());
+        response.setWinterFuelConsumptionNorm(ambulance.getWinterFuelConsumptionNorm());
+        response.setTankCapacityLiters(ambulance.getTankCapacityLiters());
+        response.setEstimatedFuelLiters(ambulance.getEstimatedFuelLiters());
+        response.setFuelEstimateUpdatedAt(ambulance.getFuelEstimateUpdatedAt());
+        response.setStatus(ambulance.getStatus());
+        response.setActive(ambulance.getActive());
+
+        return response;
     }
 }

@@ -118,6 +118,10 @@ public enum ErrorCode {
             "error.invalid_refueling_mileage", HttpStatus.BAD_REQUEST),
     REFUELING_ALREADY_VERIFIED("REFUELING_ALREADY_VERIFIED",
             "error.refueling_already_verified", HttpStatus.BAD_REQUEST),
+    INVALID_ODOMETER_LAST_DIGITS("INVALID_ODOMETER_LAST_DIGITS",
+            "error.invalid_odometer_last_digits", HttpStatus.BAD_REQUEST),
+    FUEL_CONSUMPTION_NORM_REQUIRED("FUEL_CONSUMPTION_NORM_REQUIRED",
+            "error.fuel_consumption_norm_required", HttpStatus.BAD_REQUEST),
 
     ;
 

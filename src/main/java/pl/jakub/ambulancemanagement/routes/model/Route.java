@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -55,6 +56,12 @@ public class Route {
 
     @Column(name = "finish_odometer_km")
     private Integer finishOdometerKm;
+
+    @Column(name = "fuel_consumption_norm_used")
+    private BigDecimal fuelConsumptionNormUsed;
+
+    @Column(name = "estimated_fuel_consumed_liters")
+    private BigDecimal estimatedFuelConsumedLiters;
 
     @CreationTimestamp
     @Column(name = "created_at",  nullable = false, updatable = false)
