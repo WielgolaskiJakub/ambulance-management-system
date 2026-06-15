@@ -106,6 +106,18 @@ public enum ErrorCode {
             "error.transport_order_not_in_route", HttpStatus.BAD_REQUEST),
     ROUTE_FINISH_ACTION_MISSING("ROUTE_FINISH_ACTION_MISSING",
             "error.route_finish_action_missing", HttpStatus.BAD_REQUEST),
+    REFUELING_NOT_FOUND("REFUELING_NOT_FOUND",
+            "error.refueling_not_found", HttpStatus.NOT_FOUND),
+    INVALID_REFUELING_STATUS("INVALID_REFUELING_STATUS",
+            "error.invalid_refueling_status", HttpStatus.BAD_REQUEST),
+    REFUELING_DRIVER_DOES_NOT_MATCH_SHIFT("REFUELING_DRIVER_DOES_NOT_MATCH_SHIFT",
+            "error.refueling.driver_does_not_match_shift", HttpStatus.BAD_REQUEST),
+    REFUELING_AMBULANCE_DOES_NOT_MATCH_SHIFT("REFUELING_AMBULANCE_DOES_NOT_MATCH_SHIFT",
+            "error.code.refueling.ambulance_does_not_match_shift", HttpStatus.BAD_REQUEST),
+    INVALID_REFUELING_MILEAGE("INVALID_REFUELING_MILEAGE",
+            "error.invalid_refueling_mileage", HttpStatus.BAD_REQUEST),
+    REFUELING_ALREADY_VERIFIED("REFUELING_ALREADY_VERIFIED",
+            "error.refueling_already_verified", HttpStatus.BAD_REQUEST),
 
     ;
 

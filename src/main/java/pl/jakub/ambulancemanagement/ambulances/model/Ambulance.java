@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -60,4 +61,11 @@ public class Ambulance {
     @NotNull
     @Column(name = "active", nullable = false)
     private Boolean active = true;
+
+    @Column(name = "estimated_fuel_liters")
+    private BigDecimal fuelEstimateLiters;
+
+    @Column(name = "fuel_estimate_updated_at")
+    private LocalDateTime fuelEstimateUpdatedAt;
+
 }
