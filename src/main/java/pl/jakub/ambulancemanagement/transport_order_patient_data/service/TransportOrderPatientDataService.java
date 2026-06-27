@@ -8,6 +8,7 @@ import pl.jakub.ambulancemanagement.transport_order_patient_data.model.Transport
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataCreateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
+import pl.jakub.ambulancemanagement.transport_orders.dto.TransportOrderPatientCreateItemRequest;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
@@ -129,6 +130,25 @@ public class TransportOrderPatientDataService {
         }
 
         return transportOrderPatientDataRepository.saveAll(patients);
+    }
+
+    public TransportOrderPatientData addPatientToTransportOrder(
+            Long transportOrderId,
+            TransportOrderPatientCreateItemRequest request
+    ) {
+        TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
+                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+
+        validateTransportOrderCanReceivePatientData(transportOrder);
+
+        TransportOrderPatientData patientData = new TransportOrderPatientData();
+
+        patientData.setTransportOrder(transportOrder);
+        patientData.setPatientFirstName(request.getPatientFirstName().trim());
+        patientData.setPatientLastName(request.getPatientLastName().trim());
+        patientData.setPickupDetails(normalizeNullableText(request.getPickupDetails()));
+
+        return transportOrderPatientDataRepository.save(patientData);
     }
 
     private void validateTransportOrderCanReceivePatientData(TransportOrder transportOrder) {

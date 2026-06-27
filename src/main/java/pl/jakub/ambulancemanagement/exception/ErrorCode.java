@@ -122,6 +122,18 @@ public enum ErrorCode {
             "error.invalid_odometer_last_digits", HttpStatus.BAD_REQUEST),
     FUEL_CONSUMPTION_NORM_REQUIRED("FUEL_CONSUMPTION_NORM_REQUIRED",
             "error.fuel_consumption_norm_required", HttpStatus.BAD_REQUEST),
+    INVALID_TEMPORARY_PASSWORD("INVALID_TEMPORARY_PASSWORD",
+            "error.invalid_temporary_password", HttpStatus.BAD_REQUEST),
+    REFUELING_ACCESS_DENIED("REFUELING_ACCESS_DENIED",
+            "error.refueling_access_denied", HttpStatus.BAD_REQUEST),
+    ROUTE_ACCESS_DENIED("ROUTE_ACCESS_DENIED",
+            "error.route_access_denied", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_INVALID_ROLE("SHIFT_DEFAULT_MEMBER_INVALID_ROLE",
+            "error.shift_default_member_invalid_role", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_NOT_FOUND("SHIFT_DEFAULT_MEMBER_NOT_FOUND",
+            "error.shift_default_member_not_found", HttpStatus.NOT_FOUND),
+    SHIFT_ACCESS_DENIED("SHIFT_ACCESS_DENIED",
+            "error.shift_access_denied", HttpStatus.BAD_REQUEST),
 
     ;
 

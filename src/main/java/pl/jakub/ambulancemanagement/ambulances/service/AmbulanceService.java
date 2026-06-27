@@ -28,6 +28,10 @@ public class AmbulanceService {
                 .orElseThrow(() -> new ApiException(ErrorCode.AMBULANCE_NOT_FOUND));
     }
 
+    public List<Ambulance> getAvailableAmbulances() {
+        return ambulanceRepository.findByStatusAndActive_True(AmbulanceStatus.AVAILABLE);
+    }
+
     public Ambulance createAmbulance(CreateAmbulanceRequest request) {
         String registrationPlates = request.getRegistrationPlates().trim().toUpperCase();
 

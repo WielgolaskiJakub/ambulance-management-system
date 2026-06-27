@@ -42,9 +42,9 @@ public class AmbulanceDashboardResponse {
     private BigDecimal tankCapacityLiters;
     private LocalDateTime fuelEstimateUpdatedAt;
 
-    public static AmbulanceDashboardResponse fromShift(Shift shift) {
+    public static AmbulanceDashboardResponse fromShift(Shift shift, User loggedUser) {
         Ambulance ambulance = shift.getAmbulance();
-        User driver = shift.getDriver();
+
 
         AmbulanceDashboardResponse response = new AmbulanceDashboardResponse();
 
@@ -56,9 +56,9 @@ public class AmbulanceDashboardResponse {
 
         response.setCurrentDate(LocalDate.now());
 
-        response.setLoggedUserId(driver.getId());
-        response.setLoggedUserFullName(driver.getFirstName() + " " + driver.getLastName());
-        response.setLoggedUserRole(driver.getUserRole());
+        response.setLoggedUserId(loggedUser.getId());
+        response.setLoggedUserFullName(loggedUser.getFirstName() + " " + loggedUser.getLastName());
+        response.setLoggedUserRole(loggedUser.getUserRole());
 
         response.setAmbulanceId(ambulance.getId());
         response.setRegistrationPlates(ambulance.getRegistrationPlates());

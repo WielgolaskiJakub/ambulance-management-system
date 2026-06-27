@@ -6,9 +6,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
+import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
@@ -28,6 +31,7 @@ public class TransportOrderService {
     private final UserRepository userRepository;
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
     private final RouteOrderRepository routeOrderRepository;
+    private final RouteMemberRepository routeMemberRepository;
 
     public List<TransportOrder> getAllTransportOrders() {
         return transportOrderRepository.findAll();
@@ -38,6 +42,7 @@ public class TransportOrderService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
     }
 
+    @Transactional
     public TransportOrder createTransportOrderByManager(CreateTransportOrderByManagerRequest request) {
 
         User user = userRepository.findById(request.getCreatedById())
@@ -55,8 +60,11 @@ public class TransportOrderService {
 
         TransportOrder transportOrder = buildTransportOrder(request, user, orderNumber, pickupAddress, destinationAddress);
 
+        TransportOrder savedTransportOrder = transportOrderRepository.save(transportOrder);
 
-        return transportOrderRepository.save(transportOrder);
+        createPatientDataForTransportOrder(savedTransportOrder, request.getPatients());
+
+        return savedTransportOrder;
     }
 
     public TransportOrder assignTransportOrderNumber(AssignOrderNumberRequest request, long id) {
@@ -137,7 +145,7 @@ public class TransportOrderService {
     }
 
     @Transactional
-    public TransportOrder completeTransportOrderByMenager(long id) {
+    public TransportOrder completeTransportOrderByManager(long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
 
         if (transportOrder.getStatus() == TransportStatus.CANCELLED) {
@@ -192,7 +200,17 @@ public class TransportOrderService {
         List<RouteSummaryResponse> routes =
                 routeOrderRepository.findByTransportOrder_Id(id)
                         .stream()
-                        .map(routeOrder -> RouteSummaryResponse.fromEntity(routeOrder.getRoute()))
+                        .map(routeOrder -> {
+                            var route = routeOrder.getRoute();
+
+                            List<RouteMemberResponse> routeMembers =
+                                    routeMemberRepository.findByRouteIdOrderByCreatedAtAsc(route.getId())
+                                            .stream()
+                                            .map(RouteMemberResponse::fromEntity)
+                                            .toList();
+
+                            return RouteSummaryResponse.fromEntity(route, routeMembers);
+                        })
                         .toList();
 
         List<TransportOrderPatientDataResponse> patients =
@@ -329,5 +347,28 @@ public class TransportOrderService {
         }
 
         return value.trim();
+    }
+    private void createPatientDataForTransportOrder(
+            TransportOrder transportOrder,
+            List<TransportOrderPatientCreateItemRequest> patients
+    ) {
+        if (patients == null || patients.isEmpty()) {
+            return;
+        }
+
+        List<TransportOrderPatientData> patientDataList = patients.stream()
+                .map(patientRequest -> {
+                    TransportOrderPatientData patientData = new TransportOrderPatientData();
+
+                    patientData.setTransportOrder(transportOrder);
+                    patientData.setPatientFirstName(normalizeRequiredText(patientRequest.getPatientFirstName()));
+                    patientData.setPatientLastName(normalizeRequiredText(patientRequest.getPatientLastName()));
+                    patientData.setPickupDetails(normalizeNullableText(patientRequest.getPickupDetails()));
+
+                    return patientData;
+                })
+                .toList();
+
+        transportOrderPatientDataRepository.saveAll(patientDataList);
     }
 }

@@ -10,4 +10,5 @@ public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
     List<RouteOrder> findByRoute_Id(Long routeId);
     List<RouteOrder> findByTransportOrder_Id(Long transportOrderId);
     Boolean existsByTransportOrder_IdAndRoute_StatusIn(Long transportOrderId, List<RouteStatus> statuses);
+
 }

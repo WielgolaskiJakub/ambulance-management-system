@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.users.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.users.model.User;
@@ -17,6 +18,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CurrentUserService currentUserService;
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
@@ -47,7 +49,7 @@ public class UserService {
 
         User user = new User();
         user.setFirstName(request.getFirstName());
-        user.setLastName(username);
+        user.setLastName(request.getLastName());
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
         user.setUserRole(request.getUserRole());
@@ -148,30 +150,44 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void changeTemporaryPasswordByUser(UserChangeTemporaryPasswordRequest request, long id) {
-        User userToUpdate = getUserById(id);
+    public void changeTemporaryPasswordByCurrentUser(UserChangeTemporaryPasswordRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        if (!userToUpdate.getMustChangePassword()) {
+        if (!Boolean.TRUE.equals(currentUser.getMustChangePassword())) {
             throw new ApiException(ErrorCode.PASSWORD_CHANGE_NOT_REQUIRED);
         }
 
-        userToUpdate.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userToUpdate.setMustChangePassword(false);
+        if (!passwordEncoder.matches(request.getTemporaryPassword(), currentUser.getPasswordHash())) {
+            throw new ApiException(ErrorCode.INVALID_TEMPORARY_PASSWORD);
+        }
+
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        currentUser.setMustChangePassword(false);
+
+        userRepository.save(currentUser);
+    }
+
+    public void resetTemporaryPasswordByAdmin(AdminResetTemporaryPasswordRequest request, long id) {
+        User userToUpdate = getUserById(id);
+
+        userToUpdate.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
+        userToUpdate.setMustChangePassword(true);
+
         userRepository.save(userToUpdate);
     }
 
-    public void changePasswordByUser(UserChangePasswordRequest request, long id) {
-        User userToUpdate = getUserById(id);
+    public void changePasswordByUser(UserChangePasswordRequest request) {
+        User currentUser = currentUserService.getCurrentUser();
 
-        if (userToUpdate.getMustChangePassword()) {
+        if (Boolean.TRUE.equals(currentUser.getMustChangePassword())) {
             throw new ApiException(ErrorCode.PASSWORD_CHANGE_REQUIRED);
         }
 
-        if (!passwordEncoder.matches(request.getOldPassword(), userToUpdate.getPasswordHash())) {
+        if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
             throw new ApiException(ErrorCode.INVALID_OLD_PASSWORD);
         }
-        userToUpdate.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(userToUpdate);
+        currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
     }
 
 }

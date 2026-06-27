@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
 import pl.jakub.ambulancemanagement.ambulances.service.AmbulanceService;
+import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.refuelings.dto.RefuelingCreateRequest;
@@ -14,6 +15,8 @@ import pl.jakub.ambulancemanagement.refuelings.model.Refueling;
 import pl.jakub.ambulancemanagement.refuelings.model.RefuelingStatus;
 import pl.jakub.ambulancemanagement.refuelings.repository.RefuelingRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
+import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.shifts.service.ShiftService;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.service.UserService;
@@ -29,7 +32,8 @@ public class RefuelingService {
     private final UserService userService;
     private final ShiftService  shiftService;
     private final AmbulanceService ambulanceService;
-
+    private final CurrentUserService currentUserService;
+    private final ShiftRepository shiftRepository;
 
     public List<Refueling> getAllRefuelings() {
         return refuelingRepository.findAll();
@@ -40,27 +44,30 @@ public class RefuelingService {
                 .orElseThrow(() -> new ApiException(ErrorCode.REFUELING_NOT_FOUND));
     }
 
+    public List<Refueling> getMyRefuelings() {
+        User currentUser = currentUserService.getCurrentUser();
+
+        return refuelingRepository.findByDriverIdOrderByRefuelingAtDesc(currentUser.getId());
+    }
+
     @Transactional
     public Refueling createRefueling(RefuelingCreateRequest request) {
 
-      User driver = userService.getUserById(request.getDriverId());
-      Shift shift = shiftService.getShiftById(request.getShiftId());
-      Ambulance ambulance = ambulanceService.getAmbulanceById(request.getAmbulanceId());
+        User currentUser = currentUserService.getCurrentUser();
 
-        if (!shift.getDriver().getId().equals(driver.getId())) {
-            throw new ApiException(ErrorCode.REFUELING_DRIVER_DOES_NOT_MATCH_SHIFT);
-        }
+        Shift shift = shiftRepository.findByDriver_IdAndStatus(
+                currentUser.getId(),
+                ShiftStatus.ACTIVE
+        ).orElseThrow(() -> new ApiException(ErrorCode.SHIFT_NOT_ACTIVE));
 
-        if (!shift.getAmbulance().getId().equals(ambulance.getId())) {
-            throw new ApiException(ErrorCode.REFUELING_AMBULANCE_DOES_NOT_MATCH_SHIFT);
-        }
+        Ambulance ambulance = shift.getAmbulance();
 
         if (request.getMileageAtRefueling() < ambulance.getMileage()) {
             throw new ApiException(ErrorCode.INVALID_REFUELING_MILEAGE);
         }
 
         Refueling refueling = new Refueling();
-        refueling.setDriver(driver);
+        refueling.setDriver(currentUser);
       refueling.setShift(shift);
       refueling.setAmbulance(ambulance);
 
@@ -77,8 +84,16 @@ public class RefuelingService {
       return  refuelingRepository.save(refueling);
     }
 
+    @Transactional
     public Refueling updateRefuelingByUser(RefuelingUserUpdateRequest request,  Long id) {
+
+       User currentUser = currentUserService.getCurrentUser();
+
         Refueling refueling = getRefuelingById(id);
+
+        if(!refueling.getDriver().getId().equals(currentUser.getId())) {
+            throw new ApiException(ErrorCode.REFUELING_ACCESS_DENIED);
+        }
 
         if (refueling.getStatus() != RefuelingStatus.REPORTED) {
             throw new ApiException(ErrorCode.REFUELING_ALREADY_VERIFIED);
@@ -101,9 +116,9 @@ public class RefuelingService {
     }
 
     public Refueling updateRefuelingByManager(RefuelingManagerUpdateRequest request, Long id) {
-        Refueling refueling = getRefuelingById(id);
 
-        User manager = userService.getUserById(request.getManagerId());
+        User currentManager = currentUserService.getCurrentUser();
+        Refueling refueling = getRefuelingById(id);
 
         if(request.getInvoiceNumber() != null) {
             refueling.setInvoiceNumber(request.getInvoiceNumber());
@@ -126,7 +141,7 @@ public class RefuelingService {
         }
 
 
-        refueling.setVerifiedBy(manager);
+        refueling.setVerifiedBy(currentManager);
         refueling.setVerifiedAt(LocalDateTime.now());
 
         return refuelingRepository.save(refueling);

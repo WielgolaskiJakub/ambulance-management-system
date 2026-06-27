@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.users.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.users.dto.*;
 import pl.jakub.ambulancemanagement.users.model.User;
@@ -10,7 +11,6 @@ import pl.jakub.ambulancemanagement.users.service.UserService;
 
 import java.util.List;
 
-// TODO po dodatniu jwt zmienic requestMapping na api/v1/users/admin i dodać 'me' dla usera do zmiany hasla
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -20,17 +20,20 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<UserResponse> getAllUsers() {
         return userService.getAllUsers().stream().map(UserResponse::fromEntity).toList();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public UserResponse getUserById(@PathVariable long id) {
         User user = userService.getUserById(id);
         return UserResponse.fromEntity(user);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse createUser(@Valid @RequestBody UserCreateRequest request) {
         User createdUser = userService.createUser(request);
@@ -38,6 +41,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public UserResponse updateUserByPutAdmin(
             @PathVariable long id,
             @Valid @RequestBody UserAdminUpdateRequest request
@@ -48,6 +52,7 @@ public class UserController {
 
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public UserResponse updateUserByPatchAdmin(
             @PathVariable long id,
             @Valid @RequestBody UserAdminPatchRequest request
@@ -57,26 +62,37 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUserById(@PathVariable long id) {
         userService.deleteUserById(id);
     }
 
-    @PatchMapping("/{id}/temporary-password")
+    @PatchMapping("/me/temporary-password")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changeTemporaryPasswordByUser(
-            @PathVariable long id,
             @Valid @RequestBody UserChangeTemporaryPasswordRequest request
     ) {
-        userService.changeTemporaryPasswordByUser(request, id);
+        userService.changeTemporaryPasswordByCurrentUser(request);
     }
 
-    @PatchMapping("/{id}/password")
+    @PatchMapping("/{id}/temporary-password/reset")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetTemporaryPasswordByAdmin(@PathVariable long id,
+                                              @Valid @RequestBody AdminResetTemporaryPasswordRequest request) {
+        userService.resetTemporaryPasswordByAdmin(request, id);
+    }
+
+    @PatchMapping("/me/password")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePasswordByUser(
-            @PathVariable long id,
-            @Valid @RequestBody UserChangePasswordRequest request
+                        @Valid @RequestBody UserChangePasswordRequest request
     ) {
-        userService.changePasswordByUser(request, id);
+        userService.changePasswordByUser(request);
     }
+
+
 }

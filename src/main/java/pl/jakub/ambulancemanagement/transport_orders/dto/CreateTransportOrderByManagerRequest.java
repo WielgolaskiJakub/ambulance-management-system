@@ -1,6 +1,8 @@
 package pl.jakub.ambulancemanagement.transport_orders.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -8,6 +10,8 @@ import lombok.Setter;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrderType;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportPriority;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportSource;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -37,4 +41,6 @@ public class CreateTransportOrderByManagerRequest {
      @NotNull
      private Long createdById;  //TODO jwt
 
+     @NotEmpty
+     private List<@Valid TransportOrderPatientCreateItemRequest> patients;
 }

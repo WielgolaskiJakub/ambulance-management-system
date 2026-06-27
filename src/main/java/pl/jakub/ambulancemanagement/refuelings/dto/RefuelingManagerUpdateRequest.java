@@ -12,8 +12,6 @@ import java.math.BigDecimal;
 @Setter
 public class RefuelingManagerUpdateRequest {
 
-    private Long managerId; //TODO <- MANAGER Z JWT
-
     private String invoiceNumber;
 
     @PositiveOrZero

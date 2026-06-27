@@ -1,5 +1,6 @@
 package pl.jakub.ambulancemanagement.routes.dto;
 
+import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 
@@ -20,9 +21,14 @@ public record RouteDetailsResponse(
         RouteStatus status,
         BigDecimal fuelConsumptionNormUsed,
         BigDecimal estimatedFuelConsumedLiters,
-        List<RouteTransportOrderSummaryResponse> transportOrders
+        Integer startOdometerKm,
+        Integer finishOdometerKm,
+        List<RouteTransportOrderSummaryResponse> transportOrders,
+        List<RouteMemberResponse> routeMembers
 ) {
-    public static RouteDetailsResponse fromEntity(Route route, List<RouteTransportOrderSummaryResponse> transportOrders) {
+    public static RouteDetailsResponse fromEntity(Route route,
+                                                  List<RouteTransportOrderSummaryResponse> transportOrders,
+                                                  List<RouteMemberResponse> routeMembers) {
         return new RouteDetailsResponse(
                 route.getId(),
                 route.getShift().getId(),
@@ -35,7 +41,10 @@ public record RouteDetailsResponse(
                 route.getStatus(),
                 route.getFuelConsumptionNormUsed(),
                 route.getEstimatedFuelConsumedLiters(),
-                transportOrders
+                route.getStartOdometerKm(),
+                route.getFinishOdometerKm(),
+                transportOrders,
+                routeMembers
         );
     }
 }

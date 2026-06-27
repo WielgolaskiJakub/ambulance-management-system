@@ -3,8 +3,11 @@ package pl.jakub.ambulancemanagement.transport_orders.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataCreateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.service.TransportOrderPatientDataService;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
@@ -22,6 +25,7 @@ public class TransportOrderController {
     private final TransportOrderPatientDataService transportOrderPatientDataService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<TransportOrderResponse> getAllTransportOrders() {
         return transportOrderService.getAllTransportOrders().stream().map(TransportOrderResponse::fromEntity).toList();
     }
@@ -81,6 +85,18 @@ public class TransportOrderController {
         return TransportOrderResponse.fromEntity(newTransportOrder);
     }
 
+    @PostMapping("/{transportOrderId}/patients")
+    @ResponseStatus(HttpStatus.CREATED)
+    public TransportOrderPatientDataResponse addPatientToTransportOrder(
+            @PathVariable Long transportOrderId,
+            @Valid @RequestBody TransportOrderPatientCreateItemRequest request
+    ) {
+        TransportOrderPatientData patientData =
+                transportOrderPatientDataService.addPatientToTransportOrder(transportOrderId, request);
+
+        return TransportOrderPatientDataResponse.fromEntity(patientData);
+    }
+
     @PatchMapping("/{id}/assign-order-number")
     public TransportOrderResponse assignTransportOrderNumber(
             @Valid @RequestBody AssignOrderNumberRequest request,
@@ -107,7 +123,7 @@ public class TransportOrderController {
 
     @PatchMapping("/{id}/complete")
     public TransportOrderResponse completeTransportOrder(@PathVariable long id) {
-        TransportOrder transportOrder = transportOrderService.completeTransportOrderByMenager(id);
+        TransportOrder transportOrder = transportOrderService.completeTransportOrderByManager(id);
         return TransportOrderResponse.fromEntity(transportOrder);
     }
 

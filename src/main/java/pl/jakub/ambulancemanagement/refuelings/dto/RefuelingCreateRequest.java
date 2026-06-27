@@ -11,15 +11,6 @@ import lombok.Setter;
 public class RefuelingCreateRequest {
 
     @NotNull
-    private Long driverId;
-
-    @NotNull
-    private Long shiftId;
-
-    @NotNull
-    private Long ambulanceId;
-
-    @NotNull
     @Positive
     private Integer liters;
 
@@ -29,6 +20,3 @@ public class RefuelingCreateRequest {
 
     private String driverNotes;
 }
-
-
-// TODO JWT DRIVER ID, AMBULANCE POBIERAMY Z DRIVER ACTIVE SHIFT GET ID.

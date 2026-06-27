@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.refuelings.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.refuelings.dto.RefuelingCreateRequest;
 import pl.jakub.ambulancemanagement.refuelings.dto.RefuelingManagerUpdateRequest;
@@ -21,20 +22,31 @@ public class RefuelingController {
     private final RefuelingService refuelingService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     public List<RefuelingResponse> getAllRefuelings() {
         return refuelingService.getAllRefuelings()
                 .stream()
                 .map(RefuelingResponse::fromEntity)
                 .toList();
     }
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('DRIVER')")
+    public List<RefuelingResponse> getMyRefuelings() {
+        return refuelingService.getMyRefuelings()
+                .stream()
+                .map(RefuelingResponse::fromEntity)
+                .toList();
+    }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     public RefuelingResponse getRefuelingById(@PathVariable Long id) {
         Refueling refueling = refuelingService.getRefuelingById(id);
         return RefuelingResponse.fromEntity(refueling);
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('DRIVER')")
     @ResponseStatus(HttpStatus.CREATED)
     public RefuelingResponse createRefueling(@Valid @RequestBody RefuelingCreateRequest request) {
         Refueling refueling = refuelingService.createRefueling(request);
@@ -42,6 +54,7 @@ public class RefuelingController {
     }
 
     @PatchMapping("/{id}/user")
+    @PreAuthorize("hasAnyRole('DRIVER')")
     public RefuelingResponse updateRefuelingByUser(
             @PathVariable Long id,
             @Valid @RequestBody RefuelingUserUpdateRequest request
@@ -51,6 +64,7 @@ public class RefuelingController {
     }
 
     @PatchMapping("/{id}/manager")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     public RefuelingResponse updateRefuelingByManager(
             @PathVariable Long id,
             @Valid @RequestBody RefuelingManagerUpdateRequest request

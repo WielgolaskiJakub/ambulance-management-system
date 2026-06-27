@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
 import pl.jakub.ambulancemanagement.ambulances.model.AmbulanceStatus;
 import pl.jakub.ambulancemanagement.ambulances.repository.AmbulanceRepository;
+import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.shifts.dto.ShiftCreateRequest;
@@ -16,7 +17,6 @@ import pl.jakub.ambulancemanagement.shifts.model.ShiftType;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.model.User;
-import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,17 +28,28 @@ import java.util.List;
 public class ShiftService {
 
     private final ShiftRepository shiftRepository;
-    private final UserRepository userRepository;
     private final AmbulanceRepository ambulanceRepository;
+    private final CurrentUserService currentUserService;
 
     public List<Shift> getAllShifts() {
         return shiftRepository.findAll();
     }
 
 
-    public Shift getShiftById(long id) {
+    public Shift getShiftById(Long id) {
         return shiftRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.SHIFT_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Shift> getMyShifts() {
+        User currentUser = currentUserService.getCurrentUser();
+        return shiftRepository.findByDriver_IdOrderByStartTimeDesc(currentUser.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public Shift getMyShiftById(Long shiftId) {
+        return getShiftForCurrentDriver(shiftId);
     }
 
     @Transactional
@@ -47,38 +58,37 @@ public class ShiftService {
         LocalDateTime startTime;
         LocalDateTime endTime;
 
-        if(request.getShiftType() == ShiftType.OTHER){
-            if(request.getStartTime() == null || request.getEndTime() == null){
+        if (request.getShiftType() == ShiftType.OTHER) {
+            if (request.getStartTime() == null || request.getEndTime() == null) {
                 throw new ApiException(ErrorCode.SHIFT_TIME_REQUIRED);
             }
             startTime = request.getStartTime();
             endTime = request.getEndTime();
         } else {
             if (request.getShiftDate() == null) {
-            throw new ApiException(ErrorCode.SHIFT_DATE_REQUIRED);
+                throw new ApiException(ErrorCode.SHIFT_DATE_REQUIRED);
             }
 
             startTime = calculateStartTime(request.getShiftDate(), request.getShiftType());
             endTime = calculateEndTime(request.getShiftDate(), request.getShiftType());
-            }
+        }
 
         if (!endTime.isAfter(startTime)) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
 
-        User driver = userRepository.findById(request.getDriverId())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User driver = currentUserService.getCurrentUser();
 
         if (driver.getUserRole() != UserRole.DRIVER) {
             throw new ApiException(ErrorCode.INVALID_DRIVER_ROLE);
         }
-        if (!driver.getActive()) {
+        if (!Boolean.TRUE.equals(driver.getActive())) {
             throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
         }
         Ambulance ambulance = ambulanceRepository.findById(request.getAmbulanceId())
                 .orElseThrow(() -> new ApiException(ErrorCode.AMBULANCE_NOT_FOUND));
 
-        if (!ambulance.getActive()) {
+        if (!Boolean.TRUE.equals(ambulance.getActive())) {
             throw new ApiException(ErrorCode.AMBULANCE_NOT_ACTIVE);
         }
 
@@ -86,9 +96,6 @@ public class ShiftService {
             throw new ApiException(ErrorCode.AMBULANCE_NOT_AVAILABLE);
         }
 
-
-        User createdBy = userRepository.findById(request.getCreatedById())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         if (shiftRepository.existsByDriver_IdAndStatus(driver.getId(), ShiftStatus.ACTIVE)) {
             throw new ApiException(ErrorCode.DRIVER_ALREADY_HAS_ACTIVE_SHIFT);
@@ -102,7 +109,7 @@ public class ShiftService {
         shift.setDriver(driver);
         shift.setAmbulance(ambulance);
         shift.setShiftType(request.getShiftType());
-        shift.setCreatedBy(createdBy);
+        shift.setCreatedBy(driver);
         shift.setStartTime(startTime);
         shift.setEndTime(endTime);
         shift.setStatus(ShiftStatus.ACTIVE);
@@ -117,7 +124,7 @@ public class ShiftService {
     public Shift updateShiftByUser(long id, ShiftUpdateByUserRequest request) {
 
 
-        Shift shiftToUpdate = getShiftById(id);
+       Shift shiftToUpdate = getShiftForCurrentDriver(id);
 
         if (shiftToUpdate.getStatus() != ShiftStatus.ACTIVE) {
             throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
@@ -130,7 +137,7 @@ public class ShiftService {
                 Ambulance newAmbulance = ambulanceRepository.findById(request.getAmbulanceId())
                         .orElseThrow(() -> new ApiException(ErrorCode.AMBULANCE_NOT_FOUND));
 
-                if (!newAmbulance.getActive()) {
+                if (!Boolean.TRUE.equals(newAmbulance.getActive())) {
                     throw new ApiException(ErrorCode.AMBULANCE_NOT_ACTIVE);
                 }
 
@@ -158,12 +165,17 @@ public class ShiftService {
             LocalDateTime endTime;
 
             if (newShiftType == ShiftType.OTHER) {
-                if (request.getStartTime() == null || request.getEndTime() == null) {
-                    throw new ApiException(ErrorCode.SHIFT_TIME_REQUIRED);
-                }
+              startTime = request.getStartTime() != null
+                      ? request.getStartTime()
+                      :shiftToUpdate.getStartTime();
 
-                startTime = request.getStartTime();
-                endTime = request.getEndTime();
+              endTime = request.getEndTime() != null
+                      ? request.getEndTime()
+                      : shiftToUpdate.getEndTime();
+
+              if(startTime == null || endTime == null) {
+                  throw new ApiException(ErrorCode.SHIFT_TIME_REQUIRED);
+              }
 
             } else {
                 LocalDate shiftDate = request.getShiftDate() != null
@@ -187,7 +199,7 @@ public class ShiftService {
 
     @Transactional
     public Shift finishShift(long id) {
-        Shift shift = getShiftById(id);
+        Shift shift = getMyShiftById(id);
         if (shift.getStatus() != ShiftStatus.ACTIVE) {
             throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
         }
@@ -198,7 +210,7 @@ public class ShiftService {
 
     @Transactional
     public Shift cancelShiftById(long id) {
-        Shift shift = getShiftById(id);
+        Shift shift = getMyShiftById(id);
 
         if (shift.getStatus() == ShiftStatus.FINISHED) {
             throw new ApiException(ErrorCode.SHIFT_ALREADY_FINISHED);
@@ -211,6 +223,7 @@ public class ShiftService {
         shift.getAmbulance().setStatus(AmbulanceStatus.AVAILABLE);
         return shiftRepository.save(shift);
     }
+
     private LocalDateTime calculateStartTime(LocalDate date, ShiftType type) {
         return switch (type) {
             case DAY_12H, FULL_24H -> date.atTime(7, 0);
@@ -226,6 +239,13 @@ public class ShiftService {
             case NIGHT_12H, FULL_24H -> date.plusDays(1).atTime(7, 0);
             case OTHER -> throw new ApiException(ErrorCode.INVALID_SHIFT_TYPE);
         };
+    }
+
+    private Shift getShiftForCurrentDriver(Long shiftId){
+        User currentUser = currentUserService.getCurrentUser();
+
+        return shiftRepository.findByIdAndDriver_Id(shiftId, currentUser.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.SHIFT_ACCESS_DENIED));
     }
 }
 

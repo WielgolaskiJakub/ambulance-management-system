@@ -11,9 +11,6 @@ import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
 @Setter
 public class RouteMemberCreateRequest {
 
-    @NotNull
-    private Long routeId;
-
     private Long userId;
 
     @Size(max = 255)

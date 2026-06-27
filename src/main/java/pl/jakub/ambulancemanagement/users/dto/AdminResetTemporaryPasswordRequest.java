@@ -8,10 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserChangeTemporaryPasswordRequest {
-
-    @NotBlank
-    private String temporaryPassword;
+public class AdminResetTemporaryPasswordRequest {
 
     @NotBlank
     @Size(min = 8, message = "Hasło musi mieć minimum 8 znaków")
@@ -19,7 +16,6 @@ public class UserChangeTemporaryPasswordRequest {
             regexp = "^(?=.*[A-Z])(?=.*\\d).+$",
             message = "Hasło musi zawierać wielką literę i cyfrę"
     )
-    private String newPassword;
-
-
+    private String temporaryPassword;
 }
+

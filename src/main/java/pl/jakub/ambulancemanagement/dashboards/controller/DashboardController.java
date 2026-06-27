@@ -1,6 +1,7 @@
 package pl.jakub.ambulancemanagement.dashboards.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +16,15 @@ import pl.jakub.ambulancemanagement.dashboards.service.DashboardService;
 public class DashboardController {
     private final DashboardService service;
 
+    @GetMapping("/me")
+    @PreAuthorize("hasAnyRole('DRIVER')")
+    public  AmbulanceDashboardResponse getMyDashboard(){
+        return service.getMyDashboard();
+    }
+
     @GetMapping("/shift/{shiftId}")
-    public AmbulanceDashboardResponse getDashboard(@PathVariable Long shiftId) {
-        return service.getDashboardById(shiftId);
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public AmbulanceDashboardResponse getDashboardByShiftId(@PathVariable Long shiftId) {
+        return service.getDashboardByShiftIdForAdmin(shiftId);
     }
 }

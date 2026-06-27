@@ -5,8 +5,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
+import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMemberRole;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
+import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.*;
@@ -22,6 +28,8 @@ import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.Tran
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
+import pl.jakub.ambulancemanagement.users.model.User;
+import pl.jakub.ambulancemanagement.users.model.UserRole;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -40,15 +48,36 @@ public class RouteService {
     private final ShiftRepository shiftRepository;
     private final RouteOrderRepository routeOrderRepository;
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
+    private final RouteMemberRepository routeMemberRepository;
+    private final CurrentUserService currentUserService;
 
     public List<Route> getAllRoutes() {
         return routeRepository.findAll();
     }
 
-    public Route getRouteById(java.lang.Long id) {
+    public Route getRouteById(Long id) {
         return routeRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
     }
+
+    @Transactional(readOnly = true)
+    public List<RouteResponse> getMyRoutes() {
+        User currentUser= currentUserService.getCurrentUser();
+        return  routeRepository.findMyRoutes(currentUser.getId())
+                .stream()
+                .map(RouteResponse::fromEntity)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RouteResponse getMyRouteById(Long routeId) {
+        User currentUser= currentUserService.getCurrentUser();
+
+        Route route = routeRepository.findMyRouteById(routeId,currentUser.getId())
+                .orElseThrow(()-> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
+    return RouteResponse.fromEntity(route);
+    }
+
 
     @Transactional
     public Route createRoute(RouteCreateRequest request) {
@@ -59,6 +88,8 @@ public class RouteService {
         if (shift.getStatus() != ShiftStatus.ACTIVE) {
             throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
         }
+        validateCurrentUserCanUseShift(shift);
+
         Route route = new Route();
         route.setShift(shift);
         route.setStartAddress(request.getStartAddress());
@@ -96,12 +127,14 @@ public class RouteService {
 
         savedRoute.setRouteOrders(routeOrders);
 
+        addDriverAsRouteMember(savedRoute);
+
         return savedRoute;
     }
 
     @Transactional
     public Route startRoute(Long id) {
-        Route route = getRouteById(id);
+        Route route = getRouteForCurrentUser(id);
 
         if (route.getStatus() != RouteStatus.CREATED) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_STARTED);
@@ -139,7 +172,7 @@ public class RouteService {
 
     @Transactional
     public Route markRouteAsWaiting(Long id) {
-        Route route = getRouteById(id);
+        Route route = getRouteForCurrentUser(id);
         if (route.getStatus() != RouteStatus.IN_PROGRESS) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_MARKED_AS_WAITING);
         }
@@ -150,7 +183,7 @@ public class RouteService {
 
     @Transactional
     public Route resumeRoute(Long id) {
-        Route route = getRouteById(id);
+        Route route = getRouteForCurrentUser(id);
         if (route.getStatus() != RouteStatus.WAITING) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_RESUMED);
         }
@@ -160,7 +193,7 @@ public class RouteService {
 
     @Transactional
     public Route finishRoute(Long id, RouteFinishRequest request) {
-        Route route = getRouteById(id);
+        Route route = getRouteForCurrentUser(id);
 
         if (route.getStatus() != RouteStatus.IN_PROGRESS) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_FINISHED);
@@ -285,20 +318,31 @@ public class RouteService {
     public RouteDetailsResponse getRouteDetailsById(Long id) {
         Route route = getRouteById(id);
 
-        List<RouteOrder> routeOrders = routeOrderRepository.findByRoute_Id(route.getId());
+        validateCurrentUserCanAccessRoute(route);
 
-        List<RouteTransportOrderSummaryResponse> transportOrders = routeOrders.stream()
-                .map(routeOrder -> {
-                    TransportOrder order = routeOrder.getTransportOrder();
+        List<RouteMemberResponse> routeMembers =
+                routeMemberRepository.findByRouteIdOrderByCreatedAtAsc(route.getId())
+                        .stream()
+                        .map(RouteMemberResponse::fromEntity)
+                        .toList();
 
-                    List<TransportOrderPatientDataResponse> patients = transportOrderPatientDataRepository.
-                            findByTransportOrderId(order.getId()).stream()
-                            .map(TransportOrderPatientDataResponse::fromEntity).toList();
+        List<RouteTransportOrderSummaryResponse> transportOrders =
+                routeOrderRepository.findByRoute_Id(route.getId())
+                        .stream()
+                        .map(routeOrder -> {
+                            var transportOrder = routeOrder.getTransportOrder();
 
-                    return RouteTransportOrderSummaryResponse.fromEntity(order, patients);
-                }).toList();
+                            List<TransportOrderPatientDataResponse> patients =
+                                    transportOrderPatientDataRepository.findByTransportOrderId(transportOrder.getId())
+                                            .stream()
+                                            .map(TransportOrderPatientDataResponse::fromEntity)
+                                            .toList();
 
-        return RouteDetailsResponse.fromEntity(route, transportOrders);
+                            return RouteTransportOrderSummaryResponse.fromEntity(transportOrder, patients);
+                        })
+                        .toList();
+
+        return RouteDetailsResponse.fromEntity(route, transportOrders, routeMembers);
     }
 
     private String normalizeNullableText(String value) {
@@ -368,5 +412,70 @@ public class RouteService {
 
         ambulance.setEstimatedFuelLiters(newEstimatedFuel);
         ambulance.setFuelEstimateUpdatedAt(LocalDateTime.now());
+    }
+    private void validateCurrentUserCanAccessRoute(Route route) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (currentUser.getUserRole() == UserRole.ADMIN ||
+                currentUser.getUserRole() == UserRole.MANAGER) {
+            return;
+        }
+
+        if (route.getShift().getDriver().getId().equals(currentUser.getId())) {
+            return;
+        }
+
+        boolean isRouteMember = routeMemberRepository.existsByRouteIdAndUserId(
+                route.getId(),
+                currentUser.getId()
+        );
+
+        if (isRouteMember) {
+            return;
+        }
+
+        throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
+    }
+    private void addDriverAsRouteMember(Route route) {
+        User driver = route.getShift().getDriver();
+
+        boolean alreadyAdded = routeMemberRepository.existsByRouteIdAndUserId(
+                route.getId(),
+                driver.getId()
+        );
+
+        if (alreadyAdded) {
+            return;
+        }
+
+        RouteMember driverMember = new RouteMember();
+
+        driverMember.setRoute(route);
+        driverMember.setUser(driver);
+        driverMember.setMemberName(null);
+        driverMember.setRole(RouteMemberRole.DRIVER);
+        driverMember.setSource(RouteMemberSource.SHIFT_TEAM);
+        driverMember.setCreatedAt(LocalDateTime.now());
+
+        routeMemberRepository.save(driverMember);
+    }
+
+    private Route getRouteForCurrentUser(Long routeId) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        return routeRepository.findMyRouteById(routeId, currentUser.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
+    }
+    private void validateCurrentUserCanUseShift(Shift shift) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (currentUser.getUserRole() == UserRole.ADMIN ||
+                currentUser.getUserRole() == UserRole.MANAGER) {
+            return;
+        }
+
+        if (!shift.getDriver().getId().equals(currentUser.getId())) {
+            throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
+        }
     }
 }

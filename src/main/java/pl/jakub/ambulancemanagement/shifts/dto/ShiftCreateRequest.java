@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 @Setter
 public class ShiftCreateRequest {
 
-    @NotNull
-    private Long driverId; // TODO tu JWT daje id i createdBYID tez
 
     @NotNull
     private Long ambulanceId;
@@ -22,9 +20,6 @@ public class ShiftCreateRequest {
     private ShiftType shiftType;
 
     private LocalDate shiftDate;
-
-    @NotNull
-    private Long createdById; // tymczasowo, dopóki nie masz logowania
 
     @NotNull
     private LocalDateTime startTime;
