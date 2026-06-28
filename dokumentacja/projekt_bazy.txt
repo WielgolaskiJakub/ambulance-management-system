@@ -1,0 +1,143 @@
+Table users {
+  id integer [primary key]
+  first_name varchar
+  last_name varchar
+  email varchar
+  password_hash varchar
+  role varchar
+  created_at timestamp
+  active bool
+}
+
+Table ambulances {
+  id integer [primary key]
+  car_brand varchar
+  model varchar
+  registration_plates varchar
+  mileage integer
+  average_fuel_consumption decimal
+  tank_capacity_liters decimal
+  status varchar
+  active bool
+}
+
+Table shifts {
+   id integer [primary key]
+  driver_id integer [not null]
+  ambulance_id integer [not null]
+  team_member_id integer [not null]
+  created_by_id integer [not null]
+  start_time timestamp [not null]
+  end_time timestamp
+  status varchar [not null]
+}
+
+Table routes {
+  id integer [primary key]
+  transport_order_id integer
+  shift_id integer
+  start_address text
+  actual_destination_address text
+  distance_km decimal
+  started_at timestamp
+  finished_at timestamp
+  completed_by_id integer
+  notes text
+}
+
+Table ambulance_service_records {
+  id integer [primary key]
+  ambulance_id integer
+  service_start_date timestamp
+  service_end_date timestamp
+  mileage_at_service integer
+  service_type varchar
+  description text
+  cost decimal
+  created_by_id integer
+  created_at timestamp
+}
+
+Table refuelings {
+  id integer [primary key]
+  ambulance_id integer [not null]
+  driver_id integer [not null]
+  shift_id integer [not null]
+  refueled_at timestamp [not null]
+  liters decimal [not null]
+  mileage_at_refueling integer [not null]
+  status varchar [not null]
+  invoice_number varchar
+  total_cost decimal
+  verified_by_id integer
+  verified_at timestamp
+  notes text
+  created_at timestamp [not null]
+}
+
+Table route_members {
+  id integer [primary key]
+  route_id integer [not null]
+  user_id integer
+  member_name varchar
+  role varchar [not null]
+  source varchar [not null]
+  created_at timestamp [not null]
+}
+
+Table transport_orders {
+  id integer [primary key]
+  order_number varchar
+  order_type varchar [not null]
+  source varchar [not null]
+  pickup_city varchar
+  pickup_street varchar
+  destination_city varchar
+  destination_street varchar
+  created_by_id integer [not null]
+  assigned_driver_id integer
+  status varchar [not null]
+  priority varchar
+  description text
+  created_at timestamp [not null]
+  completed_at timestamp
+  cancelled_at timestamp
+  anonymized_at timestamp
+}
+
+Table transport_order_patient_data {
+  id integer [primary key]
+  transport_order_id integer [not null]
+  patient_first_name varchar [not null]
+  patient_last_name varchar [not null]
+  pickup_address_full text [not null]
+  destination_address_full text [not null]
+  delete_after timestamp [not null]
+  created_at timestamp [not null]
+}
+
+Ref: transport_orders.created_by_id > users.id
+Ref: transport_order_patient_data.transport_order_id > transport_orders.id
+Ref: transport_orders.assigned_driver_id > users.id
+
+Ref: route_members.route_id > routes.id
+Ref: route_members.user_id > users.id
+
+
+Ref: refuelings.ambulance_id > ambulances.id
+Ref: refuelings.driver_id > users.id
+Ref: refuelings.shift_id > shifts.id
+Ref: refuelings.verified_by_id > users.id
+
+Ref: shifts.driver_id > users.id
+Ref: shifts.team_member_id > users.id
+Ref: shifts.ambulance_id > ambulances.id
+Ref: shifts.created_by_id > users.id
+
+
+Ref: routes.transport_order_id > transport_orders.id
+Ref: routes.shift_id > shifts.id
+Ref: routes.completed_by_id > users.id
+
+Ref: ambulance_service_records.ambulance_id > ambulances.id
+Ref: ambulance_service_records.created_by_id > users.id

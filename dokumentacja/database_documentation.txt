@@ -1,0 +1,363 @@
+# Database documentation
+
+## Cel dokumentu
+
+Ten dokument opisuje główne tabele bazy danych systemu do zarządzania karetkami transportowymi. Celem dokumentacji jest zapisanie nie tylko struktury danych, ale też sensu biznesowego poszczególnych tabel.
+
+System nie jest zwykłym CRUD-em zleceń. Ma obsługiwać realny proces transportu medycznego: użytkowników, karetki, zmiany, zlecenia, trasy, dodatkowych członków zespołu, tankowania, serwis karetek, raporty oraz ograniczenie przechowywania danych pacjenta.
+
+---
+
+# users
+
+Tabela przechowuje konta użytkowników systemu.
+
+Użytkownik może pełnić różne role, np.:
+
+* DRIVER — kierowca,
+* TEAM_MEMBER — sanitariusz / członek zespołu,
+* MANAGER — kierownik,
+* ADMIN — administrator,
+* DOCTOR — lekarz, opcjonalnie w przyszłości.
+
+Przykładowe pola:
+
+* id — identyfikator użytkownika,
+* first_name — imię,
+* last_name — nazwisko,
+* email — adres e-mail używany do logowania,
+* password_hash — zahashowane hasło,
+* role — rola użytkownika w systemie,
+* created_at — data utworzenia konta,
+* active — informacja, czy konto jest aktywne.
+
+Hasło nie powinno być nigdy zwracane w odpowiedziach API. Do komunikacji z frontendem należy używać DTO/response zawierających tylko potrzebne dane.
+
+---
+
+# ambulances
+
+Tabela przechowuje dane karetek.
+
+Przykładowe pola:
+
+* id — identyfikator karetki,
+* car_brand — marka pojazdu,
+* model — model pojazdu,
+* registration_plates — numer rejestracyjny,
+* mileage — aktualny znany przebieg,
+* average_fuel_consumption — średnie spalanie pojazdu,
+* tank_capacity_liters — pojemność baku,
+* status — aktualny status karetki,
+* active — informacja, czy karetka jest aktywna w systemie.
+
+Przykładowe statusy karetki:
+
+* AVAILABLE — dostępna,
+* IN_TRANSPORT — w trakcie transportu,
+* IN_SERVICE — w serwisie,
+* OUT_OF_SERVICE — wyłączona z użytku.
+
+Numer rejestracyjny powinien być typem tekstowym, ponieważ może zawierać litery.
+
+Średnie spalanie i pojemność baku powinny być typami liczbowymi z częścią dziesiętną, np. decimal.
+
+---
+
+# shifts
+
+Tabela przechowuje zmiany dyżurowe.
+
+Zmiana opisuje podstawowy skład zespołu pracujący przez określony czas, np. 12 godzin.
+
+Przykładowe pola:
+
+* id — identyfikator zmiany,
+* driver_id — kierowca przypisany do zmiany,
+* ambulance_id — karetka przypisana do zmiany,
+* team_member_id — stały członek zespołu, np. sanitariusz,
+* start_time — początek zmiany,
+* end_time — koniec zmiany,
+* status — status zmiany.
+
+Relacje:
+
+* shifts.driver_id -> users.id,
+* shifts.team_member_id -> users.id,
+* shifts.ambulance_id -> ambulances.id.
+
+Tabela shifts opisuje stały skład zmiany. Dodatkowe osoby, które dołączają tylko do konkretnego transportu, nie są zapisywane w shifts, tylko w route_members.
+
+---
+
+# transport_orders
+
+Tabela przechowuje zadania transportowe.
+
+Ważna decyzja projektowa: transport_orders nie oznacza wyłącznie zlecenia od kierownika. Ta tabela oznacza szerzej powód wykonania przejazdu karetki.
+
+Transport order może reprezentować:
+
+* zwykły transport pacjenta zlecony przez kierownika,
+* transport z NPL/POZ,
+* przejazd techniczny,
+* wyjazd do serwisu,
+* przejazd specjalny,
+* w przyszłości zlecenie utworzone przez lekarza albo system zewnętrzny.
+
+Przykładowe pola:
+
+* id — identyfikator zadania,
+* order_number — numer zlecenia,
+* order_type — typ zlecenia/przejazdu,
+* source — źródło utworzenia zlecenia,
+* pickup_city — miasto odbioru,
+* pickup_street — ulica odbioru,
+* destination_city — miasto docelowe,
+* destination_street — ulica docelowa,
+* created_by_id — użytkownik, który utworzył zadanie,
+* assigned_driver_id — kierowca przypisany do zadania,
+* status — status zadania,
+* priority — priorytet, opcjonalnie,
+* description — opis zadania,
+* created_at — data utworzenia,
+* completed_at — data zakończenia,
+* cancelled_at — data anulowania,
+* anonymized_at — data anonimizacji/usunięcia danych pacjenta.
+
+Relacje:
+
+* transport_orders.created_by_id -> users.id,
+* transport_orders.assigned_driver_id -> users.id.
+
+Przykładowe typy order_type:
+
+* PATIENT_TRANSPORT — zwykły transport pacjenta,
+* NPL_TRANSPORT — transport z nocnej pomocy lekarskiej / POZ,
+* TECHNICAL_TRIP — przejazd techniczny,
+* SERVICE_TRIP — wyjazd serwisowy,
+* SPECIAL_TRIP — przejazd specjalny.
+
+Przykładowe wartości source:
+
+* MANAGER — zlecenie utworzone przez kierownika,
+* DRIVER — zlecenie utworzone przez kierowcę,
+* NPL — transport z NPL/POZ,
+* DOCTOR — zlecenie utworzone przez lekarza,
+* SYSTEM — zlecenie z integracji z systemem zewnętrznym.
+
+assigned_driver_id nie musi być obowiązkowe, ponieważ kierownik może utworzyć zlecenie, które nie zostało jeszcze przypisane do konkretnego kierowcy.
+
+---
+
+# transport_order_patient_data
+
+Tabela przechowuje tymczasowe dane pacjenta.
+
+Ta tabela istnieje po to, żeby ograniczyć przechowywanie danych osobowych. Pełne dane pacjenta są potrzebne operacyjnie, aby kierowca lub sanitariusz wiedział, kogo odebrać i skąd. Nie powinny być jednak trzymane w historii systemu bezterminowo.
+
+Przykładowe pola:
+
+* id — identyfikator rekordu,
+* transport_order_id — powiązane zadanie transportowe,
+* patient_first_name — imię pacjenta,
+* patient_last_name — nazwisko pacjenta,
+* pickup_address_full — pełny adres odbioru,
+* destination_address_full — pełny adres docelowy,
+* delete_after — data, po której dane powinny zostać usunięte,
+* created_at — data utworzenia rekordu.
+
+Relacja:
+
+* transport_order_patient_data.transport_order_id -> transport_orders.id.
+
+Po zakończeniu zlecenia system powinien ustawić termin usunięcia danych, np. completed_at + 24 godziny.
+
+Po upływie tego czasu dane z transport_order_patient_data powinny zostać usunięte, a w transport_orders powinny zostać tylko dane ogólne potrzebne do raportów, np. miasto i ulica.
+
+Dla przejazdów technicznych, serwisowych i specjalnych tabela transport_order_patient_data nie musi być tworzona, ponieważ nie ma tam pacjenta.
+
+---
+
+# routes
+
+Tabela przechowuje faktyczny przejazd jednej karetki.
+
+Ważna decyzja projektowa: transport_order opisuje powód przejazdu, a route opisuje faktyczny przejazd pojazdu.
+
+Przykładowe pola:
+
+* id — identyfikator trasy,
+* transport_order_id — zadanie transportowe, którego dotyczy przejazd,
+* shift_id — zmiana, na której wykonano przejazd,
+* start_address — adres startowy,
+* actual_destination_address — faktyczny adres docelowy,
+* distance_km — liczba przejechanych kilometrów,
+* started_at — data i godzina rozpoczęcia trasy,
+* finished_at — data i godzina zakończenia trasy,
+* notes — uwagi.
+
+Relacje:
+
+* routes.transport_order_id -> transport_orders.id,
+* routes.shift_id -> shifts.id.
+
+Jedno zadanie transportowe może mieć jedną albo więcej tras.
+
+Jeśli jedna karetka realizuje zlecenie, powstaje jedna route.
+
+Jeśli dwie karetki jadą do jednego pacjenta, powstają dwie routes powiązane z jednym transport_order. Dzięki temu kilometry i paliwo są liczone osobno dla każdej karetki.
+
+Jeśli jedna karetka jedzie z większą liczbą osób, nadal powstaje jedna route, a dodatkowe osoby są zapisywane w route_members.
+
+---
+
+# route_members
+
+Tabela przechowuje dodatkowe osoby przypisane do konkretnej trasy.
+
+Ta tabela nie opisuje stałego składu zmiany. Stały skład jest zapisany w shifts. route_members służy tylko do osób, które dołączyły do konkretnego przejazdu.
+
+Przykładowe pola:
+
+* id — identyfikator rekordu,
+* route_id — trasa, której dotyczy wpis,
+* user_id — użytkownik systemu, jeżeli osoba ma konto,
+* member_name — imię i nazwisko osoby wpisanej ręcznie,
+* role — rola osoby przy trasie,
+* source — źródło osoby,
+* created_at — data dodania.
+
+Relacje:
+
+* route_members.route_id -> routes.id,
+* route_members.user_id -> users.id.
+
+Przykładowe role:
+
+* DRIVER,
+* SANITARY,
+* PARAMEDIC,
+* NURSE,
+* DOCTOR,
+* OTHER.
+
+Przykładowe source:
+
+* TRANSPORT — osoba z transportu, posiadająca konto w systemie,
+* SOR — osoba z SOR-u, wpisana ręcznie,
+* WARD — osoba z oddziału, wpisana ręcznie,
+* OTHER — inne źródło.
+
+Zasada:
+
+* jeżeli source = TRANSPORT, to user_id powinno być ustawione,
+* jeżeli source = SOR, WARD albo OTHER, to member_name powinno być ustawione.
+
+Tabela route_members będzie używana np. po kliknięciu przycisku „Dodaj członka zespołu” przy konkretnej trasie.
+
+---
+
+# refuelings
+
+Tabela przechowuje tankowania karetek.
+
+Założenie biznesowe: karetki są zawsze tankowane do pełna. Kierowca wpisuje tylko liczbę litrów z faktury oraz aktualny przebieg pojazdu. Dane księgowe, np. numer faktury i kwotę, może później uzupełnić kierownik.
+
+Przykładowe pola:
+
+* id — identyfikator tankowania,
+* ambulance_id — karetka, której dotyczy tankowanie,
+* driver_id — kierowca, który zgłosił tankowanie,
+* shift_id — zmiana, na której wykonano tankowanie,
+* refueled_at — data i godzina tankowania,
+* liters — liczba zatankowanych litrów,
+* mileage_at_refueling — przebieg pojazdu przy tankowaniu,
+* status — status wpisu tankowania,
+* invoice_number — numer faktury, uzupełniany przez kierownika,
+* total_cost — całkowity koszt tankowania, uzupełniany przez kierownika,
+* verified_by_id — kierownik, który zweryfikował wpis,
+* verified_at — data weryfikacji,
+* notes — uwagi,
+* created_at — data utworzenia wpisu.
+
+Relacje:
+
+* refuelings.ambulance_id -> ambulances.id,
+* refuelings.driver_id -> users.id,
+* refuelings.shift_id -> shifts.id,
+* refuelings.verified_by_id -> users.id.
+
+Przykładowe statusy:
+
+* REPORTED — kierowca zgłosił tankowanie,
+* VERIFIED — kierownik zweryfikował tankowanie,
+* REJECTED — wpis został odrzucony.
+
+Dzięki zapisywaniu litrów i przebiegu można obliczać rzeczywiste spalanie między tankowaniami do pełna.
+
+---
+
+# ambulance_service_records
+
+Tabela przechowuje historię serwisową karetek.
+
+Przykładowe pola:
+
+* id — identyfikator wpisu,
+* ambulance_id — karetka, której dotyczy serwis,
+* service_date — data serwisu,
+* mileage_at_service — przebieg w momencie serwisu,
+* service_type — typ serwisu,
+* description — opis wykonanych czynności,
+* cost — koszt serwisu,
+* created_by_id — użytkownik, który dodał wpis,
+* created_at — data utworzenia wpisu.
+
+Relacje:
+
+* ambulance_service_records.ambulance_id -> ambulances.id,
+* ambulance_service_records.created_by_id -> users.id.
+
+Tabela pozwala zapisywać historię napraw, przeglądów, wymian części i innych czynności serwisowych.
+
+---
+
+# Raporty
+
+Na początkowym etapie nie tworzymy osobnej tabeli reports.
+
+Raporty miesięczne powinny być generowane dynamicznie na podstawie istniejących tabel:
+
+* routes,
+* shifts,
+* ambulances,
+* transport_orders,
+* refuelings,
+* ambulance_service_records.
+
+Przykładowy raport miesięczny może pokazywać:
+
+* ile kilometrów przejechała każda karetka,
+* ile tras wykonała każda karetka,
+* ile zleceń wykonano,
+* ile litrów paliwa zatankowano,
+* szacowane i rzeczywiste spalanie,
+* podsumowanie wszystkich karetek,
+* podział na typy przejazdów, np. transport pacjenta, NPL, techniczne, serwisowe.
+
+Osobna tabela raportów może zostać dodana w przyszłości, jeśli system będzie obsługiwał zatwierdzanie raportów miesięcznych, archiwizację albo generowanie plików PDF.
+
+---
+
+# Timestampy
+
+Pola timestamp przechowują datę i godzinę.
+
+Sam typ timestamp nie ustawia automatycznie daty. Automatyczne ustawienie daty wymaga np. default current_timestamp w bazie albo ustawienia wartości z backendu.
+
+Przykładowa zasada:
+
+* created_at — może być ustawiane automatycznie przez bazę,
+* started_at, finished_at, completed_at, cancelled_at — powinny być ustawiane przez backend, bo są zdarzeniami biznesowymi,
+* delete_after — powinno być wyliczane przez backend na podstawie completed_at.

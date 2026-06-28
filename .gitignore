@@ -1,43 +1,16 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+# Backend
+backend_ambulance/AmbulanceManagement/.gradle/
+backend_ambulance/AmbulanceManagement/build/
+backend_ambulance/AmbulanceManagement/out/
+backend_ambulance/AmbulanceManagement/.idea/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
+# Frontend
+frontend_ambulance/node_modules/
+frontend_ambulance/dist/
+frontend_ambulance/.env
+frontend_ambulance/frontend-ambulance/node_modules/
+frontend_ambulance/frontend-ambulance/dist/
+frontend_ambulance/frontend-ambulance/.env
 
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
-.vscode/
-
-### Local config / secrets ###
-.env
-application-local.properties
-application-dev.properties
-application-prod.properties
+# Logs
+*.log

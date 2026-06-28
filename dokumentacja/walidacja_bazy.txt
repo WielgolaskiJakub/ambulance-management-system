@@ -1,0 +1,50 @@
+Jeśli source = TRANSPORT, to user_id musi być ustawione.
+Jeśli source = SOR/WARD/OTHER, to member_name musi być ustawione.
+
+
+transport_orders — co trzeba zrobić
+patient_data — tymczasowe dane pacjenta
+routes — faktyczny przejazd
+shifts — kto pracuje na zmianie
+route_members — dodatkowe osoby przy konkretnej trasie
+ambulances — karetki
+refuelings — tankowania
+service_records — serwis
+users — konta i role
+
+#SHIFTS
+nie masz ACTIVE shift → nie możesz utworzyć route / pobrać zlecenia
+
+Dodałbym też zabezpieczenia:
+
+jeden kierowca nie może mieć dwóch aktywnych zmian naraz
+jedna karetka nie może mieć dwóch aktywnych zmian naraz
+endTime musi być po startTime
+tylko aktywna karetka może być wybrana
+  
+Na teraz najlepszy flow:
+
+1. Kierowca loguje się.
+2. Klika „Utwórz dyżur”.
+3. Wybiera karetkę z selecta.
+4. Wybiera członka zespołu z selecta.
+5. Wybiera preset 07–19 albo 19–07.
+6. Backend tworzy Shift ze statusem ACTIVE.
+7. Powrót do ekranu głównego.
+8. Ekran główny pokazuje zlecenia dostępne na dziś.
+
+
+Możliwe dalsze feature:
+
+-harmonogram sprzątania z możliwą dokumentacją fotograficzną,
+-możliwy grafik pracy
+-odwoływanie transportów, bo został odwołany, albo pojechał zewnętrznym transportem
+
+
+Notatki:
+
+1. poprawić adresy jako optional pickupAddress/destinationAddress <- ogarnięte w transport Order jeszcze trzeba to z routes przyłączyć
+2. zrobić osobne DTO dla manager create <- chyba ogarniete
+3. zrobić osobne DTO dla driver create
+4. zrobić assignOrderNumber/update dla kierownika
+

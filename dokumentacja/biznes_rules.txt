@@ -1,0 +1,450 @@
+# Business rules
+
+## Cel dokumentu
+
+Ten dokument opisuje główne zasady biznesowe systemu do zarządzania karetkami transportowymi. Zasady te wyjaśniają, jak aplikacja powinna działać i dlaczego baza danych została zaprojektowana w określony sposób.
+
+Dokument służy jako pomoc przy implementacji backendu, frontendu oraz późniejszym opisie projektu w pracy dyplomowej.
+
+---
+
+# Główna koncepcja systemu
+
+System służy do obsługi pracy karetek transportowych w szpitalu.
+
+Podstawowy proces:
+1. Kierownik tworzy zlecenie albo zadanie transportowe.
+2. Kierowca loguje się do systemu i rozpoczyna zmianę.
+3. Kierowca wybiera wolną karetkę oraz stałego członka załogi.
+4. System tworzy aktywną zmianę.
+5. Kierowca i członek zespołu widzą zlecenia do realizacji.
+6. Sanitariusz/członek zespołu uzupełnia dane wykonania transportu, np. kilometry, godziny i statusy.
+7. Kierowca może dodać tankowanie.
+8. Kierownik widzi raporty, tankowania, historię tras i serwisów.
+
+Najważniejsze pojęcia:
+
+* transport_orders — powód przejazdu / zadanie,
+* routes — faktyczny przejazd jednej karetki,
+* shifts — stały zespół na zmianie,
+* route_members — dodatkowe osoby przy konkretnej trasie,
+* refuelings — tankowania,
+* patient_data — tymczasowe dane pacjenta.
+
+---
+
+# Transport order
+
+Transport order oznacza zadanie transportowe albo powód przejazdu.
+
+Nie oznacza wyłącznie klasycznego zlecenia od kierownika.
+
+Transport order może dotyczyć:
+
+* transportu pacjenta,
+* transportu z NPL/POZ,
+* przejazdu technicznego,
+* wyjazdu do serwisu,
+* przejazdu specjalnego,
+* w przyszłości zlecenia od lekarza albo systemu zewnętrznego.
+
+Każda route powinna mieć powiązany transport_order, ponieważ każda trasa powinna mieć znany powód wykonania przejazdu.
+
+Dzięki temu w raportach wiadomo, dlaczego karetka zrobiła konkretne kilometry.
+
+---
+
+# Route
+
+Route oznacza faktyczny przejazd jednej karetki.
+
+Jedna route dotyczy:
+
+* jednej karetki,
+* jednej zmiany,
+* jednego faktycznego przejazdu.
+
+Route jest powiązana z transport_order.
+
+Jeżeli jedna karetka jedzie do pacjenta, powstaje jedna route.
+
+Jeżeli dwie karetki jadą do tego samego pacjenta, powstają dwie routes powiązane z jednym transport_order.
+
+Jeżeli jedną karetką jadą cztery osoby, nadal powstaje jedna route, ponieważ przejazd wykonuje jeden pojazd. Dodatkowe osoby zapisuje się w route_members.
+
+---
+
+# Shifts
+
+Shift oznacza zmianę dyżurową.
+
+Zmiana opisuje podstawowy skład zespołu na określony czas, np. 12 godzin.
+
+Zmiana zawiera:
+
+- kierowcę,
+- stałego członka zespołu,
+- karetkę,
+- czas rozpoczęcia,
+- czas zakończenia,
+- status.
+
+Zmiana nie jest tworzona przez kierownika. Zmianę rozpoczyna kierowca po zalogowaniu do systemu.
+
+Podczas rozpoczęcia zmiany kierowca wybiera:
+
+- wolną karetkę,
+- stałego członka załogi.
+
+Po rozpoczęciu zmiany system zapisuje kierowcę, karetkę i członka zespołu w tabeli shifts.
+
+Rozliczanie transportów, czyli uzupełnianie kilometrów, godzin, statusów oraz danych związanych z wykonaniem trasy, wykonuje sanitariusz/członek zespołu przypisany do zmiany.
+
+Dodatkowych osób, które jadą tylko przy jednej konkretnej trasie, nie wpisuje się do shifts. Takie osoby zapisuje się w route_members.
+
+# Route members
+
+Route members oznacza dodatkowe osoby przy konkretnej trasie.
+
+Tabela route_members jest używana tylko wtedy, gdy przy danym przejeździe jedzie ktoś ponad standardowy skład zmiany.
+
+Przykładowe przypadki:
+
+* dodatkowy ratownik z SOR-u,
+* pielęgniarka z oddziału,
+* drugi sanitariusz z transportu,
+* drugi kierowca,
+* lekarz,
+* inna osoba wyjątkowo uczestnicząca w transporcie.
+
+Stały skład zmiany jest w shifts.
+
+Dodatkowe osoby przy konkretnej trasie są w route_members.
+
+Zasada:
+
+* jeśli jedzie standardowy skład, route_members pozostaje puste,
+* jeśli ktoś dodatkowy dołącza do transportu, klikamy „Dodaj członka zespołu” i tworzymy wpis w route_members.
+
+Osoba z transportu może zostać wybrana z listy aktywnych pracowników transportu.
+
+Osoba spoza transportu może zostać wpisana ręcznie.
+
+Kierowca nie powinien widzieć technicznego user_id. W interfejsie powinien widzieć imię, nazwisko, rolę i ewentualnie jednostkę.
+
+---
+
+# Aktywni członkowie transportu
+
+Przy dodawaniu dodatkowej osoby z transportu kierowca powinien widzieć tylko osoby, które są aktualnie na aktywnych zmianach.
+
+Nie powinien widzieć wszystkich użytkowników systemu.
+
+Lista powinna być oparta na aktywnych zmianach, a nie tylko na tym, kto ma aktywną sesję logowania.
+
+Przykładowa zasada:
+
+* użytkownik ma aktywną zmianę,
+* zmiana ma status ACTIVE,
+* aktualna data i godzina mieści się między start_time a end_time,
+* użytkownik ma odpowiednią rolę, np. DRIVER albo TEAM_MEMBER.
+
+---
+
+# Transport z NPL/POZ
+
+Transport z NPL/POZ różni się od zwykłego zlecenia kierownika.
+
+W takim przypadku kierowca może sam utworzyć zadanie transportowe.
+
+Przykładowy proces:
+
+1. Kierowca klika „Dodaj transport z NPL”.
+2. Wpisuje dane potrzebne do wykonania transportu.
+3. System tworzy transport_order z typem NPL_TRANSPORT.
+4. System ustawia source jako DRIVER albo NPL.
+5. Kierowca realizuje trasę normalnie jak inne przejazdy.
+
+Dane pacjenta, jeśli są potrzebne operacyjnie, trafiają do transport_order_patient_data i powinny zostać usunięte po zakończeniu oraz upływie czasu retencji.
+
+---
+
+# Przejazdy techniczne, serwisowe i specjalne
+
+System powinien obsługiwać przejazdy, które nie są typowym transportem pacjenta.
+
+Przykłady:
+
+* wyjazd do serwisu,
+* odbiór dokumentacji,
+* przejazd techniczny,
+* odbiór osoby z dyrekcji,
+* inne zadanie służbowe.
+
+Takie przejazdy również powinny mieć transport_order, ponieważ każda trasa powinna mieć znany powód.
+
+Dla takich zadań nie tworzy się transport_order_patient_data, ponieważ nie ma pacjenta.
+
+Opis zadania można zapisać w polu description.
+
+---
+
+# Dane pacjenta i RODO
+
+Pełne dane pacjenta są potrzebne tylko do realizacji transportu.
+
+System powinien ograniczać przechowywanie danych pacjenta do minimum.
+
+Pełne dane pacjenta powinny być przechowywane w osobnej tabeli transport_order_patient_data.
+
+Po zakończeniu zlecenia system powinien ustawić termin usunięcia danych, np. 24 godziny od completed_at.
+
+Po upływie tego czasu dane pacjenta powinny zostać usunięte.
+
+W historii zlecenia powinny zostać tylko dane ogólne potrzebne do raportów, np.:
+
+* numer zlecenia,
+* typ zlecenia,
+* status,
+* miasto odbioru,
+* ulica odbioru,
+* miasto docelowe,
+* ulica docelowa,
+* daty,
+* powiązana trasa,
+* kilometry.
+
+Nie zaleca się hashowania imienia, nazwiska ani adresu jako głównej metody, ponieważ po zakończeniu transportu system nie powinien potrzebować pełnych danych pacjenta. Lepszą strategią jest usuwanie danych identyfikujących i pozostawienie tylko danych ogólnych.
+
+---
+
+# Tankowania
+
+Kierowca wpisuje tylko:
+
+* liczbę litrów z faktury,
+* aktualny przebieg pojazdu.
+
+System automatycznie przypisuje:
+
+* kierowcę,
+* karetkę,
+* zmianę,
+* datę i godzinę tankowania.
+
+Założenie biznesowe:
+
+* każda karetka jest tankowana do pełna.
+
+Kierowca nie musi wpisywać:
+
+* numeru faktury,
+* kwoty,
+* stacji benzynowej,
+* ceny za litr.
+
+Te dane może później uzupełnić kierownik podczas weryfikacji.
+
+Wpis tankowania może mieć status:
+
+* REPORTED — zgłoszone przez kierowcę,
+* VERIFIED — zweryfikowane przez kierownika,
+* REJECTED — odrzucone.
+
+Dzięki zapisywaniu przebiegu i litrów można liczyć rzeczywiste spalanie między tankowaniami do pełna.
+
+Przykład:
+
+* poprzednie tankowanie: 245000 km,
+* aktualne tankowanie: 245480 km,
+* zatankowano: 52 L.
+
+Przejechano 480 km, więc rzeczywiste spalanie wynosi:
+
+52 / 480 * 100 = 10.83 L / 100 km.
+
+---
+
+# Raporty
+
+Na początku raporty powinny być generowane dynamicznie z istniejących tabel.
+
+Nie trzeba tworzyć osobnej tabeli reports na etapie MVP.
+
+Raport miesięczny powinien móc pokazać:
+
+* liczbę tras każdej karetki,
+* liczbę zleceń każdej karetki,
+* sumę kilometrów każdej karetki,
+* sumę kilometrów wszystkich karetek,
+* zatankowane litry,
+* koszt paliwa,
+* szacowane spalanie,
+* rzeczywiste spalanie między tankowaniami,
+* podział przejazdów według typu,
+* podsumowanie wszystkich zleceń.
+
+Raport może korzystać z tabel:
+
+* routes,
+* shifts,
+* ambulances,
+* transport_orders,
+* refuelings,
+* ambulance_service_records.
+
+Osobna tabela raportów może zostać dodana później, jeśli pojawi się potrzeba zatwierdzania, archiwizowania albo generowania raportów miesięcznych w PDF.
+
+---
+
+# Serwis karetek
+
+System powinien pozwalać na zapis historii serwisowej karetek.
+
+Wpis serwisowy powinien zawierać:
+
+* karetkę,
+* datę serwisu,
+* przebieg przy serwisie,
+* typ serwisu,
+* opis wykonanych czynności,
+* koszt,
+* użytkownika, który dodał wpis.
+
+Moduł serwisowy nie musi być pierwszy w MVP, ale warto uwzględnić go w strukturze bazy, ponieważ jest naturalnym rozszerzeniem systemu.
+
+---
+
+# Statusy
+
+Statusy powinny być obsługiwane jako enumy w backendzie.
+
+Przykładowe statusy zlecenia:
+
+* NEW,
+* ASSIGNED,
+* IN_PROGRESS,
+* COMPLETED,
+* CANCELLED.
+
+Przykładowe statusy karetki:
+
+* AVAILABLE,
+* IN_TRANSPORT,
+* IN_SERVICE,
+* OUT_OF_SERVICE.
+
+Przykładowe statusy zmiany:
+
+* PLANNED,
+* ACTIVE,
+* COMPLETED,
+* CANCELLED.
+
+Przykładowe statusy tankowania:
+
+* REPORTED,
+* VERIFIED,
+* REJECTED.
+
+W bazie statusy mogą być zapisane jako varchar, a w Javie jako enum.
+
+---
+
+# Role i widoki
+
+System powinien mieć różne widoki zależnie od roli użytkownika.
+
+Kierownik może widzieć:
+
+* użytkowników,
+* karetki,
+* zmiany,
+* zlecenia,
+* raporty,
+* tankowania do weryfikacji,
+* historię serwisów,
+* dashboard.
+
+Kierowca może widzieć:
+
+* swoją aktywną zmianę,
+* dostępne/przypisane zlecenia,
+* możliwość rozpoczęcia i zakończenia trasy,
+* możliwość dodania tankowania,
+* możliwość dodania dodatkowego członka zespołu,
+* możliwość dodania transportu z NPL albo przejazdu technicznego, jeśli jest taka potrzeba.
+
+Lekarz, jeśli zostanie dodany w przyszłości, powinien mieć uproszczony widok:
+
+* zgłoś transport,
+* moje zgłoszenia,
+* status transportu.
+
+Lekarz nie powinien widzieć paliwa, tankowań, serwisów, użytkowników ani raportów kierownika.
+
+---
+
+# DTO i API
+
+API nie powinno zwracać encji JPA bezpośrednio.
+
+Do komunikacji z frontendem należy używać DTO/response dopasowanych do konkretnego widoku i roli.
+
+Przykładowo to samo zlecenie może mieć inne DTO dla kierowcy i inne dla kierownika.
+
+Kierowca podczas aktywnej realizacji może potrzebować pełnych danych operacyjnych, np. pełnego adresu i danych pacjenta.
+
+Kierownik w historii może widzieć dane zanonimizowane albo ogólne.
+
+DTO powinny zawierać tylko dane potrzebne w danym widoku.
+
+---
+
+# Plan MVP
+
+Pierwsza wersja systemu powinna skupić się na działającym przepływie od początku do końca.
+
+MVP:
+
+1. Logowanie i role.
+2. Użytkownicy.
+3. Karetki.
+4. Zmiany.
+5. Zlecenia / zadania transportowe.
+6. Trasy.
+7. Tankowania.
+8. Prosty raport miesięczny.
+
+Dopiero później można dodać:
+
+* route_members,
+* anonimizację automatyczną,
+* serwis karetek,
+* dashboard kierownika,
+* dostęp dla lekarzy,
+* harmonogram transportów,
+* eksport PDF/Excel,
+* integrację z systemem szpitalnym,
+* Google Maps,
+* powiadomienia.
+
+---
+
+# Możliwe kierunki rozwoju
+
+System może zostać rozbudowany o:
+
+* integrację z systemem szpitalnym, np. Medicus,
+* możliwość zgłaszania transportów przez lekarzy,
+* harmonogram transportów,
+* automatyczne proponowanie najbliższego wolnego terminu,
+* integrację z mapami,
+* estymację czasu przejazdu,
+* eksport raportów do PDF lub Excel,
+* bardziej rozbudowane raporty paliwa,
+* historię kosztów utrzymania pojazdów,
+* powiadomienia dla kierowców,
+* panel dyspozytora.
+
+Te funkcje nie są wymagane w MVP, ale system powinien być projektowany tak, aby można było je dodać bez przebudowy całej aplikacji.
