@@ -38,9 +38,6 @@ public class CreateTransportOrderByManagerRequest {
      @NotBlank
      private String destinationAddress;
 
-     @NotNull
-     private Long createdById;  //TODO jwt
-
      @NotEmpty
      private List<@Valid TransportOrderPatientCreateItemRequest> patients;
 }

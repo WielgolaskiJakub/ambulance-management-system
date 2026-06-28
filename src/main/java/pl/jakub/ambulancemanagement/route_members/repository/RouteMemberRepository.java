@@ -13,4 +13,5 @@ public interface RouteMemberRepository extends JpaRepository<RouteMember, Long> 
     Optional<RouteMember> findByIdAndRouteId(Long id, Long routeId);
 
     boolean existsByRouteIdAndUserId(Long routeId, Long userId);
+
 }

@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.transport_order_patient_data.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
@@ -19,6 +20,7 @@ public class TransportOrderPatientDataController {
 
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY', 'ADMIN', 'MANAGER')")
     public TransportOrderPatientDataResponse getTransportOrderPatientDataById(@PathVariable Long id) {
         TransportOrderPatientData patientData =
                 transportOrderPatientDataService.getTransportOrderPatientDataById(id);
@@ -26,6 +28,7 @@ public class TransportOrderPatientDataController {
     }
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY', 'ADMIN', 'MANAGER')")
     public TransportOrderPatientDataResponse updateTransportOrderPatientData(
             @PathVariable Long id,
             @Valid @RequestBody TransportOrderPatientDataUpdateRequest request
@@ -37,6 +40,7 @@ public class TransportOrderPatientDataController {
     }
 
     @PatchMapping("/{id}/anonymize")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public TransportOrderPatientDataResponse anonymizeTransportOrderPatientData(@PathVariable long id) {
         TransportOrderPatientData patientData =
                 transportOrderPatientDataService.anonymizeTransportOrderPatientData(id);
@@ -45,6 +49,7 @@ public class TransportOrderPatientDataController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTransportOrderPatientData(@PathVariable Long id) {
         transportOrderPatientDataService.deleteTransportOrderPatientData(id);

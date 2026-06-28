@@ -4,7 +4,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
-import pl.jakub.ambulancemanagement.ambulances.service.AmbulanceService;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
@@ -17,9 +16,8 @@ import pl.jakub.ambulancemanagement.refuelings.repository.RefuelingRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
-import pl.jakub.ambulancemanagement.shifts.service.ShiftService;
 import pl.jakub.ambulancemanagement.users.model.User;
-import pl.jakub.ambulancemanagement.users.service.UserService;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,9 +27,6 @@ import java.util.List;
 public class RefuelingService {
 
     private final RefuelingRepository refuelingRepository;
-    private final UserService userService;
-    private final ShiftService  shiftService;
-    private final AmbulanceService ambulanceService;
     private final CurrentUserService currentUserService;
     private final ShiftRepository shiftRepository;
 
@@ -114,7 +109,7 @@ public class RefuelingService {
         }
         return  refuelingRepository.save(refueling);
     }
-
+    @Transactional
     public Refueling updateRefuelingByManager(RefuelingManagerUpdateRequest request, Long id) {
 
         User currentManager = currentUserService.getCurrentUser();
@@ -135,6 +130,7 @@ public class RefuelingService {
             throw new ApiException(ErrorCode.INVALID_REFUELING_STATUS);
         }
             refueling.setStatus(request.getStatus());
+
 
         if(request.getManagerNotes() != null) {
             refueling.setNotes(request.getManagerNotes());

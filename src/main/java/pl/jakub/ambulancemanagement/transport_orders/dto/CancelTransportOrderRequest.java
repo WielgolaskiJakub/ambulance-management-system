@@ -10,9 +10,6 @@ import pl.jakub.ambulancemanagement.transport_orders.model.TransportCancelReason
 public class CancelTransportOrderRequest {
 
     @NotNull
-    private Long cancelledById;
-
-    @NotNull
     private TransportCancelReason  cancelReason;
 
     private String cancelDescription;

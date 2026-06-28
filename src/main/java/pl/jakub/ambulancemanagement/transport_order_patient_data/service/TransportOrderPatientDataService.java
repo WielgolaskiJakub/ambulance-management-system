@@ -2,16 +2,16 @@ package pl.jakub.ambulancemanagement.transport_order_patient_data.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
-import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataCreateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.dto.TransportOrderPatientCreateItemRequest;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
-import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
+import pl.jakub.ambulancemanagement.transport_orders.service.TransportOrderService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,53 +21,40 @@ import java.util.List;
 public class TransportOrderPatientDataService {
 
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
-    private final TransportOrderRepository transportOrderRepository;
+    private final TransportOrderService transportOrderService;
 
 
+    @Transactional(readOnly = true)
     public List<TransportOrderPatientData> getPatientsByTransportOrderId(Long transportOrderId) {
 
-        transportOrderRepository.findById(transportOrderId)
-                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+        TransportOrder transportOrder = transportOrderService.getTransportOrderByIdWithAccessCheck(transportOrderId);
 
-        return transportOrderPatientDataRepository.findByTransportOrderId(transportOrderId);
+        return transportOrderPatientDataRepository.findByTransportOrderId(transportOrder.getId());
     }
 
+    @Transactional(readOnly = true)
     public TransportOrderPatientData getTransportOrderPatientDataById(long id) {
-        return transportOrderPatientDataRepository.findById(id).
+        TransportOrderPatientData patientData = transportOrderPatientDataRepository.findById(id).
                 orElseThrow(() -> new ApiException(ErrorCode.PATIENT_NOT_FOUND));
+
+        transportOrderService.getTransportOrderByIdWithAccessCheck(patientData.getTransportOrder().getId());
+
+        return patientData;
     }
 
-    public TransportOrderPatientData createTransportOrderPatientData(
-            TransportOrderPatientDataCreateRequest request) {
-
-        TransportOrder transportOrder = transportOrderRepository.
-                findById(request.getTransportOrderId()).orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
-
-        validateTransportOrderCanReceivePatientData(transportOrder);
-
-        TransportOrderPatientData patientData = new TransportOrderPatientData();
-
-        patientData.setTransportOrder(transportOrder);
-        patientData.setPatientFirstName(request.getPatientFirstName().trim());
-        patientData.setPatientLastName(request.getPatientLastName().trim());
-        patientData.setPickupDetails(normalizeNullableText(request.getPickupDetails()));
-
-
-        return transportOrderPatientDataRepository.save(patientData);
-    }
-
+    @Transactional
     public TransportOrderPatientData updateTransportOrderPatientData(
             TransportOrderPatientDataUpdateRequest request, long id) {
 
         TransportOrderPatientData patientDataToUpdate = getTransportOrderPatientDataById(id);
 
+        validatePatientDataNotAnonymized(patientDataToUpdate);
         validateTransportOrderCanReceivePatientData(patientDataToUpdate.getTransportOrder());
 
         if (request.getTransportOrderId() != null) {
 
-            TransportOrder transportOrder = transportOrderRepository.
-                    findById(request.getTransportOrderId())
-                    .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+            TransportOrder transportOrder = transportOrderService
+                    .getTransportOrderByIdWithAccessCheck(request.getTransportOrderId());
 
             validateTransportOrderCanReceivePatientData(transportOrder);
 
@@ -75,35 +62,31 @@ public class TransportOrderPatientDataService {
         }
 
         if (request.getPatientFirstName() != null) {
-            if (request.getPatientFirstName().isBlank()) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-            }
-            patientDataToUpdate.setPatientFirstName(request.getPatientFirstName().trim());
+            patientDataToUpdate.setPatientFirstName(normalizeRequiredText(request.getPatientFirstName()));
         }
 
         if (request.getPatientLastName() != null) {
-            if (request.getPatientLastName().isBlank()) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-            }
-            patientDataToUpdate.setPatientLastName(request.getPatientLastName().trim());
+            patientDataToUpdate.setPatientLastName(normalizeRequiredText(request.getPatientLastName()));
         }
-
         if (request.getPickupDetails() != null) {
             patientDataToUpdate.setPickupDetails(normalizeNullableText(request.getPickupDetails()));
         }
         return transportOrderPatientDataRepository.save(patientDataToUpdate);
     }
 
+    @Transactional
     public void deleteTransportOrderPatientData(long id) {
         TransportOrderPatientData patientData = getTransportOrderPatientDataById(id);
 
         validateTransportOrderCanReceivePatientData(patientData.getTransportOrder());
+        validatePatientDataNotAnonymized(patientData);
 
         transportOrderPatientDataRepository.delete(patientData);
     }
 
 //TODO AUTOANONIMIZACJA Scheduler
 
+    @Transactional
     public TransportOrderPatientData anonymizeTransportOrderPatientData(long id) {
         TransportOrderPatientData patientData = getTransportOrderPatientDataById(id);
 
@@ -115,37 +98,40 @@ public class TransportOrderPatientDataService {
         return transportOrderPatientDataRepository.save(patientData);
     }
 
+    @Transactional
     public List<TransportOrderPatientData> anonymizePatientsByTransportOrderId(Long transportOrderId) {
-        TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
-                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+
+        TransportOrder transportOrder = transportOrderService.getTransportOrderByIdWithAccessCheck(transportOrderId);
 
         List<TransportOrderPatientData> patients =
                 transportOrderPatientDataRepository.findByTransportOrderId(transportOrder.getId());
+
+        LocalDateTime now = LocalDateTime.now();
 
         for (TransportOrderPatientData patientData : patients) {
             patientData.setPatientFirstName(null);
             patientData.setPatientLastName(null);
             patientData.setPickupDetails(null);
-            patientData.setAnonymizedAt(LocalDateTime.now());
+            patientData.setAnonymizedAt(now);
         }
 
         return transportOrderPatientDataRepository.saveAll(patients);
     }
 
+    @Transactional
     public TransportOrderPatientData addPatientToTransportOrder(
             Long transportOrderId,
             TransportOrderPatientCreateItemRequest request
     ) {
-        TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
-                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+        TransportOrder transportOrder = transportOrderService.getTransportOrderByIdWithAccessCheck(transportOrderId);
 
         validateTransportOrderCanReceivePatientData(transportOrder);
 
         TransportOrderPatientData patientData = new TransportOrderPatientData();
 
         patientData.setTransportOrder(transportOrder);
-        patientData.setPatientFirstName(request.getPatientFirstName().trim());
-        patientData.setPatientLastName(request.getPatientLastName().trim());
+        patientData.setPatientFirstName(normalizeRequiredText(request.getPatientFirstName()));
+        patientData.setPatientLastName(normalizeRequiredText(request.getPatientLastName()));
         patientData.setPickupDetails(normalizeNullableText(request.getPickupDetails()));
 
         return transportOrderPatientDataRepository.save(patientData);
@@ -169,4 +155,17 @@ public class TransportOrderPatientDataService {
         return value.trim();
     }
 
+    private String normalizeRequiredText(String value) {
+        if (value == null || value.isBlank()) {
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+        }
+
+        return value.trim();
+
+    }
+    private void validatePatientDataNotAnonymized(TransportOrderPatientData patientData) {
+        if (patientData.getAnonymizedAt() != null) {
+            throw new ApiException(ErrorCode.PATIENT_ALREADY_ANONYMIZED);
+        }
+    }
 }

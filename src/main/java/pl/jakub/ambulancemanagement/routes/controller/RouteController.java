@@ -50,7 +50,7 @@ public class RouteController {
     }
 
     @GetMapping("/{id}/details")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DRIVER','SANITARY')")
     public RouteDetailsResponse getRouteDetailsById(@PathVariable Long id) {
         return routeService.getRouteDetailsById(id);
     }

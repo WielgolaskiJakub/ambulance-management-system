@@ -12,6 +12,7 @@ public interface TransportOrderRepository extends JpaRepository<TransportOrder, 
 
     boolean existsByOrderNumber(String orderNumber);
     List<TransportOrder> findByStatusOrderByCreatedAtAsc(TransportStatus status);
+    List<TransportOrder> findByCreatedBy_IdOrderByCreatedAtDesc(Long userId);
 
 
 }

@@ -4,6 +4,7 @@ package pl.jakub.ambulancemanagement.transport_orders.service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
@@ -18,20 +19,24 @@ import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
 import pl.jakub.ambulancemanagement.users.model.User;
-import pl.jakub.ambulancemanagement.users.repository.UserRepository;
+import pl.jakub.ambulancemanagement.users.model.UserRole;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
 public class TransportOrderService {
 
     private final TransportOrderRepository transportOrderRepository;
-    private final UserRepository userRepository;
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
     private final RouteOrderRepository routeOrderRepository;
     private final RouteMemberRepository routeMemberRepository;
+    private final CurrentUserService currentUserService;
+
 
     public List<TransportOrder> getAllTransportOrders() {
         return transportOrderRepository.findAll();
@@ -42,11 +47,54 @@ public class TransportOrderService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
     }
 
+    @Transactional(readOnly = true)
+    public TransportOrder getTransportOrderByIdWithAccessCheck(Long id) {
+        TransportOrder transportOrder = getTransportOrderById(id);
+
+        validateCurrentUserCanAccessTransportOrder(transportOrder);
+
+        return transportOrder;
+    }
+
+    @Transactional(readOnly = true)
+    public List<TransportOrder> getMyTransportOrders() {
+        User currentUser = currentUserService.getCurrentUser();
+
+        List<TransportOrder> createdByMe =
+                transportOrderRepository.findByCreatedBy_IdOrderByCreatedAtDesc(currentUser.getId());
+
+        List<TransportOrder> fromRoutesAsDriver =
+                routeOrderRepository.findTransportOrdersByRouteDriverId(currentUser.getId());
+
+        List<TransportOrder> fromRoutesAsRegisteredMember =
+                routeOrderRepository.findTransportOrdersByRouteMemberUserId(currentUser.getId());
+
+        return Stream.of(createdByMe, fromRoutesAsDriver, fromRoutesAsRegisteredMember)
+                //Zmieniamy stream trzech list na jeden stream pojedyńczych zleceń
+                .flatMap(List::stream)
+
+                //usuwamy duplikaty po ID, bo to samo zlecenie może pojawić się w kilku źródłach
+                .collect(Collectors.toMap(
+                        TransportOrder::getId,
+                        transportOrder -> transportOrder,
+
+                        //jeśli są dwa zlecenia z tym samym ID--- zostawiamy pierwsze
+                        (first, second) -> first))
+
+                //wyciągam z mapy same zlecenia
+                .values()
+                .stream()
+
+                //sortujemy od najnowszych do najstarszych
+                .sorted(Comparator.comparing(TransportOrder::getCreatedAt).reversed())
+                .toList();
+
+    }
+
     @Transactional
     public TransportOrder createTransportOrderByManager(CreateTransportOrderByManagerRequest request) {
 
-        User user = userRepository.findById(request.getCreatedById())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User user = currentUserService.getCurrentUser();
 
         String orderNumber = prepareOptionalOrderNumber(request.getOrderNumber());
 
@@ -67,6 +115,7 @@ public class TransportOrderService {
         return savedTransportOrder;
     }
 
+    @Transactional
     public TransportOrder assignTransportOrderNumber(AssignOrderNumberRequest request, long id) {
 
         TransportOrder transportOrder = getTransportOrderById(id);
@@ -83,10 +132,10 @@ public class TransportOrderService {
         return transportOrderRepository.save(transportOrder);
     }
 
+    @Transactional
     public TransportOrder createTransportOrderByUser(CreateTransportOrderByUserRequest request) {
 
-        User user = userRepository.findById(request.getCreatedById())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User user = currentUserService.getCurrentUser();
 
         if (!Boolean.TRUE.equals(user.getActive())) {
             throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
@@ -99,9 +148,12 @@ public class TransportOrderService {
 
     }
 
+    @Transactional
     public TransportOrder updateTransportOrderByUser(UpdateTransportOrderByUserRequest request, long id) {
 
         TransportOrder transportOrderToUpdate = getTransportOrderById(id);
+
+        validateCurrentUserCanModifyTransportOrderAsUser(transportOrderToUpdate);
 
         validateTransportOrderCanBeModified(transportOrderToUpdate);
 
@@ -110,6 +162,7 @@ public class TransportOrderService {
         return transportOrderRepository.save(transportOrderToUpdate);
     }
 
+    @Transactional
     public TransportOrder updateTransportOrderByManager(UpdateTransportOrderByManagerRequest request, long id) {
         TransportOrder transportOrderToUpdate = getTransportOrderById(id);
 
@@ -166,6 +219,8 @@ public class TransportOrderService {
     public TransportOrder cancelTransportOrder(long id, CancelTransportOrderRequest request) {
         TransportOrder transportOrder = getTransportOrderById(id);
 
+        validateCurrentUserCanCancelTransportOrder(transportOrder);
+
         if (transportOrder.getStatus() == TransportStatus.COMPLETED) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_COMPLETED);
         }
@@ -174,8 +229,7 @@ public class TransportOrderService {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
         }
 
-        User cancelledBy = userRepository.findById(request.getCancelledById())
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User cancelledBy = currentUserService.getCurrentUser();
 
         if (!Boolean.TRUE.equals(cancelledBy.getActive())) {
             throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
@@ -185,17 +239,21 @@ public class TransportOrderService {
         transportOrder.setCancelledAt(LocalDateTime.now());
         transportOrder.setCancelledBy(cancelledBy);
         transportOrder.setCancelReason(request.getCancelReason());
-        transportOrder.setCancelDescription(request.getCancelDescription());
+        transportOrder.setCancelDescription(normalizeNullableText(request.getCancelDescription()));
 
         return transportOrderRepository.save(transportOrder);
     }
 
+    @Transactional(readOnly = true)
     public List<TransportOrder> getOrderByStatus(TransportStatus status) {
         return transportOrderRepository.findByStatusOrderByCreatedAtAsc(status);
     }
 
+    @Transactional(readOnly = true)
     public TransportOrderDetailsResponse getTransportOrderDetailsById(Long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
+
+        validateCurrentUserCanAccessTransportOrder(transportOrder);
 
         List<RouteSummaryResponse> routes =
                 routeOrderRepository.findByTransportOrder_Id(id)
@@ -305,7 +363,7 @@ public class TransportOrderService {
         }
 
         if (request.getDescription() != null) {
-            transportOrderToUpdate.setDescription(request.getDescription());
+            transportOrderToUpdate.setDescription(normalizeNullableText(request.getDescription()));
         }
 
     }
@@ -370,5 +428,61 @@ public class TransportOrderService {
                 .toList();
 
         transportOrderPatientDataRepository.saveAll(patientDataList);
+    }
+
+    private void validateCurrentUserCanAccessTransportOrder(TransportOrder transportOrder) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if(isAdminOrManager(currentUser)) {
+            return;
+        }
+
+        if(transportOrder.getCreatedBy() != null
+                && transportOrder.getCreatedBy().getId().equals(currentUser.getId())) {
+            return;
+        }
+
+        boolean userIsRelatedToRouteWithThisOrder = routeOrderRepository.findByTransportOrder_Id(transportOrder.getId())
+                .stream()
+                .anyMatch(routeOrder -> {
+                    Long routeId = routeOrder.getRoute().getId();
+
+                    boolean isRouteDriver = routeOrder.getRoute()
+                            .getShift()
+                            .getDriver()
+                            .getId()
+                            .equals(currentUser.getId());
+
+                    boolean isRouteMember = routeMemberRepository.existsByRouteIdAndUserId(
+                            routeId,
+                            currentUser.getId()
+                    );
+
+                    return isRouteDriver || isRouteMember;
+                });
+
+        if(userIsRelatedToRouteWithThisOrder) {
+            return;
+        }
+        throw new ApiException(ErrorCode.TRANSPORT_ORDER_ACCESS_DENIED);
+    }
+
+    private boolean isAdminOrManager(User user) {
+        return user.getUserRole() == UserRole.ADMIN
+                || user.getUserRole() == UserRole.MANAGER;
+    }
+
+    private void validateCurrentUserCanModifyTransportOrderAsUser(TransportOrder transportOrder) {
+        User currentUser = currentUserService.getCurrentUser();
+
+        if (transportOrder.getCreatedBy() != null
+                && transportOrder.getCreatedBy().getId().equals(currentUser.getId())) {
+            return;
+        }
+
+        throw new ApiException(ErrorCode.TRANSPORT_ORDER_ACCESS_DENIED);
+    }
+    private void validateCurrentUserCanCancelTransportOrder(TransportOrder transportOrder) {
+        validateCurrentUserCanAccessTransportOrder(transportOrder);
     }
 }

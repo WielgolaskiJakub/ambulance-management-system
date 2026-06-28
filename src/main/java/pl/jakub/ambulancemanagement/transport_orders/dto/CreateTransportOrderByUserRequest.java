@@ -24,6 +24,4 @@ public class CreateTransportOrderByUserRequest {
     @Size(max=1000)
     private String description;
 
-    @NotNull
-    private Long createdById; //TODO jwt
 }

@@ -134,6 +134,10 @@ public enum ErrorCode {
             "error.shift_default_member_not_found", HttpStatus.NOT_FOUND),
     SHIFT_ACCESS_DENIED("SHIFT_ACCESS_DENIED",
             "error.shift_access_denied", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_ACCESS_DENIED("TRANSPORT_ORDER_ACCESS_DENIED",
+            "error.transport_order_access_denied", HttpStatus.BAD_REQUEST),
+    PATIENT_ALREADY_ANONYMIZED("PATIENT_ALREADY_ANONYMIZED",
+            "error.patient.already_anonymized", HttpStatus.BAD_REQUEST),
 
     ;
 

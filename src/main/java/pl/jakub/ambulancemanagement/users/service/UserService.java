@@ -50,6 +50,7 @@ public class UserService {
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
+        user.setUsername(username);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
         user.setUserRole(request.getUserRole());
