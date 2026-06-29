@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { getNewTransportOrdersForCrew } from "../../api/transportOrdersApi";
 import type { TransportOrderResponse } from "../../types/transportOrder";
-import{getTransportOrderTypeLabel,
-getTransportPriorityLabel,
-getTransportSourceLabel,
-getTransportStatusLabel,
+import {
+  getTransportOrderTypeLabel,
+  getTransportPriorityLabel,
+  getTransportSourceLabel,
+  getTransportStatusLabel,
 } from "../../utils/transportOrderLabels";
-import {getUserRoleLabel} from "../../utils/userRoleLabels";
+import { getUserRoleLabel } from "../../utils/userRoleLabels";
+import { Link } from "react-router-dom";
 
 export function NewTransportOrdersList() {
   const [orders, setOrders] = useState<TransportOrderResponse[]>([]);
@@ -63,47 +65,55 @@ export function NewTransportOrdersList() {
     return <p>Brak nowych zleceń transportu.</p>;
   }
 
- return (
-  <div className="orders-list">
-    {orders.map((order) => (
-      <article className="order-card" key={order.id}>
-        <div className="order-card-header">
-          <h3>{order.orderNumber ?? "Bez numeru zlecenia"}</h3>
-          <span className="order-priority">{getTransportPriorityLabel(order.priority)}</span>
-        </div>
+  return (
+    <div className="orders-list">
+      {orders.map((order) => (
+        <article className="order-card" key={order.id}>
+          <div className="order-card-header">
+            <h3>{order.orderNumber ?? "Bez numeru zlecenia"}</h3>
+            <span className="order-priority">{getTransportPriorityLabel(order.priority)}</span>
+          </div>
 
-        <div className="order-card-body">
-          <p>
-            <strong>Typ:</strong> {getTransportOrderTypeLabel(order.orderType)}
-          </p>
-
-          <p>
-            <strong>Źródło:</strong> {getTransportSourceLabel(order.source)}
-          </p>
-
-          <p>
-            <strong>Status:</strong> {getTransportStatusLabel(order.status)}
-          </p>
-
-          <p>
-            <strong>Utworzone przez:</strong> {order.createdByFullName} - {getUserRoleLabel(order.createdByRole)}
-          </p>
-
-          {order.createdAt && (
+          <div className="order-card-body">
             <p>
-              <strong>Utworzono:</strong>{" "}
-              {new Date(order.createdAt).toLocaleString()}
+              <strong>Typ:</strong> {getTransportOrderTypeLabel(order.orderType)}
             </p>
-          )}
 
-          {order.description && (
             <p>
-              <strong>Opis:</strong> {order.description}
+              <strong>Źródło:</strong> {getTransportSourceLabel(order.source)}
             </p>
-          )}
-        </div>
-      </article>
-    ))}
-  </div>
-);
+
+            <p>
+              <strong>Status:</strong> {getTransportStatusLabel(order.status)}
+            </p>
+
+            <p>
+              <strong>Utworzone przez:</strong> {order.createdByFullName} - {getUserRoleLabel(order.createdByRole)}
+            </p>
+
+            {order.createdAt && (
+              <p>
+                <strong>Utworzono:</strong>{" "}
+                {new Date(order.createdAt).toLocaleString()}
+              </p>
+            )}
+
+            {order.description && (
+              <p>
+                <strong>Opis:</strong> {order.description}
+              </p>
+            )}
+            <div className="order-card__actions">
+              <Link
+                className="order-card__details-link"
+                to={`/transport-orders/${order.id}/preview`}
+              >
+                Podgląd
+              </Link>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
 }

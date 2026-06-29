@@ -17,3 +17,34 @@ export type TransportOrderResponse = {
   cancelDescription: string | null;
   anonymizedAt: string | null;
 };
+
+export type TransportOrderPatientDataResponse = {
+  id: number;
+  transportOrderId: number;
+  patientFirstName: string | null;
+  patientLastName: string | null;
+  pickupDetails: string | null;
+  anonymized: boolean;
+  anonymizedAt: string | null;
+};
+
+export type TransportOrderCrewPreviewResponse = {
+  id: number;
+  orderNumber: string | null;
+  orderType: string;
+  source: string;
+  priority: string;
+  status: string;
+
+  pickupAddress: string | null;
+  destinationAddress: string | null;
+  description: string | null;
+
+  createdAt: string | null;
+
+  createdById: number;
+  createdByFullName: string;
+  createdByRole: string;
+
+  patients: TransportOrderPatientDataResponse[];
+};

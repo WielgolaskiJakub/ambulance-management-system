@@ -163,4 +163,149 @@
   .orders-section__title {
     font-size: 28px;
   }
+  .order-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.order-card__details-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background-color: #374151;
+  color: #f9fafb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.order-card__details-link:hover {
+  background-color: #4b5563;
+}
+
+.transport-order-preview-page {
+  min-height: 100vh;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.transport-order-preview-page__message {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.transport-order-preview {
+  padding: 24px;
+  border: 1px solid #374151;
+  border-radius: 16px;
+  background-color: #1f2937;
+}
+
+.transport-order-preview__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.transport-order-preview__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transport-order-preview__back-button {
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #111827;
+  color: #f9fafb;
+  cursor: pointer;
+}
+
+.transport-order-preview__title {
+  margin: 0;
+  font-size: 32px;
+}
+
+.transport-order-preview__subtitle {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.transport-order-preview__priority {
+  height: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background-color: #374151;
+  font-weight: 700;
+}
+
+.transport-order-preview__section {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid #374151;
+}
+
+.transport-order-preview__section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.transport-order-preview__section-title {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+
+.transport-order-preview__rows {
+  display: grid;
+  gap: 8px;
+}
+
+.transport-order-preview__row {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.transport-order-preview__row strong {
+  color: #f9fafb;
+}
+
+.transport-order-preview__description {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.transport-order-preview__patients {
+  display: grid;
+  gap: 12px;
+}
+
+.transport-order-preview__patient-card {
+  padding: 16px;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  background-color: #111827;
+}
+
+.transport-order-preview__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.transport-order-preview__primary-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  color: #111827;
+  font-weight: 700;
+  cursor: pointer;
+}
 }
