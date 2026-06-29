@@ -4,6 +4,8 @@ import {
   finishRoute,
   getMyRoutes,
   startRoute,
+  markRouteAsWaiting,
+  resumeRoute,
   type RouteOrderFinishAction,
 } from "../api/routesApi";
 import type { RouteResponse } from "../types/route";
@@ -31,6 +33,9 @@ export function MyRoutesPage() {
   const [loading, setLoading] = useState(true);
   const [startingRouteId, setStartingRouteId] = useState<number | null>(null);
   const [finishingRouteId, setFinishingRouteId] = useState<number | null>(null);
+  const [waitingRouteId, setWaitingRouteId] = useState<number | null>(null);
+  const [resumingRouteId, setResumingRouteId] = useState<number | null>(null);
+  const [showCompletedRoutes, setShowCompletedRoutes] = useState(false);
 
   const [finishOdometerLastThreeByRouteId, setFinishOdometerLastThreeByRouteId] =
     useState<Record<number, string>>({});
@@ -49,19 +54,12 @@ export function MyRoutesPage() {
 
         const data = await getMyRoutes();
 
-        const activeRoutes = data.filter(
-          (route) =>
-            route.status === "CREATED" ||
-            route.status === "IN_PROGRESS" ||
-            route.status === "WAITING"
-        );
+        setRoutes(data);
 
-        setRoutes(activeRoutes);
       } catch (error) {
         if (axios.isAxiosError(error)) {
           setErrorMessage(
-            `Błąd pobierania tras: ${
-              error.response?.status ?? "brak odpowiedzi"
+            `Błąd pobierania tras: ${error.response?.status ?? "brak odpowiedzi"
             }`
           );
           return;
@@ -114,8 +112,7 @@ export function MyRoutesPage() {
         }
 
         setErrorMessage(
-          `Błąd rozpoczynania trasy: ${
-            error.response?.status ?? "brak odpowiedzi"
+          `Błąd rozpoczynania trasy: ${error.response?.status ?? "brak odpowiedzi"
           }`
         );
         return;
@@ -124,6 +121,106 @@ export function MyRoutesPage() {
       setErrorMessage("Nieznany błąd rozpoczynania trasy.");
     } finally {
       setStartingRouteId(null);
+    }
+  }
+
+  async function handleMarkRouteAsWaiting(routeId: number) {
+    try {
+      setWaitingRouteId(routeId);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      const updatedRoute = await markRouteAsWaiting(routeId);
+
+      setRoutes((currentRoutes) =>
+        currentRoutes.map((route) =>
+          route.id === routeId ? updatedRoute : route
+        )
+      );
+
+      setSuccessMessage("Trasa została oznaczona jako oczekująca.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          setErrorMessage("Nie można teraz oznaczyć tej trasy jako oczekującej.");
+          return;
+        }
+
+        if (error.response?.status === 401) {
+          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+          return;
+        }
+
+        if (error.response?.status === 403) {
+          setErrorMessage("Brak uprawnień do zmiany statusu trasy.");
+          return;
+        }
+
+        if (error.response?.status === 404) {
+          setErrorMessage("Nie znaleziono trasy.");
+          return;
+        }
+
+        setErrorMessage(
+          `Błąd oznaczania trasy jako oczekującej: ${error.response?.status ?? "brak odpowiedzi"
+          }`
+        );
+        return;
+      }
+
+      setErrorMessage("Nieznany błąd oznaczania trasy jako oczekującej.");
+    } finally {
+      setWaitingRouteId(null);
+    }
+  }
+
+  async function handleResumeRoute(routeId: number) {
+    try {
+      setResumingRouteId(routeId);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      const updatedRoute = await resumeRoute(routeId);
+
+      setRoutes((currentRoutes) =>
+        currentRoutes.map((route) =>
+          route.id === routeId ? updatedRoute : route
+        )
+      );
+
+      setSuccessMessage("Trasa została wznowiona.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          setErrorMessage("Nie można teraz wznowić tej trasy.");
+          return;
+        }
+
+        if (error.response?.status === 401) {
+          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+          return;
+        }
+
+        if (error.response?.status === 403) {
+          setErrorMessage("Brak uprawnień do wznowienia trasy.");
+          return;
+        }
+
+        if (error.response?.status === 404) {
+          setErrorMessage("Nie znaleziono trasy.");
+          return;
+        }
+
+        setErrorMessage(
+          `Błąd wznawiania trasy: ${error.response?.status ?? "brak odpowiedzi"
+          }`
+        );
+        return;
+      }
+
+      setErrorMessage("Nieznany błąd wznawiania trasy.");
+    } finally {
+      setResumingRouteId(null);
     }
   }
 
@@ -156,7 +253,7 @@ export function MyRoutesPage() {
       setErrorMessage(null);
       setSuccessMessage(null);
 
-      await finishRoute(route.id, {
+      const updatedRoute = await finishRoute(route.id, {
         finishOdometerLastThree,
         notes: route.notes,
         orders: route.transportOrderIds.map((transportOrderId) => ({
@@ -166,7 +263,9 @@ export function MyRoutesPage() {
       });
 
       setRoutes((currentRoutes) =>
-        currentRoutes.filter((currentRoute) => currentRoute.id !== route.id)
+        currentRoutes.map((currentRoute) =>
+          currentRoute.id === route.id ? updatedRoute : currentRoute
+        )
       );
 
       setSuccessMessage("Trasa została zakończona.");
@@ -193,8 +292,7 @@ export function MyRoutesPage() {
         }
 
         setErrorMessage(
-          `Błąd kończenia trasy: ${
-            error.response?.status ?? "brak odpowiedzi"
+          `Błąd kończenia trasy: ${error.response?.status ?? "brak odpowiedzi"
           }`
         );
         return;
@@ -213,7 +311,16 @@ export function MyRoutesPage() {
       </main>
     );
   }
+  const activeRoutes = routes.filter(
+    (route) =>
+      route.status === "CREATED" ||
+      route.status === "IN_PROGRESS" ||
+      route.status === "WAITING"
+  );
 
+  const completedRoutes = routes.filter(
+    (route) => route.status === "COMPLETED"
+  );
   return (
     <main className="my-routes-page">
       <header className="my-routes-page__header">
@@ -235,13 +342,13 @@ export function MyRoutesPage() {
         </p>
       )}
 
-      {routes.length === 0 ? (
+      {activeRoutes.length === 0 ? (
         <p className="my-routes-page__message">
           Nie masz aktualnie żadnych aktywnych tras.
         </p>
       ) : (
         <section className="my-routes-list">
-          {routes.map((route) => (
+          {activeRoutes.map((route) => (
             <article className="my-route-card" key={route.id}>
               <header className="my-route-card__header">
                 <div>
@@ -299,68 +406,143 @@ export function MyRoutesPage() {
                 )}
 
                 {route.status === "IN_PROGRESS" && (
-                  <div className="my-route-card__finish-form">
-                    <label className="my-route-card__finish-label">
-                      Ostatnie 3 cyfry licznika
-                    </label>
-
-                    <input
-                      className="my-route-card__finish-input"
-                      inputMode="numeric"
-                      maxLength={3}
-                      value={finishOdometerLastThreeByRouteId[route.id] ?? ""}
-                      onChange={(event) =>
-                        setFinishOdometerLastThreeByRouteId((currentValues) => ({
-                          ...currentValues,
-                          [route.id]: event.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 3),
-                        }))
-                      }
-                    />
-
-                    <select
-                      className="my-route-card__finish-select"
-                      value={
-                        finishActionByRouteId[route.id] ?? "WAITING_FOR_PICKUP"
-                      }
-                      onChange={(event) =>
-                        setFinishActionByRouteId((currentValues) => ({
-                          ...currentValues,
-                          [route.id]: event.target.value as RouteOrderFinishAction,
-                        }))
-                      }
-                    >
-                      <option value="WAITING_FOR_PICKUP">
-                        Oczekuje na odbiór
-                      </option>
-                      <option value="COMPLETE">Zlecenie zakończone</option>
-                    </select>
-
+                  <>
                     <button
                       className="my-route-card__secondary-button"
                       type="button"
-                      disabled={finishingRouteId === route.id}
-                      onClick={() => handleFinishRoute(route)}
+                      disabled={waitingRouteId === route.id}
+                      onClick={() => handleMarkRouteAsWaiting(route.id)}
                     >
-                      {finishingRouteId === route.id
-                        ? "Kończenie..."
-                        : "Zakończ trasę"}
+                      {waitingRouteId === route.id ? "Zapisywanie..." : "Oczekiwanie"}
                     </button>
-                  </div>
+
+                    <div className="my-route-card__finish-form">
+                      <label className="my-route-card__finish-label">
+                        Ostatnie 3 cyfry licznika
+                      </label>
+
+                      <input
+                        className="my-route-card__finish-input"
+                        inputMode="numeric"
+                        maxLength={3}
+                        value={finishOdometerLastThreeByRouteId[route.id] ?? ""}
+                        onChange={(event) =>
+                          setFinishOdometerLastThreeByRouteId((currentValues) => ({
+                            ...currentValues,
+                            [route.id]: event.target.value.replace(/\D/g, "").slice(0, 3),
+                          }))
+                        }
+                      />
+
+                      <select
+                        className="my-route-card__finish-select"
+                        value={finishActionByRouteId[route.id] ?? "WAITING_FOR_PICKUP"}
+                        onChange={(event) =>
+                          setFinishActionByRouteId((currentValues) => ({
+                            ...currentValues,
+                            [route.id]: event.target.value as RouteOrderFinishAction,
+                          }))
+                        }
+                      >
+                        <option value="WAITING_FOR_PICKUP">Oczekuje na odbiór</option>
+                        <option value="COMPLETE">Zlecenie zakończone</option>
+                      </select>
+
+                      <button
+                        className="my-route-card__secondary-button"
+                        type="button"
+                        disabled={finishingRouteId === route.id}
+                        onClick={() => handleFinishRoute(route)}
+                      >
+                        {finishingRouteId === route.id ? "Kończenie..." : "Zakończ trasę"}
+                      </button>
+                    </div>
+                  </>
                 )}
 
                 {route.status === "WAITING" && (
                   <button
-                    className="my-route-card__secondary-button"
+                    className="my-route-card__primary-button"
                     type="button"
+                    disabled={resumingRouteId === route.id}
+                    onClick={() => handleResumeRoute(route.id)}
                   >
-                    Wznów trasę
+                    {resumingRouteId === route.id ? "Wznawianie..." : "Wznów trasę"}
                   </button>
                 )}
               </div>
             </article>
           ))}
+        </section>
+      )}
+      <div className="my-routes-history-toggle">
+        <button
+          className="my-routes-history-toggle__button"
+          type="button"
+          onClick={() => setShowCompletedRoutes((currentValue) => !currentValue)}
+        >
+          {showCompletedRoutes
+            ? "Ukryj zakończone trasy"
+            : `Pokaż zakończone trasy (${completedRoutes.length})`}
+        </button>
+      </div>
+
+      {showCompletedRoutes && (
+        <section className="my-routes-history">
+          <header className="my-routes-history__header">
+            <h2 className="my-routes-history__title">Historia tras</h2>
+            <p className="my-routes-history__subtitle">
+              Zakończone trasy przypisane do Twojej załogi.
+            </p>
+          </header>
+
+          {completedRoutes.length === 0 ? (
+            <p className="my-routes-page__message">Brak zakończonych tras.</p>
+          ) : (
+            <div className="my-routes-history__list">
+              {completedRoutes.map((route) => (
+                <article className="my-route-history-card" key={route.id}>
+                  <div>
+                    <h3 className="my-route-history-card__title">
+                      Trasa #{route.id}
+                    </h3>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Zlecenia:</strong>{" "}
+                      {formatTransportOrderIds(route.transportOrderIds)}
+                    </p>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Start:</strong> {route.startAddress}
+                    </p>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Cel:</strong> {route.actualDestinationAddress}
+                    </p>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Rozpoczęto:</strong> {formatDateTime(route.startedAt)}
+                    </p>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Zakończono:</strong> {formatDateTime(route.finishedAt)}
+                    </p>
+
+                    <p className="my-route-history-card__row">
+                      <strong>Dystans:</strong>{" "}
+                      {route.distanceKm !== null
+                        ? `${route.distanceKm} km`
+                        : "Brak danych"}
+                    </p>
+                  </div>
+
+                  <span className="my-route-history-card__status">
+                    {getRouteStatusLabel(route.status)}
+                  </span>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </main>

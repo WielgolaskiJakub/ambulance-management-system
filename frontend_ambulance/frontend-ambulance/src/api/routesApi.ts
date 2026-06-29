@@ -56,3 +56,21 @@ export async function finishRoute(
 
   return response.data;
 }
+
+export async function markRouteAsWaiting(
+  routeId: number
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/waiting`
+  );
+  return response.data
+}
+
+export async function resumeRoute(
+  routeId: number
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/resume`
+  );
+  return response.data
+}

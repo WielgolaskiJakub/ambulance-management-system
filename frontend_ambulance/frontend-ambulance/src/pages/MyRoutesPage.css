@@ -150,3 +150,84 @@
     width: 100%;
   }
 }
+
+.my-routes-history {
+  margin-top: 24px;
+}
+
+.my-routes-history__header {
+  margin-bottom: 16px;
+}
+
+.my-routes-history__title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.my-routes-history__subtitle {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.my-routes-history__list {
+  display: grid;
+  gap: 12px;
+}
+
+.my-route-history-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  background-color: #111827;
+}
+
+.my-route-history-card__title {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.my-route-history-card__row {
+  margin: 6px 0;
+  color: #d1d5db;
+}
+
+.my-route-history-card__row strong {
+  color: #f9fafb;
+}
+
+.my-route-history-card__status {
+  height: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: #374151;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .my-route-history-card {
+    flex-direction: column;
+  }
+}
+.my-routes-history-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+
+.my-routes-history-toggle__button {
+  padding: 10px 16px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #1f2937;
+  color: #f9fafb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-routes-history-toggle__button:hover {
+  background-color: #374151;
+}
