@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import pl.jakub.ambulancemanagement.routes.dto.RouteCreateRequest;
-import pl.jakub.ambulancemanagement.routes.dto.RouteDetailsResponse;
-import pl.jakub.ambulancemanagement.routes.dto.RouteFinishRequest;
-import pl.jakub.ambulancemanagement.routes.dto.RouteResponse;
+import pl.jakub.ambulancemanagement.routes.dto.*;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
 
 import java.util.List;
@@ -60,6 +57,18 @@ public class RouteController {
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@Valid @RequestBody RouteCreateRequest request) {
         return RouteResponse.fromEntity(routeService.createRoute(request));
+    }
+
+    @PostMapping("/from-order/{transportOrderId}")
+    @PreAuthorize("hasAnyRole('DRIVER')")
+    @ResponseStatus(HttpStatus.CREATED)
+    public RouteResponse createRouteFromOrder(
+            @PathVariable Long transportOrderId,
+            @Valid @RequestBody RouteCreateFromOrderRequest request
+    ) {
+        return RouteResponse.fromEntity(
+                routeService.createRouteFromOrder(transportOrderId, request)
+        );
     }
 
     @PatchMapping("/{id}/start")

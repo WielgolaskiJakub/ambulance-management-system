@@ -78,7 +78,6 @@ public class RouteService {
     return RouteResponse.fromEntity(route);
     }
 
-
     @Transactional
     public Route createRoute(RouteCreateRequest request) {
 
@@ -88,6 +87,7 @@ public class RouteService {
         if (shift.getStatus() != ShiftStatus.ACTIVE) {
             throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
         }
+
         validateCurrentUserCanUseShift(shift);
 
         Route route = new Route();
@@ -111,7 +111,9 @@ public class RouteService {
             }
 
             boolean alreadyAssignedToActiveRoute = routeOrderRepository.existsByTransportOrder_IdAndRoute_StatusIn(
-                    transportOrderId, List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING));
+                    transportOrderId,
+                    List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING)
+            );
 
             if (alreadyAssignedToActiveRoute) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
@@ -123,9 +125,64 @@ public class RouteService {
 
             routeOrders.add(routeOrder);
         }
+
         routeOrderRepository.saveAll(routeOrders);
 
         savedRoute.setRouteOrders(routeOrders);
+
+        addDriverAsRouteMember(savedRoute);
+
+        return savedRoute;
+    }
+    @Transactional
+    public Route createRouteFromOrder(Long transportOrderId, RouteCreateFromOrderRequest request) {
+        Shift shift = shiftRepository.findById(request.getShiftId())
+                .orElseThrow(() -> new ApiException(ErrorCode.SHIFT_NOT_FOUND));
+
+        if (shift.getStatus() != ShiftStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
+        }
+
+        validateCurrentUserCanUseShift(shift);
+
+        TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
+                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
+
+        if (transportOrder.getStatus() != TransportStatus.NEW
+                && transportOrder.getStatus() != TransportStatus.WAITING_FOR_PICKUP) {
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_AVAILABLE);
+        }
+
+        if (isBlank(transportOrder.getPickupAddress())
+                || isBlank(transportOrder.getDestinationAddress())) {
+            throw new ApiException(ErrorCode.BOTH_ADDRESS_REQUIRED);
+        }
+
+        boolean alreadyAssignedToActiveRoute = routeOrderRepository.existsByTransportOrder_IdAndRoute_StatusIn(
+                transportOrderId,
+                List.of(RouteStatus.CREATED, RouteStatus.IN_PROGRESS, RouteStatus.WAITING)
+        );
+
+        if (alreadyAssignedToActiveRoute) {
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
+        }
+
+        Route route = new Route();
+        route.setShift(shift);
+        route.setStartAddress(transportOrder.getPickupAddress());
+        route.setActualDestinationAddress(transportOrder.getDestinationAddress());
+        route.setNotes(normalizeNullableText(request.getNotes()));
+        route.setStatus(RouteStatus.CREATED);
+
+        Route savedRoute = routeRepository.save(route);
+
+        RouteOrder routeOrder = new RouteOrder();
+        routeOrder.setRoute(savedRoute);
+        routeOrder.setTransportOrder(transportOrder);
+
+        routeOrderRepository.save(routeOrder);
+
+        savedRoute.setRouteOrders(List.of(routeOrder));
 
         addDriverAsRouteMember(savedRoute);
 
@@ -477,5 +534,8 @@ public class RouteService {
         if (!shift.getDriver().getId().equals(currentUser.getId())) {
             throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
         }
+    }
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }
