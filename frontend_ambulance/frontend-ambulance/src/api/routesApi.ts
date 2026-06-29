@@ -6,6 +6,19 @@ export type CreateRouteFromOrderRequest = {
   notes: string | null;
 };
 
+export type RouteOrderFinishAction = "WAITING_FOR_PICKUP" | "COMPLETE";
+
+export type RouteFinishOrderItemRequest = {
+  transportOrderId: number;
+  action: RouteOrderFinishAction;
+};
+
+export type RouteFinishRequest = {
+  finishOdometerLastThree: number;
+  notes: string | null;
+  orders: RouteFinishOrderItemRequest[];
+};
+
 export async function createRouteFromOrder(
   transportOrderId: number,
   request: CreateRouteFromOrderRequest
@@ -27,6 +40,18 @@ export async function getMyRoutes(): Promise<RouteResponse[]> {
 export async function startRoute(routeId: number): Promise<RouteResponse> {
   const response = await axiosClient.patch<RouteResponse>(
     `/api/v1/routes/${routeId}/start`
+  );
+
+  return response.data;
+}
+
+export async function finishRoute(
+  routeId: number,
+  request: RouteFinishRequest
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/finish`,
+    request
   );
 
   return response.data;

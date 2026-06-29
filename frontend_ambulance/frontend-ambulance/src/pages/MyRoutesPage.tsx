@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { getMyRoutes, startRoute } from "../api/routesApi";
+import {
+  finishRoute,
+  getMyRoutes,
+  startRoute,
+  type RouteOrderFinishAction,
+} from "../api/routesApi";
 import type { RouteResponse } from "../types/route";
 import { getRouteStatusLabel } from "../utils/routeLabels";
-import "./MyRoutesPage.css"
+import "./MyRoutesPage.css";
 
 function formatDateTime(value: string | null): string {
   if (!value) {
@@ -25,6 +30,14 @@ export function MyRoutesPage() {
   const [routes, setRoutes] = useState<RouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingRouteId, setStartingRouteId] = useState<number | null>(null);
+  const [finishingRouteId, setFinishingRouteId] = useState<number | null>(null);
+
+  const [finishOdometerLastThreeByRouteId, setFinishOdometerLastThreeByRouteId] =
+    useState<Record<number, string>>({});
+
+  const [finishActionByRouteId, setFinishActionByRouteId] =
+    useState<Record<number, RouteOrderFinishAction>>({});
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -114,6 +127,85 @@ export function MyRoutesPage() {
     }
   }
 
+  async function handleFinishRoute(route: RouteResponse) {
+    const rawValue = finishOdometerLastThreeByRouteId[route.id];
+
+    if (!rawValue || rawValue.trim().length === 0) {
+      setErrorMessage("Podaj ostatnie 3 cyfry licznika.");
+      return;
+    }
+
+    const finishOdometerLastThree = Number(rawValue);
+
+    if (
+      Number.isNaN(finishOdometerLastThree) ||
+      finishOdometerLastThree < 0 ||
+      finishOdometerLastThree > 999
+    ) {
+      setErrorMessage("Ostatnie 3 cyfry licznika muszą być w zakresie 0-999.");
+      return;
+    }
+
+    if (route.transportOrderIds.length === 0) {
+      setErrorMessage("Trasa nie ma przypisanych zleceń.");
+      return;
+    }
+
+    try {
+      setFinishingRouteId(route.id);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      await finishRoute(route.id, {
+        finishOdometerLastThree,
+        notes: route.notes,
+        orders: route.transportOrderIds.map((transportOrderId) => ({
+          transportOrderId,
+          action: finishActionByRouteId[route.id] ?? "WAITING_FOR_PICKUP",
+        })),
+      });
+
+      setRoutes((currentRoutes) =>
+        currentRoutes.filter((currentRoute) => currentRoute.id !== route.id)
+      );
+
+      setSuccessMessage("Trasa została zakończona.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          setErrorMessage("Nie można teraz zakończyć tej trasy.");
+          return;
+        }
+
+        if (error.response?.status === 401) {
+          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+          return;
+        }
+
+        if (error.response?.status === 403) {
+          setErrorMessage("Brak uprawnień do zakończenia trasy.");
+          return;
+        }
+
+        if (error.response?.status === 404) {
+          setErrorMessage("Nie znaleziono trasy.");
+          return;
+        }
+
+        setErrorMessage(
+          `Błąd kończenia trasy: ${
+            error.response?.status ?? "brak odpowiedzi"
+          }`
+        );
+        return;
+      }
+
+      setErrorMessage("Nieznany błąd kończenia trasy.");
+    } finally {
+      setFinishingRouteId(null);
+    }
+  }
+
   if (loading) {
     return (
       <main className="my-routes-page">
@@ -153,9 +245,7 @@ export function MyRoutesPage() {
             <article className="my-route-card" key={route.id}>
               <header className="my-route-card__header">
                 <div>
-                  <h2 className="my-route-card__title">
-                    Trasa #{route.id}
-                  </h2>
+                  <h2 className="my-route-card__title">Trasa #{route.id}</h2>
 
                   <p className="my-route-card__subtitle">
                     Zlecenia: {formatTransportOrderIds(route.transportOrderIds)}
@@ -182,7 +272,9 @@ export function MyRoutesPage() {
 
                 <p className="my-route-card__row">
                   <strong>Dystans:</strong>{" "}
-                  {route.distanceKm !== null ? `${route.distanceKm} km` : "Brak danych"}
+                  {route.distanceKm !== null
+                    ? `${route.distanceKm} km`
+                    : "Brak danych"}
                 </p>
 
                 {route.notes && (
@@ -207,12 +299,55 @@ export function MyRoutesPage() {
                 )}
 
                 {route.status === "IN_PROGRESS" && (
-                  <button
-                    className="my-route-card__secondary-button"
-                    type="button"
-                  >
-                    Zakończ trasę
-                  </button>
+                  <div className="my-route-card__finish-form">
+                    <label className="my-route-card__finish-label">
+                      Ostatnie 3 cyfry licznika
+                    </label>
+
+                    <input
+                      className="my-route-card__finish-input"
+                      inputMode="numeric"
+                      maxLength={3}
+                      value={finishOdometerLastThreeByRouteId[route.id] ?? ""}
+                      onChange={(event) =>
+                        setFinishOdometerLastThreeByRouteId((currentValues) => ({
+                          ...currentValues,
+                          [route.id]: event.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 3),
+                        }))
+                      }
+                    />
+
+                    <select
+                      className="my-route-card__finish-select"
+                      value={
+                        finishActionByRouteId[route.id] ?? "WAITING_FOR_PICKUP"
+                      }
+                      onChange={(event) =>
+                        setFinishActionByRouteId((currentValues) => ({
+                          ...currentValues,
+                          [route.id]: event.target.value as RouteOrderFinishAction,
+                        }))
+                      }
+                    >
+                      <option value="WAITING_FOR_PICKUP">
+                        Oczekuje na odbiór
+                      </option>
+                      <option value="COMPLETE">Zlecenie zakończone</option>
+                    </select>
+
+                    <button
+                      className="my-route-card__secondary-button"
+                      type="button"
+                      disabled={finishingRouteId === route.id}
+                      onClick={() => handleFinishRoute(route)}
+                    >
+                      {finishingRouteId === route.id
+                        ? "Kończenie..."
+                        : "Zakończ trasę"}
+                    </button>
+                  </div>
                 )}
 
                 {route.status === "WAITING" && (
