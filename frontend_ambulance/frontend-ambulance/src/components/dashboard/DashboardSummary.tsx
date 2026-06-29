@@ -4,6 +4,7 @@ import {getShiftStatusLabel} from "../../utils/dashboardLabels";
 import { getMyDashboard } from "../../api/dashboardApi";
 import type { AmbulanceDashboardResponse} from "../../types/dashboard";
 import {getUserRoleLabel} from "../../utils/userRoleLabels";
+import { formatDate } from "../../utils/dateTimeFormat";
 
 
 export function DashboardSummary() {
@@ -78,7 +79,7 @@ if(errorMessage) {
                 </p>
             </div>
         <div className="dashboard-summary__date">
-            {new Date(dashboard.currentDate).toLocaleDateString()}
+            {formatDate(dashboard.currentDate)}
         </div>
         </div>
 

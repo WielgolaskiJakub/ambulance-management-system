@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { formatDateTime } from "../utils/dateTimeFormat";
 import {
   finishRoute,
   getMyRoutes,
@@ -12,13 +13,6 @@ import type { RouteResponse } from "../types/route";
 import { getRouteStatusLabel } from "../utils/routeLabels";
 import "./MyRoutesPage.css";
 
-function formatDateTime(value: string | null): string {
-  if (!value) {
-    return "Brak danych";
-  }
-
-  return new Date(value).toLocaleString();
-}
 
 function formatTransportOrderIds(ids: number[]): string {
   if (ids.length === 0) {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDateTime } from "../utils/dateTimeFormat";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { getTransportOrderCrewPreview } from "../api/transportOrdersApi";
@@ -10,19 +11,14 @@ import {
     getTransportStatusLabel,
 } from "../utils/transportOrderLabels";
 import { getUserRoleLabel } from "../utils/userRoleLabels";
+import { getMyDashboard } from "../api/dashboardApi";
+import { createRouteFromOrder } from "../api/routesApi";
 
 
 function hasText(value: string | null | undefined): value is string {
     return value !== null && value !== undefined && value.trim().length > 0;
 }
 
-function formatDateTime(value: string | null): string {
-    if (!value) {
-        return "Brak danych";
-    }
-
-    return new Date(value).toLocaleString();
-}
 
 export function TransportOrderCrewPreviewPage() {
     const { orderId } = useParams();
@@ -31,6 +27,10 @@ export function TransportOrderCrewPreviewPage() {
     const [order, setOrder] = useState<TransportOrderCrewPreviewResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [shiftId, setShiftId] = useState<number | null>(null);
+    const [loggedUserRole, setLoggedUserRole] = useState<string | null>(null);
+    const [accepting, setAccepting] = useState(false);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         async function loadPreview() {
@@ -46,8 +46,14 @@ export function TransportOrderCrewPreviewPage() {
                 setLoading(true);
                 setErrorMessage(null);
 
-                const data = await getTransportOrderCrewPreview(parsedOrderId);
-                setOrder(data);
+                const [orderData, dashboardData] = await Promise.all([
+                    getTransportOrderCrewPreview(Number(orderId)),
+                    getMyDashboard(),
+                ]);
+
+                setOrder(orderData);
+                setShiftId(dashboardData.shiftId);
+                setLoggedUserRole(dashboardData.loggedUserRole);
             } catch (error) {
                 if (axios.isAxiosError(error)) {
                     if (error.response?.status === 401) {
@@ -69,7 +75,7 @@ export function TransportOrderCrewPreviewPage() {
                     }
 
                     setErrorMessage(
-                        `Błąd pobierania podglądu: ${error.response?.status ?? "Brak odpowiedzi" }`
+                        `Błąd pobierania podglądu: ${error.response?.status ?? "Brak odpowiedzi"}`
                     );
                     return;
                 }
@@ -81,6 +87,69 @@ export function TransportOrderCrewPreviewPage() {
         }
         loadPreview();
     }, [orderId]);
+    {
+        successMessage && (
+            <p className="transport-order-preview-page__message">
+                {successMessage}
+            </p>
+        )
+    }
+    async function handleAcceptOrder() {
+        if (!order) {
+            return;
+        }
+
+        if (shiftId === null) {
+            setErrorMessage("Nie znaleziono aktywnej zmiany.");
+            return;
+        }
+
+        try {
+            setAccepting(true);
+            setErrorMessage(null);
+            setSuccessMessage(null);
+
+            await createRouteFromOrder(order.id, {
+                shiftId,
+                notes: null,
+            });
+
+            setSuccessMessage("Zlecenie zostało przyjęte.");
+            navigate("/routes/me");
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 400) {
+                    setErrorMessage("Nie można teraz przyjąć tego zlecenia.");
+                    return;
+                }
+
+                if (error.response?.status === 401) {
+                    setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+                    return;
+                }
+
+                if (error.response?.status === 403) {
+                    setErrorMessage("Brak uprawnień do przyjęcia zlecenia.");
+                    return;
+                }
+
+                if (error.response?.status === 404) {
+                    setErrorMessage("Nie znaleziono zlecenia albo zmiany.");
+                    return;
+                }
+
+                setErrorMessage(
+                    `Błąd przyjmowania zlecenia: ${error.response?.status ?? "brak odpowiedzi"
+                    }`
+                );
+                return;
+            }
+
+            setErrorMessage("Nieznany błąd przyjmowania zlecenia.");
+        } finally {
+            setAccepting(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -231,9 +300,20 @@ export function TransportOrderCrewPreviewPage() {
                     )}
                 </section>
                 <div className="transport-order-preview__actions">
-                    <button className="transport-order-preview__primary-button" type="button">
-                        Przyjmij zlecenie
-                    </button>
+                    {loggedUserRole === "DRIVER" && (
+                        <button
+                            className="transport-order-preview__primary-button"
+                            type="button"
+                            disabled={accepting}
+                            onClick={handleAcceptOrder}
+                        >
+                            {accepting
+                                ? "Przyjmowanie..."
+                                : order.status === "WAITING_FOR_PICKUP"
+                                    ? "Odbierz pacjenta"
+                                    : "Przyjmij zlecenie"}
+                        </button>
+                    )}
                 </div>
             </article>
         </main>
