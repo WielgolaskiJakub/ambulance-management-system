@@ -1,10 +1,12 @@
 import { useState } from "react";
 import axios from "axios";
 import { login } from "../api/authApi";
+import {useNavigate} from "react-router-dom";
 
 export function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -12,7 +14,7 @@ export function LoginPage() {
     try {
       const response = await login({ username, password });
       localStorage.setItem("token", response.token);
-      alert("Zalogowano pomyślnie");
+      navigate("/dashboard");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.log("STATUS:", error.response?.status);
