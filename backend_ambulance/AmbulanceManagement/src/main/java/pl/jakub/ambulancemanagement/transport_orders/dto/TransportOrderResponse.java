@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import pl.jakub.ambulancemanagement.transport_orders.model.*;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
+import pl.jakub.ambulancemanagement.users.model.UserRole;
 
 import java.time.LocalDateTime;
 
@@ -11,29 +12,37 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TransportOrderResponse {
 
-    private java.lang.Long id;
+    private Long id;
     private String orderNumber;
     private TransportOrderType orderType;
     private TransportSource source;
-    private java.lang.Long createdById;
+    private Long createdById;
+    private String createdByFullName;
+    private UserRole createdByRole;
     private TransportStatus status;
     private TransportPriority priority;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
     private LocalDateTime cancelledAt;
-    private java.lang.Long cancelledById;
+    private Long cancelledById;
     private TransportCancelReason cancelReason;
     private String cancelDescription;
     private LocalDateTime anonymizedAt;
 
     public static TransportOrderResponse fromEntity(TransportOrder order) {
+       String createdByFullName = order.getCreatedBy().getFirstName()
+               + " "
+               + order.getCreatedBy().getLastName();
+
         return new TransportOrderResponse(
                 order.getId(),
                 order.getOrderNumber(),
                 order.getOrderType(),
                 order.getSource(),
                 order.getCreatedBy().getId(),
+                createdByFullName,
+                order.getCreatedBy().getUserRole(),
                 order.getStatus(),
                 order.getPriority(),
                 order.getDescription(),

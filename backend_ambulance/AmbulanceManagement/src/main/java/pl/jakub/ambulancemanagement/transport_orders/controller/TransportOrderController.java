@@ -40,6 +40,12 @@ public class TransportOrderController {
                 .map(TransportOrderResponse::fromEntity)
                 .toList();
     }
+    @GetMapping("/{id}/crew-preview")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public TransportOrderCrewPreviewResponse getTransportOrderCrewPreviewById(@PathVariable Long id) {
+        return transportOrderService.getTransportOrderCrewPreviewById(id);
+    }
+
 
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")

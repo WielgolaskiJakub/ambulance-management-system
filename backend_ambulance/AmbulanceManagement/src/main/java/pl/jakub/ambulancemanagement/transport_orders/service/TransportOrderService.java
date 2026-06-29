@@ -250,6 +250,22 @@ public class TransportOrderService {
     }
 
     @Transactional(readOnly = true)
+    public TransportOrderCrewPreviewResponse getTransportOrderCrewPreviewById(Long id){
+        TransportOrder transportOrder = getTransportOrderById(id);
+
+        if(transportOrder.getStatus() != TransportStatus.NEW){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+        }
+        List<TransportOrderPatientDataResponse> patients =
+                transportOrderPatientDataRepository.findByTransportOrderId(id)
+                        .stream()
+                        .map(TransportOrderPatientDataResponse::fromEntity)
+                        .toList();
+
+        return TransportOrderCrewPreviewResponse.fromEntity(transportOrder,patients);
+    }
+
+    @Transactional(readOnly = true)
     public TransportOrderDetailsResponse getTransportOrderDetailsById(Long id) {
         TransportOrder transportOrder = getTransportOrderById(id);
 
@@ -300,9 +316,14 @@ public class TransportOrderService {
     private TransportOrder buildTransportOrderByUser(CreateTransportOrderByUserRequest request, User user) {
         TransportOrder transportOrder = new TransportOrder();
 
+        String pickupAddress = normalizeRequiredText(request.getPickupAddress());
+        String destinationAddress = normalizeRequiredText(request.getDestinationAddress());
+
         transportOrder.setOrderType(request.getOrderType());
         transportOrder.setSource(request.getSource());
         transportOrder.setPriority(request.getPriority());
+        transportOrder.setPickupAddress(pickupAddress);
+        transportOrder.setDestinationAddress(destinationAddress);
         transportOrder.setDescription(normalizeNullableText(request.getDescription()));
         transportOrder.setCreatedBy(user);
         transportOrder.setStatus(TransportStatus.NEW);

@@ -1,5 +1,6 @@
 package pl.jakub.ambulancemanagement.transport_orders.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -20,6 +21,14 @@ public class CreateTransportOrderByUserRequest {
 
     @NotNull
     private TransportPriority priority;
+
+    @NotBlank
+    @Size(max = 1000)
+    private String pickupAddress;
+
+    @NotBlank
+    @Size(max = 1000)
+    private String destinationAddress;
 
     @Size(max=1000)
     private String description;
