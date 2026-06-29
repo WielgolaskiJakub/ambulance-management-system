@@ -4,6 +4,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { TransportOrderCrewPreviewPage } from "./pages/TransportOrderCrewPreviewPage";
 import { MainLayout } from "./layouts/MainLayout";
+import { MyRoutesPage } from "./pages/MyRoutesPage";
 
 function App() {
   return (
@@ -16,7 +17,11 @@ function App() {
           path="/transport-orders/:orderId/preview"
           element={<TransportOrderCrewPreviewPage />}
         />
+     <Route path="/routes/me" element={<MyRoutesPage />} />
+     
+     
       </Route>
+      
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

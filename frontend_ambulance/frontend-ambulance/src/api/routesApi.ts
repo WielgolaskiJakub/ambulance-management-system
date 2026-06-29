@@ -17,3 +17,17 @@ export async function createRouteFromOrder(
 
   return response.data;
 }
+
+export async function getMyRoutes(): Promise<RouteResponse[]> {
+  const response = await axiosClient.get<RouteResponse[]>("/api/v1/routes/me");
+
+  return response.data;
+}
+
+export async function startRoute(routeId: number): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/start`
+  );
+
+  return response.data;
+}

@@ -163,6 +163,8 @@
   .orders-section__title {
     font-size: 28px;
   }
+}
+
   .order-card__actions {
   display: flex;
   justify-content: flex-end;
@@ -344,8 +346,4 @@
 .order-card__accept-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
-}
-
-
-
 }
