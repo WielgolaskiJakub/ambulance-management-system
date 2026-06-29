@@ -308,4 +308,41 @@
   font-weight: 700;
   cursor: pointer;
 }
+.orders-list__message,
+.orders-list__feedback {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.orders-list__feedback {
+  padding: 12px 16px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #111827;
+}
+
+.order-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.order-card__accept-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  color: #111827;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.order-card__accept-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 }

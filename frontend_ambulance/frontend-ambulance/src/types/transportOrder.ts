@@ -7,6 +7,8 @@ export type TransportOrderResponse = {
   createdByFullName: string;
   createdByRole: string;
   status: string;
+  pickupAddress: string | null;
+  destinationAddress: string | null;
   priority: string;
   description: string | null;
   createdAt: string | null;

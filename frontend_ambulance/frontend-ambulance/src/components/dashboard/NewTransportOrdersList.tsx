@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
+import { getMyDashboard } from "../../api/dashboardApi";
+import { createRouteFromOrder } from "../../api/routesApi";
 import { getNewTransportOrdersForCrew } from "../../api/transportOrdersApi";
 import type { TransportOrderResponse } from "../../types/transportOrder";
 import {
@@ -9,108 +12,200 @@ import {
   getTransportStatusLabel,
 } from "../../utils/transportOrderLabels";
 import { getUserRoleLabel } from "../../utils/userRoleLabels";
-import { Link } from "react-router-dom";
+
+function hasText(value: string | null | undefined): value is string {
+  return value !== null && value !== undefined && value.trim().length > 0;
+}
 
 export function NewTransportOrdersList() {
   const [orders, setOrders] = useState<TransportOrderResponse[]>([]);
+  const [shiftId, setShiftId] = useState<number | null>(null);
+  const [loggedUserRole, setLoggedUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [acceptingOrderId, setAcceptingOrderId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadNewOrders() {
+    async function loadData() {
       try {
         setLoading(true);
         setErrorMessage(null);
 
-        const data = await getNewTransportOrdersForCrew();
-        setOrders(data);
+        const [ordersData, dashboardData] = await Promise.all([
+          getNewTransportOrdersForCrew(),
+          getMyDashboard(),
+        ]);
+
+        setOrders(ordersData);
+        setShiftId(dashboardData.shiftId);
+        setLoggedUserRole(dashboardData.loggedUserRole);
       } catch (error) {
         if (axios.isAxiosError(error)) {
-          if (error.response?.status === 403) {
-            setErrorMessage(
-              "Brak dostępu do nowych zleceń. Ten widok jest dla DRIVER/SANITARY."
-            );
-            return;
-          }
-
-          if (error.response?.status === 401) {
-            setErrorMessage("Sesja wygasła albo brakuje tokena. Zaloguj się ponownie.");
-            return;
-          }
-
           setErrorMessage(
-            `Błąd pobierania zleceń: ${error.response?.status ?? "brak odpowiedzi"}`
+            `Błąd pobierania nowych zleceń: ${
+              error.response?.status ?? "brak odpowiedzi"
+            }`
           );
           return;
         }
 
-        setErrorMessage("Nieznany błąd pobierania zleceń.");
+        setErrorMessage("Nieznany błąd pobierania nowych zleceń.");
       } finally {
         setLoading(false);
       }
     }
 
-    loadNewOrders();
+    loadData();
   }, []);
 
+  async function handleAcceptOrder(orderId: number) {
+    if (shiftId === null) {
+      setErrorMessage("Nie znaleziono aktywnej zmiany.");
+      return;
+    }
+
+    try {
+      setAcceptingOrderId(orderId);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      await createRouteFromOrder(orderId, {
+        shiftId,
+        notes: null,
+      });
+
+      setOrders((currentOrders) =>
+        currentOrders.filter((order) => order.id !== orderId)
+      );
+
+      setSuccessMessage("Zlecenie zostało przyjęte.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 400) {
+          setErrorMessage("Nie można teraz przyjąć tego zlecenia.");
+          return;
+        }
+
+        if (error.response?.status === 401) {
+          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+          return;
+        }
+
+        if (error.response?.status === 403) {
+          setErrorMessage("Brak uprawnień do przyjęcia zlecenia.");
+          return;
+        }
+
+        if (error.response?.status === 404) {
+          setErrorMessage("Nie znaleziono zlecenia albo zmiany.");
+          return;
+        }
+
+        setErrorMessage(
+          `Błąd przyjmowania zlecenia: ${
+            error.response?.status ?? "brak odpowiedzi"
+          }`
+        );
+        return;
+      }
+
+      setErrorMessage("Nieznany błąd przyjmowania zlecenia.");
+    } finally {
+      setAcceptingOrderId(null);
+    }
+  }
+
   if (loading) {
-    return <p>Ładowanie nowych zleceń...</p>;
+    return <p className="orders-list__message">Ładowanie nowych zleceń...</p>;
   }
 
   if (errorMessage) {
-    return <p>{errorMessage}</p>;
+    return <p className="orders-list__message">{errorMessage}</p>;
   }
 
   if (orders.length === 0) {
-    return <p>Brak nowych zleceń transportu.</p>;
+    return <p className="orders-list__message">Brak nowych zleceń.</p>;
   }
+
+  const canAcceptOrders = loggedUserRole === "DRIVER";
 
   return (
     <div className="orders-list">
+      {successMessage && (
+        <p className="orders-list__feedback">{successMessage}</p>
+      )}
+
       {orders.map((order) => (
         <article className="order-card" key={order.id}>
-          <div className="order-card-header">
-            <h3>{order.orderNumber ?? "Bez numeru zlecenia"}</h3>
-            <span className="order-priority">{getTransportPriorityLabel(order.priority)}</span>
-          </div>
+          <header className="order-card__header">
+            <div className="order-card__title-group">
+              <h2 className="order-card__title">
+                {order.orderNumber ?? `Zlecenie #${order.id}`}
+              </h2>
 
-          <div className="order-card-body">
-            <p>
-              <strong>Typ:</strong> {getTransportOrderTypeLabel(order.orderType)}
-            </p>
+              <p className="order-card__subtitle">
+                {getTransportOrderTypeLabel(order.orderType)} •{" "}
+                {getTransportSourceLabel(order.source)}
+              </p>
+            </div>
 
-            <p>
-              <strong>Źródło:</strong> {getTransportSourceLabel(order.source)}
-            </p>
+            <span className="order-card__badge">
+              {getTransportPriorityLabel(order.priority)}
+            </span>
+          </header>
 
-            <p>
+          <div className="order-card__body">
+            <p className="order-card__row">
               <strong>Status:</strong> {getTransportStatusLabel(order.status)}
             </p>
 
-            <p>
-              <strong>Utworzone przez:</strong> {order.createdByFullName} - {getUserRoleLabel(order.createdByRole)}
+            <p className="order-card__row">
+              <strong>Skąd:</strong>{" "}
+              {hasText(order.pickupAddress)
+                ? order.pickupAddress
+                : "Brak adresu"}
             </p>
 
-            {order.createdAt && (
-              <p>
-                <strong>Utworzono:</strong>{" "}
-                {new Date(order.createdAt).toLocaleString()}
-              </p>
-            )}
+            <p className="order-card__row">
+              <strong>Dokąd:</strong>{" "}
+              {hasText(order.destinationAddress)
+                ? order.destinationAddress
+                : "Brak adresu"}
+            </p>
 
-            {order.description && (
-              <p>
+            {hasText(order.description) && (
+              <p className="order-card__row">
                 <strong>Opis:</strong> {order.description}
               </p>
             )}
-            <div className="order-card__actions">
-              <Link
-                className="order-card__details-link"
-                to={`/transport-orders/${order.id}/preview`}
+
+            <p className="order-card__row">
+              <strong>Utworzone przez:</strong> {order.createdByFullName} —{" "}
+              {getUserRoleLabel(order.createdByRole)}
+            </p>
+          </div>
+
+          <div className="order-card__actions">
+            <Link
+              className="order-card__details-link"
+              to={`/transport-orders/${order.id}/preview`}
+            >
+              Podgląd
+            </Link>
+
+            {canAcceptOrders && (
+              <button
+                className="order-card__accept-button"
+                type="button"
+                disabled={acceptingOrderId === order.id}
+                onClick={() => handleAcceptOrder(order.id)}
               >
-                Podgląd
-              </Link>
-            </div>
+                {acceptingOrderId === order.id
+                  ? "Przyjmowanie..."
+                  : "Przyjmij zlecenie"}
+              </button>
+            )}
           </div>
         </article>
       ))}
