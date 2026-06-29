@@ -21,6 +21,8 @@ public class TransportOrderResponse {
     private UserRole createdByRole;
     private TransportStatus status;
     private TransportPriority priority;
+    private String pickupAddress;
+    private String destinationAddress;
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime completedAt;
@@ -45,6 +47,8 @@ public class TransportOrderResponse {
                 order.getCreatedBy().getUserRole(),
                 order.getStatus(),
                 order.getPriority(),
+                order.getPickupAddress(),
+                order.getDestinationAddress(),
                 order.getDescription(),
                 order.getCreatedAt(),
                 order.getCompletedAt(),

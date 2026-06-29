@@ -91,6 +91,16 @@ public class TransportOrderService {
 
     }
 
+    @Transactional(readOnly = true)
+    public List<TransportOrder> getAvailableOrdersForCrew() {
+        return transportOrderRepository.findByStatusInOrderByCreatedAtAsc(
+                List.of(
+                        TransportStatus.WAITING_FOR_PICKUP,
+                        TransportStatus.NEW
+                )
+        );
+    }
+
     @Transactional
     public TransportOrder createTransportOrderByManager(CreateTransportOrderByManagerRequest request) {
 

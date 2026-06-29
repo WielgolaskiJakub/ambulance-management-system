@@ -65,6 +65,15 @@ public class TransportOrderController {
                 .toList();
     }
 
+    @GetMapping("/queue/available")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public List<TransportOrderResponse> getAvailableTransportOrdersForCrew() {
+        return transportOrderService.getAvailableOrdersForCrew()
+                .stream()
+                .map(TransportOrderResponse::fromEntity)
+                .toList();
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DRIVER', 'SANITARY')")
     public TransportOrderResponse getTransportOrderById(@PathVariable Long id) {
