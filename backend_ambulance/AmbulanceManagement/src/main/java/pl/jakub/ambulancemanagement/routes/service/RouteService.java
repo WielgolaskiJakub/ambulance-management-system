@@ -118,6 +118,7 @@ public class RouteService {
             if (alreadyAssignedToActiveRoute) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
             }
+            transportOrder.setStatus(TransportStatus.IN_PROGRESS);
 
             RouteOrder routeOrder = new RouteOrder();
             routeOrder.setRoute(savedRoute);
@@ -167,6 +168,7 @@ public class RouteService {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
         }
 
+        transportOrder.setStatus(TransportStatus.IN_PROGRESS);
         Route route = new Route();
         route.setShift(shift);
         route.setStartAddress(transportOrder.getPickupAddress());
