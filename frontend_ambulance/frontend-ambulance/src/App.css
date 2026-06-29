@@ -347,3 +347,102 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+.orders-dashboard-list {
+  display: grid;
+  gap: 32px;
+}
+
+.orders-subsection {
+  display: grid;
+  gap: 16px;
+}
+
+.orders-subsection__title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.orders-subsection__subtitle {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.orders-alert-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  background-color: #1f2937;
+}
+
+.orders-alert-card strong {
+  color: #fbbf24;
+}
+
+.orders-alert-card p {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.orders-section__subtitle {
+  margin: 8px 0 0;
+  color: #d1d5db;
+}
+
+.orders-dashboard-list {
+  display: grid;
+  gap: 24px;
+}
+
+.orders-overview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.orders-overview-card {
+  padding: 16px 20px;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  background-color: #1f2937;
+}
+
+.orders-overview-card__label {
+  display: block;
+  margin-bottom: 8px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.orders-overview-card__value {
+  display: block;
+  color: #f9fafb;
+  font-size: 32px;
+}
+
+.orders-subsection {
+  display: grid;
+  gap: 16px;
+}
+
+.orders-subsection__header {
+  text-align: left;
+}
+
+.orders-subsection__title {
+  margin: 0;
+  font-size: 26px;
+}
+
+.orders-subsection__subtitle {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+@media (max-width: 700px) {
+  .orders-overview {
+    grid-template-columns: 1fr;
+  }
+}

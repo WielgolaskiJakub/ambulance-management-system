@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { getMyDashboard } from "../../api/dashboardApi";
 import { createRouteFromOrder } from "../../api/routesApi";
-import { getNewTransportOrdersForCrew } from "../../api/transportOrdersApi";
+import { getAvailableTransportOrdersForCrew } from "../../api/transportOrdersApi";
 import type { TransportOrderResponse } from "../../types/transportOrder";
 import {
   getTransportOrderTypeLabel,
@@ -33,7 +33,7 @@ export function NewTransportOrdersList() {
         setErrorMessage(null);
 
         const [ordersData, dashboardData] = await Promise.all([
-          getNewTransportOrdersForCrew(),
+          getAvailableTransportOrdersForCrew(),
           getMyDashboard(),
         ]);
 
@@ -43,8 +43,7 @@ export function NewTransportOrdersList() {
       } catch (error) {
         if (axios.isAxiosError(error)) {
           setErrorMessage(
-            `Błąd pobierania nowych zleceń: ${
-              error.response?.status ?? "brak odpowiedzi"
+            `Błąd pobierania nowych zleceń: ${error.response?.status ?? "brak odpowiedzi"
             }`
           );
           return;
@@ -103,8 +102,7 @@ export function NewTransportOrdersList() {
         }
 
         setErrorMessage(
-          `Błąd przyjmowania zlecenia: ${
-            error.response?.status ?? "brak odpowiedzi"
+          `Błąd przyjmowania zlecenia: ${error.response?.status ?? "brak odpowiedzi"
           }`
         );
         return;
@@ -130,85 +128,148 @@ export function NewTransportOrdersList() {
 
   const canAcceptOrders = loggedUserRole === "DRIVER";
 
+  const waitingForPickupOrders = orders.filter(
+    (order) => order.status === "WAITING_FOR_PICKUP"
+  );
+
+  const newOrders = orders.filter((order) => order.status === "NEW");
+
+  function renderOrdersSection(
+    title: string,
+    subtitle: string,
+    sectionOrders: TransportOrderResponse[],
+    emptyMessage: string
+  ) {
+    return (
+      <section className="orders-subsection">
+        <header className="orders-subsection__header">
+          <h2 className="orders-subsection__title">{title}</h2>
+          {hasText(subtitle) && (
+            <p className="orders-subsection__subtitle">{subtitle}</p>
+          )}
+        </header>
+
+        {sectionOrders.length === 0 ? (
+          <p className="orders-list__message">{emptyMessage}</p>
+        ) : (
+          <div className="orders-list">
+            {sectionOrders.map((order) => (
+              <article className="order-card" key={order.id}>
+                <header className="order-card__header">
+                  <div className="order-card__title-group">
+                    <h2 className="order-card__title">
+                      {order.orderNumber ?? `Zlecenie #${order.id}`}
+                    </h2>
+
+                    <p className="order-card__subtitle">
+                      {getTransportOrderTypeLabel(order.orderType)} •{" "}
+                      {getTransportSourceLabel(order.source)}
+                    </p>
+                  </div>
+
+                  <span className="order-card__badge">
+                    {getTransportPriorityLabel(order.priority)}
+                  </span>
+                </header>
+
+                <div className="order-card__body">
+                  <p className="order-card__row">
+                    <strong>Status:</strong> {getTransportStatusLabel(order.status)}
+                  </p>
+
+                  {hasText(order.pickupAddress) && (
+                    <p className="order-card__row">
+                      <strong>Skąd:</strong> {order.pickupAddress}
+                    </p>
+                  )}
+
+                  {hasText(order.destinationAddress) && (
+                    <p className="order-card__row">
+                      <strong>Dokąd:</strong> {order.destinationAddress}
+                    </p>
+                  )}
+
+                  {hasText(order.description) && (
+                    <p className="order-card__row">
+                      <strong>Opis:</strong> {order.description}
+                    </p>
+                  )}
+
+                  {hasText(order.createdByFullName) && (
+                    <p className="order-card__row">
+                      <strong>Utworzone przez:</strong> {order.createdByFullName} —{" "}
+                      {getUserRoleLabel(order.createdByRole)}
+                    </p>
+                  )}
+                </div>
+
+                <div className="order-card__actions">
+                  <Link
+                    className="order-card__details-link"
+                    to={`/transport-orders/${order.id}/preview`}
+                  >
+                    Podgląd
+                  </Link>
+
+                  {canAcceptOrders && (
+                    <button
+                      className="order-card__accept-button"
+                      type="button"
+                      disabled={acceptingOrderId === order.id}
+                      onClick={() => handleAcceptOrder(order.id)}
+                    >
+                      {acceptingOrderId === order.id
+                        ? "Przyjmowanie..."
+                        : order.status === "WAITING_FOR_PICKUP"
+                          ? "Odbierz pacjenta"
+                          : "Przyjmij zlecenie"}
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
   return (
-    <div className="orders-list">
+    <div className="orders-dashboard-list">
       {successMessage && (
         <p className="orders-list__feedback">{successMessage}</p>
       )}
 
-      {orders.map((order) => (
-        <article className="order-card" key={order.id}>
-          <header className="order-card__header">
-            <div className="order-card__title-group">
-              <h2 className="order-card__title">
-                {order.orderNumber ?? `Zlecenie #${order.id}`}
-              </h2>
-
-              <p className="order-card__subtitle">
-                {getTransportOrderTypeLabel(order.orderType)} •{" "}
-                {getTransportSourceLabel(order.source)}
-              </p>
-            </div>
-
-            <span className="order-card__badge">
-              {getTransportPriorityLabel(order.priority)}
-            </span>
-          </header>
-
-          <div className="order-card__body">
-            <p className="order-card__row">
-              <strong>Status:</strong> {getTransportStatusLabel(order.status)}
-            </p>
-
-            <p className="order-card__row">
-              <strong>Skąd:</strong>{" "}
-              {hasText(order.pickupAddress)
-                ? order.pickupAddress
-                : "Brak adresu"}
-            </p>
-
-            <p className="order-card__row">
-              <strong>Dokąd:</strong>{" "}
-              {hasText(order.destinationAddress)
-                ? order.destinationAddress
-                : "Brak adresu"}
-            </p>
-
-            {hasText(order.description) && (
-              <p className="order-card__row">
-                <strong>Opis:</strong> {order.description}
-              </p>
-            )}
-
-            <p className="order-card__row">
-              <strong>Utworzone przez:</strong> {order.createdByFullName} —{" "}
-              {getUserRoleLabel(order.createdByRole)}
-            </p>
-          </div>
-
-          <div className="order-card__actions">
-            <Link
-              className="order-card__details-link"
-              to={`/transport-orders/${order.id}/preview`}
-            >
-              Podgląd
-            </Link>
-
-            {canAcceptOrders && (
-              <button
-                className="order-card__accept-button"
-                type="button"
-                disabled={acceptingOrderId === order.id}
-                onClick={() => handleAcceptOrder(order.id)}
-              >
-                {acceptingOrderId === order.id
-                  ? "Przyjmowanie..."
-                  : "Przyjmij zlecenie"}
-              </button>
-            )}
-          </div>
+      <div className="orders-overview">
+        <article className="orders-overview-card">
+          <span className="orders-overview-card__label">Do odbioru</span>
+          <strong className="orders-overview-card__value">
+            {waitingForPickupOrders.length}
+          </strong>
         </article>
-      ))}
+
+        <article className="orders-overview-card">
+          <span className="orders-overview-card__label">Nowe zlecenia</span>
+          <strong className="orders-overview-card__value">
+            {newOrders.length}
+          </strong>
+        </article>
+      </div>
+
+      {waitingForPickupOrders.length > 0 &&
+        renderOrdersSection(
+          "Pacjenci do odbioru",
+          "Pacjenci oczekujący na kolejny przejazd.",
+          waitingForPickupOrders,
+          "Brak pacjentów oczekujących na odbiór."
+        )}
+
+      {renderOrdersSection(
+        "Nowe zlecenia",
+        "",
+        newOrders,
+        "Brak nowych zleceń."
+      )}
     </div>
   );
 }
