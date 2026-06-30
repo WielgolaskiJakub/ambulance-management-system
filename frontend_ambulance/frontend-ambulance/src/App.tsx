@@ -5,6 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { TransportOrderCrewPreviewPage } from "./pages/TransportOrderCrewPreviewPage";
 import { MainLayout } from "./layouts/MainLayout";
 import { MyRoutesPage } from "./pages/MyRoutesPage";
+import { CreateTransportOrderPage } from "./pages/CreateTransportOrderPage";
 
 function App() {
   return (
@@ -18,7 +19,9 @@ function App() {
           element={<TransportOrderCrewPreviewPage />}
         />
      <Route path="/routes/me" element={<MyRoutesPage />} />
+     <Route path="/transport-orders/create" element={<CreateTransportOrderPage/>} />
      
+
      
       </Route>
       

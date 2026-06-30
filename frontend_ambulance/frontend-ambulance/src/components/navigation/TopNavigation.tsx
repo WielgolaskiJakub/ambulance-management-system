@@ -30,6 +30,10 @@ export function TopNavigation() {
           Tankowanie
         </NavLink>
 
+        <NavLink className="top-navigation__link" to="/transport-orders/create">
+        Utwórz zlecenie
+        </NavLink>
+
         <NavLink className="top-navigation__link" to="/shifts/create">
           Utwórz zmianę
         </NavLink>

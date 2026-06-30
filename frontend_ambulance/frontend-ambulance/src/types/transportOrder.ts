@@ -50,3 +50,20 @@ export type TransportOrderCrewPreviewResponse = {
 
   patients: TransportOrderPatientDataResponse[];
 };
+
+export type TransportOrderPatientCreateItemRequest = {
+
+  patientFirstName: string;
+  patientLastName: string;
+  pickupDetails: string | null;
+};
+
+export type CreateTransportOrderByUserRequest = {
+  orderType: string;
+  source: string;
+  priority: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  description: string | null;
+  patients: TransportOrderPatientCreateItemRequest[];
+};
