@@ -8,6 +8,7 @@ import { MyRoutesPage } from "./pages/MyRoutesPage";
 import { CreateTransportOrderPage } from "./pages/CreateTransportOrderPage";
 import { MyTransportOrdersPage } from "./pages/MyTransportOrdersPage";
 import { TransportOrderDetailsPage } from "./pages/TransportOrderDetailsPage";
+import { CreateShiftPage } from "./pages/CreateShiftPage";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
 
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/shifts/create" element={<CreateShiftPage/>} />
         <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />
         <Route path="/transport-orders/me" element={<MyTransportOrdersPage />} />
         <Route

@@ -35,6 +35,18 @@ const initialFormState: FormState = {
     pickupDetails: "",
 };
 
+type ApiErrorResponse = {
+    code?: string;
+    message?: string;
+};
+
+function getApiErrorCode(error: unknown): string | null {
+    if (!axios.isAxiosError(error)) {
+        return null;
+    }
+    return (error.response?.data as ApiErrorResponse | undefined)?.code ?? null;
+}
+
 function hasText(value: string): boolean {
     return value.trim().length > 0;
 }
@@ -98,13 +110,21 @@ export function CreateTransportOrderPage() {
                         : [],
             });
 
-           navigate(`/transport-orders/${createdOrder.id}/preview`, { replace: true });
+            navigate(`/transport-orders/${createdOrder.id}/preview`, { replace: true });
         } catch (error) {
             if (axios.isAxiosError(error)) {
+                const errorCode = getApiErrorCode(error);
+
+                if (errorCode === "SHIFT_NOT_ACTIVE") {
+                    setErrorMessage("Najpierw utwórz aktywną zmianę.");
+                    return;
+                }
+
                 if (error.response?.status === 400) {
                     setErrorMessage("Nieprawidłowe dane zlecenia.");
                     return;
                 }
+
                 if (error.response?.status === 401) {
                     setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
                     return;
@@ -115,12 +135,12 @@ export function CreateTransportOrderPage() {
                     return;
                 }
 
-                setErrorMessage(
-                    `Błąd tworzenia zlecenia: ${error.response?.status ?? "brak odpowiedzi"}`
-                );
+                setErrorMessage("Nie udało się utworzyć zlecenia.");
                 return;
             }
+
             setErrorMessage("Nieznany błąd tworzenia zlecenia.");
+
         } finally {
             setSubmitting(false);
         }
@@ -142,7 +162,7 @@ export function CreateTransportOrderPage() {
                         <h1 className="create-transport-order-card__title">
                             Stwórz zlecenie transportu
                         </h1>
-                      
+
                     </div>
                 </header>
 
@@ -206,9 +226,9 @@ export function CreateTransportOrderPage() {
                         />
 
                         <button
-                        className="create-transport-order-form__clear-button"
-                        type="button"
-                        onClick={() =>updateField("pickupAddress", "")}
+                            className="create-transport-order-form__clear-button"
+                            type="button"
+                            onClick={() => updateField("pickupAddress", "")}
                         >
                             Wyczyść
                         </button>
@@ -224,10 +244,10 @@ export function CreateTransportOrderPage() {
                             placeholder="np. Szpital Bródnowski / Wołomin Lipińska 12"
                         />
 
-                         <button
-                        className="create-transport-order-form__clear-button"
-                        type="button"
-                        onClick={() =>updateField("pickupAddress", "")}
+                        <button
+                            className="create-transport-order-form__clear-button"
+                            type="button"
+                            onClick={() => updateField("pickupAddress", "")}
                         >
                             Wyczyść
                         </button>
@@ -246,7 +266,7 @@ export function CreateTransportOrderPage() {
                     <section className="create-transport-order-form__section">
                         <h2>Dane pacjenta</h2>
                         <p>
-                           Jeśli transport bez pacjenta - pozostaw puste.
+                            Jeśli transport bez pacjenta - pozostaw puste.
                         </p>
 
                         <div className="create-transport-order-form__grid">

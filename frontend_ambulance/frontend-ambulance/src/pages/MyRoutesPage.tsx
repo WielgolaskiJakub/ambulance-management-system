@@ -12,7 +12,11 @@ import {
 import type { RouteResponse } from "../types/route";
 import { getRouteStatusLabel } from "../utils/routeLabels";
 import "./MyRoutesPage.css";
+import { Link, useLocation } from "react-router-dom";
 
+type MyRoutesLocationState = {
+  warningMessage?: string
+};
 
 function formatTransportOrderIds(ids: number[]): string {
   if (ids.length === 0) {
@@ -23,6 +27,8 @@ function formatTransportOrderIds(ids: number[]): string {
 }
 
 export function MyRoutesPage() {
+  const location = useLocation();
+
   const [routes, setRoutes] = useState<RouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingRouteId, setStartingRouteId] = useState<number | null>(null);
@@ -37,7 +43,12 @@ export function MyRoutesPage() {
   const [finishActionByRouteId, setFinishActionByRouteId] =
     useState<Record<number, RouteOrderFinishAction>>({});
 
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [warningMessage, setWarningMessage] = useState<string | null>(() => {
+    const state = location.state as MyRoutesLocationState | null;
+    return state?.warningMessage ?? null;
+  });
+
+   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -323,6 +334,26 @@ export function MyRoutesPage() {
           Przyjęte i aktualnie realizowane trasy.
         </p>
       </header>
+{warningMessage && (
+  <section className="my-routes-page__warning-box">
+    <div>
+      <strong>Nie można jeszcze zakończyć zmiany</strong>
+      <p>{warningMessage}</p>
+    </div>
+
+    <Link className="my-routes-page__warning-link" to="/dashboard">
+      Wróć do dashboardu
+    </Link>
+
+    <button
+      className="my-routes-page__warning-close"
+      type="button"
+      onClick={() => setWarningMessage(null)}
+    >
+      Zamknij
+    </button>
+  </section>
+)}
 
       {errorMessage && (
         <p className="my-routes-page__message my-routes-page__message--error">

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import { getMyDashboard } from "../../api/dashboardApi";
@@ -12,9 +12,45 @@ import {
   getTransportStatusLabel,
 } from "../../utils/transportOrderLabels";
 import { getUserRoleLabel } from "../../utils/userRoleLabels";
+import {
+  isNewOrderSoundEnabled,
+  playNewOrderSound,
+  startCriticalOrderAlarm,
+  stopCriticalOrderAlarm,
+} from "../../utils/newOrderSound";
 
 function hasText(value: string | null | undefined): value is string {
   return value !== null && value !== undefined && value.trim().length > 0;
+}
+
+type ApiErrorResponse = {
+  code?: string;
+  message?: string;
+};
+
+function getApiErrorCode(error: unknown): string | null {
+  if (!axios.isAxiosError(error)) {
+    return null;
+  }
+
+  return (error.response?.data as ApiErrorResponse | undefined)?.code ?? null;
+}
+
+const NIGHT_ALARM_START_HOUR = 22;
+const NIGHT_ALARM_END_HOUR = 6;
+
+function isNightAlarmTime(date = new Date()): boolean {
+  const hour = date.getHours();
+
+  return hour >= NIGHT_ALARM_START_HOUR || hour < NIGHT_ALARM_END_HOUR;
+}
+
+function shouldUseCriticalAlarm(order: TransportOrderResponse): boolean {
+  return order.priority === "URGENT" || isNightAlarmTime();
+}
+
+function formatCriticalOrderName(order: TransportOrderResponse): string {
+  return order.orderNumber ?? `Zlecenie #${order.id}`;
 }
 
 export function NewTransportOrdersList() {
@@ -25,11 +61,58 @@ export function NewTransportOrdersList() {
   const [acceptingOrderId, setAcceptingOrderId] = useState<number | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [criticalAlarmOrders, setCriticalAlarmOrders] = useState<
+    TransportOrderResponse[]
+  >([]);
+
+  const knownOrderIdsRef = useRef<Set<number> | null>(null);
+  const acknowledgedCriticalOrderIdsRef = useRef<Set<number>>(new Set());
+
+  function syncCriticalAlarm(nextOrders: TransportOrderResponse[]) {
+    const currentOrderIds = new Set(nextOrders.map((order) => order.id));
+
+    acknowledgedCriticalOrderIdsRef.current.forEach((orderId) => {
+      if (!currentOrderIds.has(orderId)) {
+        acknowledgedCriticalOrderIdsRef.current.delete(orderId);
+      }
+    });
+
+    const unacknowledgedCriticalOrders = nextOrders.filter(
+      (order) =>
+        shouldUseCriticalAlarm(order) &&
+        !acknowledgedCriticalOrderIdsRef.current.has(order.id)
+    );
+
+    setCriticalAlarmOrders(unacknowledgedCriticalOrders);
+
+    if (
+      unacknowledgedCriticalOrders.length > 0 &&
+      isNewOrderSoundEnabled()
+    ) {
+      startCriticalOrderAlarm();
+      return;
+    }
+
+    stopCriticalOrderAlarm();
+  }
+
+  function handleConfirmCriticalAlarm() {
+    criticalAlarmOrders.forEach((order) => {
+      acknowledgedCriticalOrderIdsRef.current.add(order.id);
+    });
+
+    stopCriticalOrderAlarm();
+    setCriticalAlarmOrders([]);
+    setSuccessMessage("Alarm pilnych zleceń został potwierdzony.");
+  }
 
   useEffect(() => {
-    async function loadData() {
+    async function loadData(showLoader = false) {
       try {
-        setLoading(true);
+        if (showLoader) {
+          setLoading(true);
+        }
+
         setErrorMessage(null);
 
         const [ordersData, dashboardData] = await Promise.all([
@@ -37,25 +120,86 @@ export function NewTransportOrdersList() {
           getMyDashboard(),
         ]);
 
+        const previousOrderIds = knownOrderIdsRef.current;
+
+        const newIncomingOrders =
+          previousOrderIds === null
+            ? []
+            : ordersData.filter((order) => !previousOrderIds.has(order.id));
+
+        const hasNewCriticalOrder = newIncomingOrders.some((order) =>
+          shouldUseCriticalAlarm(order)
+        );
+
+        const hasAnyUnacknowledgedCriticalOrder = ordersData.some(
+          (order) =>
+            shouldUseCriticalAlarm(order) &&
+            !acknowledgedCriticalOrderIdsRef.current.has(order.id)
+        );
+
+        knownOrderIdsRef.current = new Set(
+          ordersData.map((order) => order.id)
+        );
+
         setOrders(ordersData);
         setShiftId(dashboardData.shiftId);
         setLoggedUserRole(dashboardData.loggedUserRole);
+
+        syncCriticalAlarm(ordersData);
+
+        if (
+          newIncomingOrders.length > 0 &&
+          !hasNewCriticalOrder &&
+          !hasAnyUnacknowledgedCriticalOrder
+        ) {
+          playNewOrderSound();
+        }
       } catch (error) {
+        stopCriticalOrderAlarm();
+        setCriticalAlarmOrders([]);
+
         if (axios.isAxiosError(error)) {
-          setErrorMessage(
-            `Błąd pobierania nowych zleceń: ${error.response?.status ?? "brak odpowiedzi"
-            }`
-          );
+          const errorCode = getApiErrorCode(error);
+
+          if (errorCode === "SHIFT_NOT_ACTIVE") {
+            setErrorMessage(
+              "Najpierw utwórz aktywną zmianę, żeby obsługiwać zlecenia."
+            );
+            return;
+          }
+
+          if (error.response?.status === 401) {
+            setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+            return;
+          }
+
+          if (error.response?.status === 403) {
+            setErrorMessage("Brak uprawnień do pobrania zleceń.");
+            return;
+          }
+
+          setErrorMessage("Nie udało się pobrać zleceń.");
           return;
         }
 
         setErrorMessage("Nieznany błąd pobierania nowych zleceń.");
       } finally {
-        setLoading(false);
+        if (showLoader) {
+          setLoading(false);
+        }
       }
     }
 
-    loadData();
+    loadData(true);
+
+    const intervalId = window.setInterval(() => {
+      loadData(false);
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      stopCriticalOrderAlarm();
+    };
   }, []);
 
   async function handleAcceptOrder(orderId: number) {
@@ -74,13 +218,31 @@ export function NewTransportOrdersList() {
         notes: null,
       });
 
-      setOrders((currentOrders) =>
-        currentOrders.filter((order) => order.id !== orderId)
-      );
+      const updatedOrders = orders.filter((order) => order.id !== orderId);
+
+      setOrders(updatedOrders);
+      syncCriticalAlarm(updatedOrders);
 
       setSuccessMessage("Zlecenie zostało przyjęte.");
     } catch (error) {
       if (axios.isAxiosError(error)) {
+        const errorCode = getApiErrorCode(error);
+
+        if (errorCode === "SHIFT_NOT_ACTIVE") {
+          setErrorMessage("Najpierw utwórz aktywną zmianę.");
+          return;
+        }
+
+        if (errorCode === "TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE") {
+          setErrorMessage("To zlecenie jest już przypisane do aktywnej trasy.");
+          return;
+        }
+
+        if (errorCode === "TRANSPORT_ORDER_NOT_AVAILABLE") {
+          setErrorMessage("To zlecenie nie jest już dostępne do przyjęcia.");
+          return;
+        }
+
         if (error.response?.status === 400) {
           setErrorMessage("Nie można teraz przyjąć tego zlecenia.");
           return;
@@ -101,10 +263,7 @@ export function NewTransportOrdersList() {
           return;
         }
 
-        setErrorMessage(
-          `Błąd przyjmowania zlecenia: ${error.response?.status ?? "brak odpowiedzi"
-          }`
-        );
+        setErrorMessage("Nie udało się przyjąć zlecenia.");
         return;
       }
 
@@ -120,10 +279,6 @@ export function NewTransportOrdersList() {
 
   if (errorMessage) {
     return <p className="orders-list__message">{errorMessage}</p>;
-  }
-
-  if (orders.length === 0) {
-    return <p className="orders-list__message">Brak nowych zleceń.</p>;
   }
 
   const canAcceptOrders = loggedUserRole === "DRIVER";
@@ -144,6 +299,7 @@ export function NewTransportOrdersList() {
       <section className="orders-subsection">
         <header className="orders-subsection__header">
           <h2 className="orders-subsection__title">{title}</h2>
+
           {hasText(subtitle) && (
             <p className="orders-subsection__subtitle">{subtitle}</p>
           )}
@@ -154,7 +310,12 @@ export function NewTransportOrdersList() {
         ) : (
           <div className="orders-list">
             {sectionOrders.map((order) => (
-              <article className="order-card" key={order.id}>
+              <article
+                className={`order-card ${
+                  order.priority === "URGENT" ? "order-card--urgent" : ""
+                }`}
+                key={order.id}
+              >
                 <header className="order-card__header">
                   <div className="order-card__title-group">
                     <h2 className="order-card__title">
@@ -174,7 +335,8 @@ export function NewTransportOrdersList() {
 
                 <div className="order-card__body">
                   <p className="order-card__row">
-                    <strong>Status:</strong> {getTransportStatusLabel(order.status)}
+                    <strong>Status:</strong>{" "}
+                    {getTransportStatusLabel(order.status)}
                   </p>
 
                   {hasText(order.pickupAddress) && (
@@ -197,7 +359,8 @@ export function NewTransportOrdersList() {
 
                   {hasText(order.createdByFullName) && (
                     <p className="order-card__row">
-                      <strong>Utworzone przez:</strong> {order.createdByFullName} —{" "}
+                      <strong>Utworzone przez:</strong>{" "}
+                      {order.createdByFullName} —{" "}
                       {getUserRoleLabel(order.createdByRole)}
                     </p>
                   )}
@@ -236,6 +399,34 @@ export function NewTransportOrdersList() {
 
   return (
     <div className="orders-dashboard-list">
+      {criticalAlarmOrders.length > 0 && (
+        <section className="orders-list__critical-alarm">
+          <div>
+            <strong>Alarm pilnego zlecenia</strong>
+
+            <p>
+              Wykryto zlecenie pilne albo nowe zlecenie w godzinach nocnych
+              22:00–06:00. Alarm będzie działał do ręcznego potwierdzenia.
+            </p>
+
+            <p>
+              Zlecenia:{" "}
+              {criticalAlarmOrders
+                .map((order) => formatCriticalOrderName(order))
+                .join(", ")}
+            </p>
+          </div>
+
+          <button
+            className="orders-list__critical-confirm-button"
+            type="button"
+            onClick={handleConfirmCriticalAlarm}
+          >
+            Potwierdzam
+          </button>
+        </section>
+      )}
+
       {successMessage && (
         <p className="orders-list__feedback">{successMessage}</p>
       )}

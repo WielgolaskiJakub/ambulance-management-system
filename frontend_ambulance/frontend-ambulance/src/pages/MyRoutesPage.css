@@ -231,3 +231,62 @@
 .my-routes-history-toggle__button:hover {
   background-color: #374151;
 }
+.my-routes-page__warning-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #fef3c7;
+  color: #78350f;
+  border: 1px solid #f59e0b;
+}
+
+.my-routes-page__warning-box strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 16px;
+}
+
+.my-routes-page__warning-box p {
+  margin: 0;
+  font-weight: 600;
+}
+
+.my-routes-page__warning-link {
+  flex-shrink: 0;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #92400e;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.my-routes-page__warning-link:hover {
+  background: #78350f;
+}
+
+.my-routes-page__warning-close {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fde68a;
+  color: #78350f;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-routes-page__warning-close:hover {
+  background: #fcd34d;
+}
+
+@media (max-width: 760px) {
+  .my-routes-page__warning-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
