@@ -3,6 +3,7 @@ import type {
     TransportOrderResponse,
     TransportOrderCrewPreviewResponse,
     CreateTransportOrderByUserRequest,
+    TransportOrderDetailsResponse,
 } from "../types/transportOrder";
 
 export async function getAvailableTransportOrdersForCrew(): Promise<TransportOrderResponse[]> {
@@ -27,6 +28,22 @@ export async function createTransportOrderByUser(
     const response = await axiosClient.post<TransportOrderResponse>(
         `/api/v1/transport-orders/user`,
         request
+    );
+    return response.data;
+}
+
+export async function getMyTransportOrders(): Promise<TransportOrderResponse[]>{
+    const response = await axiosClient.get<TransportOrderResponse[]>(
+        `/api/v1/transport-orders/me`
+    );
+    return response.data;
+}
+
+export async function getTransportOrderDetails(
+    orderId:number
+): Promise <TransportOrderDetailsResponse>{
+    const response = await axiosClient.get<TransportOrderDetailsResponse>(
+        `/api/v1/transport-orders/${orderId}/details`
     );
     return response.data;
 }

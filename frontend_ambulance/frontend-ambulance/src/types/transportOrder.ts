@@ -67,3 +67,41 @@ export type CreateTransportOrderByUserRequest = {
   description: string | null;
   patients: TransportOrderPatientCreateItemRequest[];
 };
+
+export type TransportOrderRouteMemberResponse = {
+  id: number;
+  userId: number | null;
+  memberName: string | null;
+  memberRole: string;
+  memberSource: string;
+};
+
+export type TransportOrderRouteSummaryResponse = {
+  id: number;
+  shiftId: number;
+  startAddress: string | null;
+  actualDestinationAddress: string | null;
+  distanceKm: number | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  notes: string | null;
+  status: string;
+  routeMembers: TransportOrderRouteMemberResponse[];
+};
+
+export type TransportOrderDetailsResponse = {
+  id: number;
+  orderNumber: string | null;
+  orderType: string;
+  source: string;
+  priority: string;
+  status: string;
+  pickupAddress: string | null;
+  destinationAddress: string | null;
+  description: string | null;
+  createdAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  patients: TransportOrderPatientDataResponse[];
+  routes: TransportOrderRouteSummaryResponse[];
+};

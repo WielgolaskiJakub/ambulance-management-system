@@ -1,0 +1,170 @@
+.transport-order-details-page {
+  width: 100%;
+  padding: 32px 16px;
+  color: #0f172a;
+}
+
+.transport-order-details-card {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.transport-order-details-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.transport-order-details-card__title-group {
+  flex: 1;
+}
+
+.transport-order-details-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.transport-order-details-card__subtitle {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.transport-order-details-card__badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.transport-order-details-card__status,
+.transport-order-details-card__priority {
+  border-radius: 999px;
+  padding: 8px 11px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.transport-order-details-card__status {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.transport-order-details-card__priority {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.transport-order-details-page__back-button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.transport-order-details-page__back-button:hover {
+  background: #e2e8f0;
+}
+
+.transport-order-details-page__message {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.transport-order-details-page__message--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.transport-order-details-section {
+  margin-top: 18px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.transport-order-details-section h2 {
+  margin: 0 0 12px;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.transport-order-details-section__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transport-order-details-section__rows p,
+.transport-order-details-section__empty,
+.transport-order-details-patient-card p,
+.transport-order-details-route-card p {
+  margin: 0;
+  color: #334155;
+}
+
+.transport-order-details-section strong,
+.transport-order-details-patient-card strong,
+.transport-order-details-route-card strong {
+  color: #0f172a;
+}
+
+.transport-order-details-patients,
+.transport-order-details-routes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transport-order-details-patient-card,
+.transport-order-details-route-card {
+  padding: 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.transport-order-details-route-card__link {
+  width: fit-content;
+  margin-top: 6px;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.transport-order-details-route-card__link:hover {
+  background: #1e293b;
+}
+
+@media (max-width: 760px) {
+  .transport-order-details-card__header {
+    flex-direction: column;
+  }
+
+  .transport-order-details-card__badges {
+    justify-content: flex-start;
+  }
+}

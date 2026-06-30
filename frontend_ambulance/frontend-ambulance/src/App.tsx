@@ -6,6 +6,8 @@ import { TransportOrderCrewPreviewPage } from "./pages/TransportOrderCrewPreview
 import { MainLayout } from "./layouts/MainLayout";
 import { MyRoutesPage } from "./pages/MyRoutesPage";
 import { CreateTransportOrderPage } from "./pages/CreateTransportOrderPage";
+import { MyTransportOrdersPage } from "./pages/MyTransportOrdersPage";
+import { TransportOrderDetailsPage } from "./pages/TransportOrderDetailsPage";
 
 function App() {
   return (
@@ -14,17 +16,22 @@ function App() {
 
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />
+        <Route path="/transport-orders/me" element={<MyTransportOrdersPage />} />
+        <Route
+          path="/transport-orders/:orderId/details"
+          element={<TransportOrderDetailsPage />}
+        />
         <Route
           path="/transport-orders/:orderId/preview"
           element={<TransportOrderCrewPreviewPage />}
         />
-     <Route path="/routes/me" element={<MyRoutesPage />} />
-     <Route path="/transport-orders/create" element={<CreateTransportOrderPage/>} />
-     
+        <Route path="/routes/me" element={<MyRoutesPage />} />
 
-     
+
+
+
       </Route>
-      
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

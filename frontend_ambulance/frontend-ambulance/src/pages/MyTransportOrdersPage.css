@@ -1,0 +1,235 @@
+.my-transport-orders-page {
+  width: 100%;
+  padding: 32px 16px;
+  color: #0f172a;
+}
+
+.my-transport-orders-page__header {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+}
+
+.my-transport-orders-page__title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 32px;
+  font-weight: 800;
+}
+
+.my-transport-orders-page__subtitle {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+}
+
+.my-transport-orders-page__message {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.my-transport-orders-page__message--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.my-transport-orders-overview {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.my-transport-orders-overview-card {
+  padding: 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.my-transport-orders-overview-card span {
+  display: block;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.my-transport-orders-overview-card strong {
+  display: block;
+  margin-top: 8px;
+  color: #0f172a;
+  font-size: 32px;
+}
+
+.my-transport-orders-section {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+}
+
+.my-transport-orders-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.my-transport-orders-section__title {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.my-transport-orders-section__subtitle {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+}
+
+.my-transport-orders-section__counter {
+  min-width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.my-transport-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.my-transport-order-card {
+  padding: 20px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.my-transport-order-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.my-transport-order-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.my-transport-order-card__subtitle {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.my-transport-order-card__badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.my-transport-order-card__status,
+.my-transport-order-card__priority {
+  border-radius: 999px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.my-transport-order-card__status {
+  background: #e0f2fe;
+  color: #075985;
+}
+
+.my-transport-order-card__priority {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.my-transport-order-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.my-transport-order-card__row {
+  margin: 0;
+  color: #334155;
+}
+
+.my-transport-order-card__row strong {
+  color: #0f172a;
+}
+
+.my-transport-order-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
+.my-transport-order-card__details-link {
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #0f172a;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.my-transport-order-card__details-link:hover {
+  background: #1e293b;
+}
+
+.my-transport-orders-toggle {
+  max-width: 1100px;
+  margin: 0 auto 18px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.my-transport-orders-toggle__button {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-transport-orders-toggle__button:hover {
+  background: #e2e8f0;
+}
+
+@media (max-width: 760px) {
+  .my-transport-orders-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .my-transport-order-card__header {
+    flex-direction: column;
+  }
+
+  .my-transport-order-card__badges {
+    justify-content: flex-start;
+  }
+
+  .my-transport-orders-section__header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+}

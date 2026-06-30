@@ -13,6 +13,7 @@ export const transportStatusLabels: Record<string, string> = {
     WAITING_FOR_PICKUP: "Oczekuje na odbiór",
     COMPLETED: "Zakończone",
     CANCELED: "Anulowane",
+    CANCELLED: "Anulowane",
 };
 
 export const transportCancelLabels: Record<string, string> = {
