@@ -18,7 +18,6 @@ import {
   startCriticalOrderAlarm,
   stopCriticalOrderAlarm,
 } from "../../utils/newOrderSound";
-import "./NewTransportOrdersList.css";
 
 function hasText(value: string | null | undefined): value is string {
   return value !== null && value !== undefined && value.trim().length > 0;
@@ -409,14 +408,14 @@ export function NewTransportOrdersList() {
                   </header>
 
                   {shouldShowCriticalAlarm && (
-                    <section className="order-card__critical-alert" role="alert">
+                    <section className="orders-list__critical-alarm" role="alert">
                       <div>
                         <strong>Alarm zlecenia</strong>
                         <p>{getCriticalAlarmMessage(order)}</p>
                       </div>
 
                       <button
-                        className="order-card__critical-confirm-button"
+                        className="orders-list__critical-confirm-button"
                         type="button"
                         onClick={() => handleConfirmCriticalAlarm(order)}
                       >
@@ -426,7 +425,7 @@ export function NewTransportOrdersList() {
                   )}
 
                   {hasCriticalAlarm && isCriticalAlarmAcknowledged && (
-                    <p className="order-card__alarm-confirmed">
+                    <p className="orders-list__feedback">
                       <strong>Alarm:</strong> potwierdzony
                     </p>
                   )}
