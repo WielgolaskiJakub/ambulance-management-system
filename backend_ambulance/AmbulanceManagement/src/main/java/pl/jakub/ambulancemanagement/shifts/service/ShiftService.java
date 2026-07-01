@@ -9,6 +9,8 @@ import pl.jakub.ambulancemanagement.ambulances.repository.AmbulanceRepository;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
+import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
 import pl.jakub.ambulancemanagement.shifts.dto.ShiftCreateRequest;
 import pl.jakub.ambulancemanagement.shifts.dto.ShiftUpdateByUserRequest;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
@@ -30,6 +32,7 @@ public class ShiftService {
     private final ShiftRepository shiftRepository;
     private final AmbulanceRepository ambulanceRepository;
     private final CurrentUserService currentUserService;
+    private final RouteRepository routeRepository;
 
     public List<Shift> getAllShifts() {
         return shiftRepository.findAll();
@@ -203,6 +206,20 @@ public class ShiftService {
         if (shift.getStatus() != ShiftStatus.ACTIVE) {
             throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
         }
+
+        boolean hasUnfinishedRoutes = routeRepository.existsByShift_IdAndStatusIn(
+                shift.getId(),
+                List.of(
+                        RouteStatus.CREATED,
+                        RouteStatus.IN_PROGRESS,
+                        RouteStatus.WAITING
+                )
+        );
+
+        if(hasUnfinishedRoutes){
+            throw new ApiException(ErrorCode.SHIFT_HAS_ACTIVE_ROUTES);
+        }
+
         shift.setStatus(ShiftStatus.FINISHED);
         shift.getAmbulance().setStatus(AmbulanceStatus.AVAILABLE);
         return shiftRepository.save(shift);

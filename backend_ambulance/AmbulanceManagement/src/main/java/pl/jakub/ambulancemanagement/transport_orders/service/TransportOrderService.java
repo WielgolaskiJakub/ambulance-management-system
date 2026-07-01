@@ -11,6 +11,8 @@ import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
 import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
+import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
@@ -36,6 +38,7 @@ public class TransportOrderService {
     private final RouteOrderRepository routeOrderRepository;
     private final RouteMemberRepository routeMemberRepository;
     private final CurrentUserService currentUserService;
+    private final ShiftRepository shiftRepository;
 
 
     public List<TransportOrder> getAllTransportOrders() {
@@ -151,10 +154,17 @@ public class TransportOrderService {
             throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
         }
 
+        if(!shiftRepository.existsByDriver_IdAndStatus(user.getId(), ShiftStatus.ACTIVE)){
+            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
+        }
+
         TransportOrder transportOrder = buildTransportOrderByUser(request, user);
 
+        TransportOrder savedTransportOrder = transportOrderRepository.save(transportOrder);
 
-        return transportOrderRepository.save(transportOrder);
+        createPatientDataForTransportOrder(savedTransportOrder, request.getPatients());
+
+       return savedTransportOrder;
 
     }
 
@@ -263,7 +273,8 @@ public class TransportOrderService {
     public TransportOrderCrewPreviewResponse getTransportOrderCrewPreviewById(Long id){
         TransportOrder transportOrder = getTransportOrderById(id);
 
-        if(transportOrder.getStatus() != TransportStatus.NEW){
+        if(transportOrder.getStatus() != TransportStatus.NEW
+                && transportOrder.getStatus() != TransportStatus.WAITING_FOR_PICKUP){
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
         }
         List<TransportOrderPatientDataResponse> patients =

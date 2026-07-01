@@ -138,7 +138,8 @@ public enum ErrorCode {
             "error.transport_order_access_denied", HttpStatus.BAD_REQUEST),
     PATIENT_ALREADY_ANONYMIZED("PATIENT_ALREADY_ANONYMIZED",
             "error.patient.already_anonymized", HttpStatus.BAD_REQUEST),
-
+    SHIFT_HAS_ACTIVE_ROUTES("SHIFT_HAS_ACTIVE_ROUTES",
+            "error.shift.has_active_routes", HttpStatus.BAD_REQUEST),
     ;
 
     private final String code;

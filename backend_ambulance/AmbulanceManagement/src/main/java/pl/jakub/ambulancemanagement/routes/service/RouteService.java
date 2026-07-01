@@ -118,6 +118,9 @@ public class RouteService {
             if (alreadyAssignedToActiveRoute) {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
             }
+
+            // Zlecenie jest IN_PROGRESS od momentu przyjęcia przez załogę
+            // i utworzenia trasy, nawet jeśli karetka jeszcze nie ruszyła.
             transportOrder.setStatus(TransportStatus.IN_PROGRESS);
 
             RouteOrder routeOrder = new RouteOrder();
