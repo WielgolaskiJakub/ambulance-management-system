@@ -5,6 +5,7 @@ import { createRefueling, getMyRefuelings } from "../api/refuelingsApi";
 import type { AmbulanceDashboardResponse } from "../types/dashboard";
 import type { RefuelingResponse } from "../types/refueling";
 import { formatDateTime } from "../utils/dateTimeFormat";
+import "./RefuelingsPage.css";
 
 const refuelingStatusLabels: Record<string, string> = {
   REPORTED: "Zgłoszone",
