@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getMyDashboard } from "../../api/dashboardApi";
 import { createRouteFromOrder } from "../../api/routesApi";
@@ -109,6 +109,7 @@ function saveAcknowledgedCriticalOrderIds(orderIds: Set<number>) {
 }
 
 export function NewTransportOrdersList() {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<TransportOrderResponse[]>([]);
   const [shiftId, setShiftId] = useState<number | null>(null);
   const [loggedUserRole, setLoggedUserRole] = useState<string | null>(null);
@@ -163,7 +164,9 @@ export function NewTransportOrdersList() {
     acknowledgedCriticalOrderIdsRef.current.add(order.id);
     saveAcknowledgedCriticalOrderIds(acknowledgedCriticalOrderIdsRef.current);
     syncCriticalAlarm(orders);
-    setSuccessMessage(`Alarm dla ${formatCriticalOrderName(order)} został potwierdzony.`);
+    setSuccessMessage(
+      `Alarm dla ${formatCriticalOrderName(order)} został potwierdzony.`
+    );
   }
 
   useEffect(() => {
@@ -282,8 +285,8 @@ export function NewTransportOrdersList() {
 
       setOrders(updatedOrders);
       syncCriticalAlarm(updatedOrders);
-
       setSuccessMessage("Zlecenie zostało przyjęte.");
+      navigate("/routes/me");
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const errorCode = getApiErrorCode(error);
