@@ -1,0 +1,248 @@
+.refuelings-page {
+  min-height: 100vh;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.refuelings-page__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.refuelings-page__title {
+  margin: 0;
+  font-size: 34px;
+}
+
+.refuelings-page__subtitle {
+  margin: 8px 0 0;
+  color: #d1d5db;
+}
+
+.refuelings-page__message {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.refuelings-page__message--error,
+.refuelings-page__message--success {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.refuelings-page__message--error {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+.refuelings-page__message--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.refuelings-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.refuelings-summary__card,
+.refuelings-card,
+.refuelings-history,
+.refueling-card {
+  border: 1px solid #374151;
+  border-radius: 16px;
+  background: #1f2937;
+}
+
+.refuelings-summary__card {
+  padding: 18px;
+}
+
+.refuelings-summary__card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.refuelings-summary__card strong {
+  display: block;
+  color: #f9fafb;
+  font-size: 22px;
+}
+
+.refuelings-summary__card p {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.refuelings-card,
+.refuelings-history {
+  padding: 22px;
+  margin-bottom: 24px;
+}
+
+.refuelings-card__header,
+.refuelings-history__header,
+.refueling-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.refuelings-card__header {
+  margin-bottom: 18px;
+}
+
+.refuelings-card__header h2,
+.refuelings-history__header h2,
+.refueling-card__header h3 {
+  margin: 0;
+}
+
+.refuelings-card__header p,
+.refueling-card__header p {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.refuelings-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.refuelings-form__field {
+  display: grid;
+  gap: 8px;
+}
+
+.refuelings-form__field--full,
+.refuelings-form__actions {
+  grid-column: 1 / -1;
+}
+
+.refuelings-form__field span {
+  color: #d1d5db;
+  font-weight: 700;
+}
+
+.refuelings-form__field input,
+.refuelings-form__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  padding: 11px 12px;
+  background: #111827;
+  color: #f9fafb;
+  font: inherit;
+}
+
+.refuelings-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.refuelings-form__submit-button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  color: #111827;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.refuelings-form__submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.refuelings-history__header {
+  margin-bottom: 18px;
+}
+
+.refuelings-history__header span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: #374151;
+  font-weight: 900;
+}
+
+.refuelings-history__list {
+  display: grid;
+  gap: 14px;
+}
+
+.refueling-card {
+  padding: 16px;
+  background: #111827;
+}
+
+.refueling-card__status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #374151;
+  color: #f9fafb;
+  font-weight: 800;
+}
+
+.refueling-card__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.refueling-card__grid p,
+.refueling-card__notes {
+  margin: 0;
+  color: #d1d5db;
+}
+
+.refueling-card__grid strong,
+.refueling-card__notes strong {
+  color: #f9fafb;
+}
+
+.refueling-card__notes {
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .refuelings-summary,
+  .refueling-card__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .refuelings-page {
+    padding: 20px 12px;
+  }
+
+  .refuelings-summary,
+  .refuelings-form,
+  .refueling-card__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .refuelings-card__header,
+  .refuelings-history__header,
+  .refueling-card__header {
+    flex-direction: column;
+  }
+}
