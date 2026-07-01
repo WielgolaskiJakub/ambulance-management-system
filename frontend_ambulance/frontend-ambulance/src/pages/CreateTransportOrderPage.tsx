@@ -247,7 +247,7 @@ export function CreateTransportOrderPage() {
                         <button
                             className="create-transport-order-form__clear-button"
                             type="button"
-                            onClick={() => updateField("pickupAddress", "")}
+                            onClick={() => updateField("destinationAddress", "")}
                         >
                             Wyczyść
                         </button>
