@@ -9,6 +9,7 @@ import { CreateTransportOrderPage } from "./pages/CreateTransportOrderPage";
 import { MyTransportOrdersPage } from "./pages/MyTransportOrdersPage";
 import { TransportOrderDetailsPage } from "./pages/TransportOrderDetailsPage";
 import { CreateShiftPage } from "./pages/CreateShiftPage";
+import { RefuelingsPage } from "./pages/RefuelingsPage";
 
 function App() {
   return (
@@ -17,7 +18,7 @@ function App() {
 
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/shifts/create" element={<CreateShiftPage/>} />
+        <Route path="/shifts/create" element={<CreateShiftPage />} />
         <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />
         <Route path="/transport-orders/me" element={<MyTransportOrdersPage />} />
         <Route
@@ -29,10 +30,7 @@ function App() {
           element={<TransportOrderCrewPreviewPage />}
         />
         <Route path="/routes/me" element={<MyRoutesPage />} />
-
-
-
-
+        <Route path="/refuelings" element={<RefuelingsPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />
