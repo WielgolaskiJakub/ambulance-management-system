@@ -11,7 +11,6 @@ import {
   getTransportSourceLabel,
   getTransportStatusLabel,
 } from "../../utils/transportOrderLabels";
-import { getUserRoleLabel } from "../../utils/userRoleLabels";
 import {
   isNewOrderSoundEnabled,
   playNewOrderSound,
@@ -108,7 +107,7 @@ function formatPlanDate(plannedDate: string | null | undefined): string {
 
 function getDateGroupTitle(plannedDate: string | null): string {
   if (!hasText(plannedDate)) {
-    return "Zlecenia bez przypisanej daty";
+    return "Zlecenia bieżące i dodatkowe";
   }
 
   const today = new Date();
@@ -127,9 +126,17 @@ function getDateGroupTitle(plannedDate: string | null): string {
   return `Plan na ${formattedDate}`;
 }
 
+function hasExactPlannedDepartureTime(order: TransportOrderResponse): boolean {
+  if (!hasText(order.plannedDepartureTime)) {
+    return false;
+  }
+
+  return order.plannedDepartureTime !== "00:00" && order.plannedDepartureTime !== "00:00:00";
+}
+
 function getPlannedDepartureTimeLabel(order: TransportOrderResponse): string {
-  if (hasText(order.plannedDepartureTime)) {
-    return order.plannedDepartureTime;
+  if (hasExactPlannedDepartureTime(order)) {
+    return order.plannedDepartureTime.slice(0, 5);
   }
 
   if (order.status === "WAITING_FOR_PICKUP") {
@@ -144,13 +151,15 @@ function getOrderAdditionalInfo(order: TransportOrderResponse): string {
     return order.description;
   }
 
-  if (hasText(order.createdByFullName)) {
-    return `Utworzone przez: ${order.createdByFullName} — ${getUserRoleLabel(
-      order.createdByRole
-    )}`;
+  return "—";
+}
+
+function getSortTime(order: TransportOrderResponse): string {
+  if (!hasExactPlannedDepartureTime(order)) {
+    return "99:99";
   }
 
-  return "—";
+  return order.plannedDepartureTime.slice(0, 5);
 }
 
 function compareTransportOrdersByPlan(
@@ -164,8 +173,8 @@ function compareTransportOrdersByPlan(
     return firstDate.localeCompare(secondDate);
   }
 
-  const firstTime = firstOrder.plannedDepartureTime ?? "99:99";
-  const secondTime = secondOrder.plannedDepartureTime ?? "99:99";
+  const firstTime = getSortTime(firstOrder);
+  const secondTime = getSortTime(secondOrder);
 
   if (firstTime !== secondTime) {
     return firstTime.localeCompare(secondTime);
@@ -506,8 +515,7 @@ export function NewTransportOrdersList() {
                       {getDateGroupTitle(dateGroup.plannedDate)}
                     </h3>
                     <p className="transport-plan-date-group__subtitle">
-                      Układ jak w papierowym harmonogramie — godzina, zlecenie,
-                      miejsce odbioru i miejsce docelowe.
+                      Harmonogram przewozów.
                     </p>
                   </div>
 
@@ -557,7 +565,7 @@ export function NewTransportOrdersList() {
                             <tr className={rowClassName}>
                               <td className="transport-plan__time-cell">
                                 <strong>{getPlannedDepartureTimeLabel(order)}</strong>
-                                {!hasText(order.plannedDepartureTime) && (
+                                {!hasExactPlannedDepartureTime(order) && (
                                   <span>bez konkretnej godziny</span>
                                 )}
                               </td>
