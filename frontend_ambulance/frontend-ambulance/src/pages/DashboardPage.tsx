@@ -10,9 +10,9 @@ export function DashboardPage() {
 
             <section className="orders-section">
                 <div className="orders-section__header">
-                    <h1 className="orders-section__title">Kolejka zleceń.</h1>
+                    <h1 className="orders-section__title">Plan pracy załogi</h1>
                     <p className="orders-section__subtitle">
-                        Zlecenia dostępne dla aktywnej załogi.
+                        Zlecenia dostępne dla aktywnej załogi, ułożone podobnie do papierowego harmonogramu.
                     </p>
                 </div>
                 <NewTransportOrdersList />
