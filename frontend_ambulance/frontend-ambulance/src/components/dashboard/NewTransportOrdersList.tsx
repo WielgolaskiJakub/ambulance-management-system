@@ -84,6 +84,10 @@ function formatLocalIsoDate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function getTodayIsoDate(): string {
+  return formatLocalIsoDate(new Date());
+}
+
 function addDays(date: Date, days: number): Date {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
@@ -124,6 +128,14 @@ function getDateGroupTitle(plannedDate: string | null): string {
   }
 
   return `Plan na ${formattedDate}`;
+}
+
+function getEffectivePlannedDate(order: TransportOrderResponse): string | null {
+  if (order.status === "WAITING_FOR_PICKUP") {
+    return getTodayIsoDate();
+  }
+
+  return order.plannedDate;
 }
 
 function getExactPlannedDepartureTime(
@@ -169,6 +181,10 @@ function getOrderAdditionalInfo(order: TransportOrderResponse): string {
 }
 
 function getSortTime(order: TransportOrderResponse): string {
+  if (order.status === "WAITING_FOR_PICKUP") {
+    return "00:00";
+  }
+
   return getExactPlannedDepartureTime(order) ?? "99:99";
 }
 
@@ -176,8 +192,8 @@ function compareTransportOrdersByPlan(
   firstOrder: TransportOrderResponse,
   secondOrder: TransportOrderResponse
 ): number {
-  const firstDate = firstOrder.plannedDate ?? "9999-12-31";
-  const secondDate = secondOrder.plannedDate ?? "9999-12-31";
+  const firstDate = getEffectivePlannedDate(firstOrder) ?? "9999-12-31";
+  const secondDate = getEffectivePlannedDate(secondOrder) ?? "9999-12-31";
 
   if (firstDate !== secondDate) {
     return firstDate.localeCompare(secondDate);
@@ -210,12 +226,13 @@ function groupOrdersByPlannedDate(
   const groups = new Map<string, TransportOrdersByDate>();
 
   sortedOrders.forEach((order) => {
-    const groupKey = order.plannedDate ?? NO_PLANNED_DATE_GROUP_KEY;
+    const effectivePlannedDate = getEffectivePlannedDate(order);
+    const groupKey = effectivePlannedDate ?? NO_PLANNED_DATE_GROUP_KEY;
 
     if (!groups.has(groupKey)) {
       groups.set(groupKey, {
         plannedDate:
-          groupKey === NO_PLANNED_DATE_GROUP_KEY ? null : order.plannedDate,
+          groupKey === NO_PLANNED_DATE_GROUP_KEY ? null : effectivePlannedDate,
         orders: [],
       });
     }
@@ -493,8 +510,6 @@ export function NewTransportOrdersList() {
   }
 
   function renderTransportPlanSection(
-    title: string,
-    subtitle: string,
     sectionOrders: TransportOrderResponse[],
     emptyMessage: string
   ) {
@@ -502,14 +517,6 @@ export function NewTransportOrdersList() {
 
     return (
       <section className="orders-subsection">
-        <header className="orders-subsection__header">
-          <h2 className="orders-subsection__title">{title}</h2>
-
-          {hasText(subtitle) && (
-            <p className="orders-subsection__subtitle">{subtitle}</p>
-          )}
-        </header>
-
         {sectionOrders.length === 0 ? (
           <p className="orders-list__message">{emptyMessage}</p>
         ) : (
@@ -688,11 +695,9 @@ export function NewTransportOrdersList() {
     criticalAlarmOrders.map((order) => order.id)
   );
 
-  const waitingForPickupOrders = orders.filter(
-    (order) => order.status === "WAITING_FOR_PICKUP"
+  const workPlanOrders = orders.filter(
+    (order) => order.status === "NEW" || order.status === "WAITING_FOR_PICKUP"
   );
-
-  const newOrders = orders.filter((order) => order.status === "NEW");
 
   return (
     <div className="orders-dashboard-list">
@@ -700,34 +705,8 @@ export function NewTransportOrdersList() {
         <p className="orders-list__feedback">{successMessage}</p>
       )}
 
-      <div className="orders-overview">
-        <article className="orders-overview-card">
-          <span className="orders-overview-card__label">Do odbioru</span>
-          <strong className="orders-overview-card__value">
-            {waitingForPickupOrders.length}
-          </strong>
-        </article>
-
-        <article className="orders-overview-card">
-          <span className="orders-overview-card__label">Planowane zlecenia</span>
-          <strong className="orders-overview-card__value">
-            {newOrders.length}
-          </strong>
-        </article>
-      </div>
-
-      {waitingForPickupOrders.length > 0 &&
-        renderTransportPlanSection(
-          "Pacjenci do odbioru",
-          "Pacjenci oczekujący na kolejny przejazd.",
-          waitingForPickupOrders,
-          "Brak pacjentów oczekujących na odbiór."
-        )}
-
       {renderTransportPlanSection(
-        "Plan pracy",
-        "Zlecenia dostępne dla aktywnej załogi, uporządkowane według daty i godziny wyjazdu.",
-        newOrders,
+        workPlanOrders,
         "Brak zaplanowanych zleceń."
       )}
     </div>
