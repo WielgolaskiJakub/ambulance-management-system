@@ -4,19 +4,8 @@ import { DashboardSummary } from "../components/dashboard/DashboardSummary";
 export function DashboardPage() {
     return (
         <main className="dashboard-page">
-            <section className="dashboard-summary">
-                <DashboardSummary />
-            </section>
-
-            <section className="orders-section">
-                <div className="orders-section__header">
-                    <h1 className="orders-section__title">Plan pracy załogi</h1>
-                    <p className="orders-section__subtitle">
-                        Zlecenia dostępne dla aktywnej załogi, ułożone podobnie do papierowego harmonogramu.
-                    </p>
-                </div>
-                <NewTransportOrdersList />
-            </section>
+            <DashboardSummary />
+            <NewTransportOrdersList />
         </main>
     );
 }
