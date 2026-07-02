@@ -19,7 +19,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: 18px 20px;
+  padding: 16px 20px;
   border-bottom: 1px solid #374151;
   background: #1f2937;
 }
@@ -31,7 +31,7 @@
 }
 
 .transport-plan-date-group__subtitle {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: #d1d5db;
 }
 
@@ -52,7 +52,7 @@
 
 .transport-plan-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1040px;
   border-collapse: collapse;
   background: #f8fafc;
   color: #111827;
@@ -62,7 +62,7 @@
 .transport-plan-table th,
 .transport-plan-table td {
   border: 1px solid #94a3b8;
-  padding: 10px 12px;
+  padding: 9px 12px;
   text-align: left;
   vertical-align: top;
 }
@@ -75,6 +75,11 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
+}
+
+.transport-plan-table th:last-child,
+.transport-plan-table td:last-child {
+  width: 150px;
 }
 
 .transport-plan__row:hover td {
@@ -108,7 +113,7 @@
 
 .transport-plan__time-cell strong {
   display: block;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.2;
 }
 
@@ -146,7 +151,8 @@
 
 .transport-plan__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
   gap: 8px;
 }
 
@@ -202,6 +208,12 @@
   margin: 12px;
   color: #166534;
   background: #dcfce7;
+}
+
+@media (max-width: 900px) {
+  .transport-plan__actions {
+    flex-wrap: wrap;
+  }
 }
 
 @media (max-width: 760px) {
