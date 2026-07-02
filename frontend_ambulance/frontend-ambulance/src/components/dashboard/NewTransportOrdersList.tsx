@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getMyDashboard } from "../../api/dashboardApi";
@@ -18,6 +18,7 @@ import {
   startCriticalOrderAlarm,
   stopCriticalOrderAlarm,
 } from "../../utils/newOrderSound";
+import "./TransportWorkPlan.css";
 
 function hasText(value: string | null | undefined): value is string {
   return value !== null && value !== undefined && value.trim().length > 0;
@@ -26,6 +27,11 @@ function hasText(value: string | null | undefined): value is string {
 type ApiErrorResponse = {
   code?: string;
   message?: string;
+};
+
+type TransportOrdersByDate = {
+  plannedDate: string | null;
+  orders: TransportOrderResponse[];
 };
 
 function getApiErrorCode(error: unknown): string | null {
@@ -40,6 +46,7 @@ const NIGHT_ALARM_START_HOUR = 22;
 const NIGHT_ALARM_END_HOUR = 6;
 const ACKNOWLEDGED_CRITICAL_ORDER_IDS_STORAGE_KEY =
   "ambulance:acknowledged-critical-order-ids";
+const NO_PLANNED_DATE_GROUP_KEY = "__NO_PLANNED_DATE__";
 
 function isNightAlarmTime(date = new Date()): boolean {
   const hour = date.getHours();
@@ -68,6 +75,136 @@ function getCriticalAlarmMessage(order: TransportOrderResponse): string {
   }
 
   return "Nowe zlecenie pojawiło się w godzinach nocnych 22:00–06:00. Alarm działa do ręcznego potwierdzenia.";
+}
+
+function formatLocalIsoDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+
+  return nextDate;
+}
+
+function formatPlanDate(plannedDate: string | null | undefined): string {
+  if (!hasText(plannedDate)) {
+    return "Bez daty";
+  }
+
+  const [year, month, day] = plannedDate.split("-");
+
+  if (!year || !month || !day) {
+    return plannedDate;
+  }
+
+  return `${day}.${month}.${year}`;
+}
+
+function getDateGroupTitle(plannedDate: string | null): string {
+  if (!hasText(plannedDate)) {
+    return "Zlecenia bez przypisanej daty";
+  }
+
+  const today = new Date();
+  const todayIsoDate = formatLocalIsoDate(today);
+  const tomorrowIsoDate = formatLocalIsoDate(addDays(today, 1));
+  const formattedDate = formatPlanDate(plannedDate);
+
+  if (plannedDate === todayIsoDate) {
+    return `Plan na dziś — ${formattedDate}`;
+  }
+
+  if (plannedDate === tomorrowIsoDate) {
+    return `Plan na jutro — ${formattedDate}`;
+  }
+
+  return `Plan na ${formattedDate}`;
+}
+
+function getPlannedDepartureTimeLabel(order: TransportOrderResponse): string {
+  if (hasText(order.plannedDepartureTime)) {
+    return order.plannedDepartureTime;
+  }
+
+  if (order.status === "WAITING_FOR_PICKUP") {
+    return "Do odbioru";
+  }
+
+  return "W ciągu dnia";
+}
+
+function getOrderAdditionalInfo(order: TransportOrderResponse): string {
+  if (hasText(order.description)) {
+    return order.description;
+  }
+
+  if (hasText(order.createdByFullName)) {
+    return `Utworzone przez: ${order.createdByFullName} — ${getUserRoleLabel(
+      order.createdByRole
+    )}`;
+  }
+
+  return "—";
+}
+
+function compareTransportOrdersByPlan(
+  firstOrder: TransportOrderResponse,
+  secondOrder: TransportOrderResponse
+): number {
+  const firstDate = firstOrder.plannedDate ?? "9999-12-31";
+  const secondDate = secondOrder.plannedDate ?? "9999-12-31";
+
+  if (firstDate !== secondDate) {
+    return firstDate.localeCompare(secondDate);
+  }
+
+  const firstTime = firstOrder.plannedDepartureTime ?? "99:99";
+  const secondTime = secondOrder.plannedDepartureTime ?? "99:99";
+
+  if (firstTime !== secondTime) {
+    return firstTime.localeCompare(secondTime);
+  }
+
+  if (firstOrder.priority !== secondOrder.priority) {
+    if (firstOrder.priority === "URGENT") {
+      return -1;
+    }
+
+    if (secondOrder.priority === "URGENT") {
+      return 1;
+    }
+  }
+
+  return (firstOrder.createdAt ?? "").localeCompare(secondOrder.createdAt ?? "");
+}
+
+function groupOrdersByPlannedDate(
+  orders: TransportOrderResponse[]
+): TransportOrdersByDate[] {
+  const sortedOrders = [...orders].sort(compareTransportOrdersByPlan);
+  const groups = new Map<string, TransportOrdersByDate>();
+
+  sortedOrders.forEach((order) => {
+    const groupKey = order.plannedDate ?? NO_PLANNED_DATE_GROUP_KEY;
+
+    if (!groups.has(groupKey)) {
+      groups.set(groupKey, {
+        plannedDate:
+          groupKey === NO_PLANNED_DATE_GROUP_KEY ? null : order.plannedDate,
+        orders: [],
+      });
+    }
+
+    groups.get(groupKey)?.orders.push(order);
+  });
+
+  return [...groups.values()];
 }
 
 function readAcknowledgedCriticalOrderIds(): Set<number> {
@@ -336,8 +473,192 @@ export function NewTransportOrdersList() {
     }
   }
 
+  function renderTransportPlanSection(
+    title: string,
+    subtitle: string,
+    sectionOrders: TransportOrderResponse[],
+    emptyMessage: string
+  ) {
+    const ordersByDate = groupOrdersByPlannedDate(sectionOrders);
+
+    return (
+      <section className="orders-subsection">
+        <header className="orders-subsection__header">
+          <h2 className="orders-subsection__title">{title}</h2>
+
+          {hasText(subtitle) && (
+            <p className="orders-subsection__subtitle">{subtitle}</p>
+          )}
+        </header>
+
+        {sectionOrders.length === 0 ? (
+          <p className="orders-list__message">{emptyMessage}</p>
+        ) : (
+          <div className="transport-work-plan">
+            {ordersByDate.map((dateGroup) => (
+              <article
+                className="transport-plan-date-group"
+                key={dateGroup.plannedDate ?? NO_PLANNED_DATE_GROUP_KEY}
+              >
+                <header className="transport-plan-date-group__header">
+                  <div>
+                    <h3 className="transport-plan-date-group__title">
+                      {getDateGroupTitle(dateGroup.plannedDate)}
+                    </h3>
+                    <p className="transport-plan-date-group__subtitle">
+                      Układ jak w papierowym harmonogramie — godzina, zlecenie,
+                      miejsce odbioru i miejsce docelowe.
+                    </p>
+                  </div>
+
+                  <strong className="transport-plan-date-group__count">
+                    {dateGroup.orders.length}
+                  </strong>
+                </header>
+
+                <div className="transport-plan-table-wrapper">
+                  <table className="transport-plan-table">
+                    <thead>
+                      <tr>
+                        <th>Godzina</th>
+                        <th>Zlecenie</th>
+                        <th>Oddział / miejsce odbioru</th>
+                        <th>Miejsce docelowe</th>
+                        <th>Pacjent / uwagi</th>
+                        <th>Status</th>
+                        <th>Akcje</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dateGroup.orders.map((order) => {
+                        const hasCriticalAlarm = shouldUseCriticalAlarm(order);
+                        const isCriticalAlarmAcknowledged =
+                          acknowledgedCriticalOrderIdsRef.current.has(order.id);
+                        const shouldShowCriticalAlarm = criticalAlarmOrderIds.has(
+                          order.id
+                        );
+                        const rowClassName = [
+                          "transport-plan__row",
+                          order.priority === "URGENT"
+                            ? "transport-plan__row--urgent"
+                            : "",
+                          order.status === "WAITING_FOR_PICKUP"
+                            ? "transport-plan__row--waiting"
+                            : "",
+                          hasCriticalAlarm && isCriticalAlarmAcknowledged
+                            ? "transport-plan__row--critical-confirmed"
+                            : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ");
+
+                        return (
+                          <Fragment key={order.id}>
+                            <tr className={rowClassName}>
+                              <td className="transport-plan__time-cell">
+                                <strong>{getPlannedDepartureTimeLabel(order)}</strong>
+                                {!hasText(order.plannedDepartureTime) && (
+                                  <span>bez konkretnej godziny</span>
+                                )}
+                              </td>
+                              <td>
+                                <strong className="transport-plan__order-title">
+                                  {order.orderNumber ?? `Zlecenie #${order.id}`}
+                                </strong>
+                                <span className="transport-plan__order-meta">
+                                  {getTransportOrderTypeLabel(order.orderType)} •{" "}
+                                  {getTransportSourceLabel(order.source)}
+                                </span>
+                                <span className="transport-plan__priority-label">
+                                  {getTransportPriorityLabel(order.priority)}
+                                </span>
+                              </td>
+                              <td>{order.pickupAddress ?? "—"}</td>
+                              <td>{order.destinationAddress ?? "—"}</td>
+                              <td>{getOrderAdditionalInfo(order)}</td>
+                              <td>
+                                <span className="transport-plan__status-label">
+                                  {getTransportStatusLabel(order.status)}
+                                </span>
+                              </td>
+                              <td>
+                                <div className="transport-plan__actions">
+                                  <Link
+                                    className="transport-plan__details-link"
+                                    to={`/transport-orders/${order.id}/preview`}
+                                  >
+                                    Podgląd
+                                  </Link>
+
+                                  {canAcceptOrders && (
+                                    <button
+                                      className="transport-plan__accept-button"
+                                      type="button"
+                                      disabled={acceptingOrderId === order.id}
+                                      onClick={() => handleAcceptOrder(order.id)}
+                                    >
+                                      {acceptingOrderId === order.id
+                                        ? "Przyjmowanie..."
+                                        : order.status === "WAITING_FOR_PICKUP"
+                                          ? "Odbierz"
+                                          : "Przyjmij"}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+
+                            {shouldShowCriticalAlarm && (
+                              <tr className="transport-plan__critical-row">
+                                <td colSpan={7}>
+                                  <section
+                                    className="orders-list__critical-alarm"
+                                    role="alert"
+                                  >
+                                    <div>
+                                      <strong>Alarm zlecenia</strong>
+                                      <p>{getCriticalAlarmMessage(order)}</p>
+                                    </div>
+
+                                    <button
+                                      className="orders-list__critical-confirm-button"
+                                      type="button"
+                                      onClick={() =>
+                                        handleConfirmCriticalAlarm(order)
+                                      }
+                                    >
+                                      Potwierdzam alarm
+                                    </button>
+                                  </section>
+                                </td>
+                              </tr>
+                            )}
+
+                            {hasCriticalAlarm && isCriticalAlarmAcknowledged && (
+                              <tr className="transport-plan__confirmed-row">
+                                <td colSpan={7}>
+                                  <p className="orders-list__feedback">
+                                    <strong>Alarm:</strong> potwierdzony
+                                  </p>
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
   if (loading) {
-    return <p className="orders-list__message">Ładowanie nowych zleceń...</p>;
+    return <p className="orders-list__message">Ładowanie planu pracy...</p>;
   }
 
   if (errorMessage) {
@@ -355,149 +676,6 @@ export function NewTransportOrdersList() {
 
   const newOrders = orders.filter((order) => order.status === "NEW");
 
-  function renderOrdersSection(
-    title: string,
-    subtitle: string,
-    sectionOrders: TransportOrderResponse[],
-    emptyMessage: string
-  ) {
-    return (
-      <section className="orders-subsection">
-        <header className="orders-subsection__header">
-          <h2 className="orders-subsection__title">{title}</h2>
-
-          {hasText(subtitle) && (
-            <p className="orders-subsection__subtitle">{subtitle}</p>
-          )}
-        </header>
-
-        {sectionOrders.length === 0 ? (
-          <p className="orders-list__message">{emptyMessage}</p>
-        ) : (
-          <div className="orders-list">
-            {sectionOrders.map((order) => {
-              const hasCriticalAlarm = shouldUseCriticalAlarm(order);
-              const isCriticalAlarmAcknowledged =
-                acknowledgedCriticalOrderIdsRef.current.has(order.id);
-              const shouldShowCriticalAlarm = criticalAlarmOrderIds.has(order.id);
-              const orderCardClassName = [
-                "order-card",
-                order.priority === "URGENT" ? "order-card--urgent" : "",
-                shouldShowCriticalAlarm ? "order-card--critical-alarm" : "",
-                hasCriticalAlarm && isCriticalAlarmAcknowledged
-                  ? "order-card--critical-confirmed"
-                  : "",
-              ]
-                .filter(Boolean)
-                .join(" ");
-
-              return (
-                <article className={orderCardClassName} key={order.id}>
-                  <header className="order-card__header">
-                    <div className="order-card__title-group">
-                      <h2 className="order-card__title">
-                        {order.orderNumber ?? `Zlecenie #${order.id}`}
-                      </h2>
-
-                      <p className="order-card__subtitle">
-                        {getTransportOrderTypeLabel(order.orderType)} •{" "}
-                        {getTransportSourceLabel(order.source)}
-                      </p>
-                    </div>
-
-                    <span className="order-card__badge">
-                      {getTransportPriorityLabel(order.priority)}
-                    </span>
-                  </header>
-
-                  {shouldShowCriticalAlarm && (
-                    <section className="orders-list__critical-alarm" role="alert">
-                      <div>
-                        <strong>Alarm zlecenia</strong>
-                        <p>{getCriticalAlarmMessage(order)}</p>
-                      </div>
-
-                      <button
-                        className="orders-list__critical-confirm-button"
-                        type="button"
-                        onClick={() => handleConfirmCriticalAlarm(order)}
-                      >
-                        Potwierdzam alarm
-                      </button>
-                    </section>
-                  )}
-
-                  {hasCriticalAlarm && isCriticalAlarmAcknowledged && (
-                    <p className="orders-list__feedback">
-                      <strong>Alarm:</strong> potwierdzony
-                    </p>
-                  )}
-
-                  <div className="order-card__body">
-                    <p className="order-card__row">
-                      <strong>Status:</strong>{" "}
-                      {getTransportStatusLabel(order.status)}
-                    </p>
-
-                    {hasText(order.pickupAddress) && (
-                      <p className="order-card__row">
-                        <strong>Skąd:</strong> {order.pickupAddress}
-                      </p>
-                    )}
-
-                    {hasText(order.destinationAddress) && (
-                      <p className="order-card__row">
-                        <strong>Dokąd:</strong> {order.destinationAddress}
-                      </p>
-                    )}
-
-                    {hasText(order.description) && (
-                      <p className="order-card__row">
-                        <strong>Opis:</strong> {order.description}
-                      </p>
-                    )}
-
-                    {hasText(order.createdByFullName) && (
-                      <p className="order-card__row">
-                        <strong>Utworzone przez:</strong>{" "}
-                        {order.createdByFullName} —{" "}
-                        {getUserRoleLabel(order.createdByRole)}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="order-card__actions">
-                    <Link
-                      className="order-card__details-link"
-                      to={`/transport-orders/${order.id}/preview`}
-                    >
-                      Podgląd
-                    </Link>
-
-                    {canAcceptOrders && (
-                      <button
-                        className="order-card__accept-button"
-                        type="button"
-                        disabled={acceptingOrderId === order.id}
-                        onClick={() => handleAcceptOrder(order.id)}
-                      >
-                        {acceptingOrderId === order.id
-                          ? "Przyjmowanie..."
-                          : order.status === "WAITING_FOR_PICKUP"
-                            ? "Odbierz pacjenta"
-                            : "Przyjmij zlecenie"}
-                      </button>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    );
-  }
-
   return (
     <div className="orders-dashboard-list">
       {successMessage && (
@@ -513,7 +691,7 @@ export function NewTransportOrdersList() {
         </article>
 
         <article className="orders-overview-card">
-          <span className="orders-overview-card__label">Nowe zlecenia</span>
+          <span className="orders-overview-card__label">Planowane zlecenia</span>
           <strong className="orders-overview-card__value">
             {newOrders.length}
           </strong>
@@ -521,18 +699,18 @@ export function NewTransportOrdersList() {
       </div>
 
       {waitingForPickupOrders.length > 0 &&
-        renderOrdersSection(
+        renderTransportPlanSection(
           "Pacjenci do odbioru",
           "Pacjenci oczekujący na kolejny przejazd.",
           waitingForPickupOrders,
           "Brak pacjentów oczekujących na odbiór."
         )}
 
-      {renderOrdersSection(
-        "Nowe zlecenia",
-        "",
+      {renderTransportPlanSection(
+        "Plan pracy",
+        "Zlecenia dostępne dla aktywnej załogi, uporządkowane według daty i godziny wyjazdu.",
         newOrders,
-        "Brak nowych zleceń."
+        "Brak zaplanowanych zleceń."
       )}
     </div>
   );
