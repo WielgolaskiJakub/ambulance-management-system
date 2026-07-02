@@ -142,7 +142,7 @@ export function DashboardSummary() {
 
     if (loading) {
         return (
-            <section className="dashboard-summary dashboard-summary-loading">
+            <section className="dashboard-summary dashboard-summary--compact dashboard-summary-loading">
                 <p className="dashboard-summary__message">Ładowanie danych...</p>
             </section>
         );
@@ -187,81 +187,64 @@ export function DashboardSummary() {
     }
 
     return (
-        <section className="dashboard-summary">
-            <div className="dashboard-summary__header">
-                <div className="dashboard-summary__user">
+        <section className="dashboard-summary dashboard-summary--compact">
+            <div className="dashboard-summary__compact-user">
+                <div>
                     <h2 className="dashboard-summary__title">
                         {dashboard.loggedUserFullName}
                     </h2>
 
                     <p className="dashboard-summary__subtitle">
-                        {getUserRoleLabel(dashboard.loggedUserRole)}
+                        {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
                     </p>
-                </div>
-
-                <div className="dashboard-summary__date">
-                    {formatDate(dashboard.currentDate)}
                 </div>
             </div>
 
-            <div className="dashboard-summary__grid">
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Zmiana</span>
-                    <strong className="dashboard-summary__value">
-                        {getShiftStatusLabel(dashboard.shiftStatus)}
-                    </strong>
-                    <span className="dashboard-summary__hint">
-                        {dashboard.shiftTimeLabel ?? "Brak godzin"}
-                    </span>
+            <div className="dashboard-summary__compact-details">
+                <div className="dashboard-summary__compact-item">
+                    <span>Zmiana</span>
+                    <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
+                    <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
                 </div>
 
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Karetka</span>
-                    <strong className="dashboard-summary__value">
-                        {dashboard.registrationPlates}
-                    </strong>
-                    <span className="dashboard-summary__hint">
-                        {dashboard.carBrand} {dashboard.model}
-                    </span>
+                <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
+                    <span>Karetka</span>
+                    <strong>{dashboard.registrationPlates}</strong>
+                    <small>{dashboard.carBrand} {dashboard.model}</small>
                 </div>
 
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Przebieg</span>
-                    <strong className="dashboard-summary__value">
-                        {dashboard.mileage} km
-                    </strong>
+                <div className="dashboard-summary__compact-item">
+                    <span>Przebieg</span>
+                    <strong>{dashboard.mileage} km</strong>
                 </div>
 
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Szacowane paliwo</span>
-                    <strong className="dashboard-summary__value">
+                <div className="dashboard-summary__compact-item">
+                    <span>Paliwo</span>
+                    <strong>
                         {dashboard.estimatedFuelLitersDisplay !== null
                             ? `${dashboard.estimatedFuelLitersDisplay} l`
                             : "Brak danych"}
                     </strong>
-
                     {dashboard.tankCapacityLiters !== null && (
-                        <span className="dashboard-summary__hint">
-                            Zbiornik: {dashboard.tankCapacityLiters} l
-                        </span>
+                        <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
                     )}
                 </div>
             </div>
 
-            {successMessage && (
-                <p className="dashboard-summary__success-message">{successMessage}</p>
-            )}
-
-            <div className="dashboard-summary__actions">
+            <div className="dashboard-summary__compact-actions">
                 <button
                     className="dashboard-summary__finish-button"
                     type="button"
                     disabled={finishingShift}
                     onClick={handleFinishShift}
                 >
-                    {finishingShift ? "Kończenie zmiany..." : "Zakończ zmianę"}
+                    {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
                 </button>
             </div>
+
+            {successMessage && (
+                <p className="dashboard-summary__success-message">{successMessage}</p>
+            )}
         </section>
     );
 }
