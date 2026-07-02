@@ -10,6 +10,7 @@ import { MyTransportOrdersPage } from "./pages/MyTransportOrdersPage";
 import { TransportOrderDetailsPage } from "./pages/TransportOrderDetailsPage";
 import { CreateShiftPage } from "./pages/CreateShiftPage";
 import { RefuelingsPage } from "./pages/RefuelingsPage";
+import { ManagerCreateTransportOrderPage } from "./pages/ManagerCreateTransportOrderPage";
 
 function App() {
   return (
@@ -31,6 +32,9 @@ function App() {
         />
         <Route path="/routes/me" element={<MyRoutesPage />} />
         <Route path="/refuelings" element={<RefuelingsPage />} />
+      
+        <Route path="/manager/transport-orders/create" element={<ManagerCreateTransportOrderPage />} />
+
       </Route>
 
       <Route path="*" element={<Navigate to="/login" replace />} />

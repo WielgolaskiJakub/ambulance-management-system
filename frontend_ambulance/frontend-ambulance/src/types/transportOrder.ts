@@ -1,5 +1,7 @@
 export type TransportOrderResponse = {
   id: number;
+  plannedDate: string;
+  plannedDepartureTime: string | null;
   orderNumber: string | null;
   orderType: string;
   source: string;
@@ -59,6 +61,19 @@ export type TransportOrderPatientCreateItemRequest = {
 };
 
 export type CreateTransportOrderByUserRequest = {
+  orderType: string;
+  source: string;
+  priority: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  description: string | null;
+  patients: TransportOrderPatientCreateItemRequest[];
+};
+
+export type CreateTransportOrderByManagerRequest = {
+  plannedDate: string;
+  plannedDepartureTime: string | null;
+  orderNumber: string | null;
   orderType: string;
   source: string;
   priority: string;

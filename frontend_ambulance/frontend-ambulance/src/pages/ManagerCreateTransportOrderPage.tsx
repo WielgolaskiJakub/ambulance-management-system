@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { createTransportOrderByUser } from "../api/transportOrdersApi";
+import { createTransportOrderByManager } from "../api/transportOrdersApi";
 import {
     transportOrderPriorityLabels,
     transportOrderTypeLabels,
@@ -12,6 +12,9 @@ import "./CreateTransportOrderPage.css"
 const defaultPickupAddress = import.meta.env.VITE_DEFAULT_PICKUP_ADDRESS ?? "";
 
 type FormState = {
+    plannedDate: string;
+    plannedDepartureTime: string;
+    orderNumber: string;
     orderType: string;
     source: string;
     priority: string;
@@ -24,6 +27,9 @@ type FormState = {
 };
 
 const initialFormState: FormState = {
+    plannedDate: "",
+    plannedDepartureTime: "",
+    orderNumber: "",
     orderType: "HOSPITAL_TRANSFER",
     source: "HOSPITAL_EMERGENCY_DEPARTMENT",
     priority: "MEDIUM",
@@ -35,23 +41,11 @@ const initialFormState: FormState = {
     pickupDetails: "",
 };
 
-type ApiErrorResponse = {
-    code?: string;
-    message?: string;
-};
-
-function getApiErrorCode(error: unknown): string | null {
-    if (!axios.isAxiosError(error)) {
-        return null;
-    }
-    return (error.response?.data as ApiErrorResponse | undefined)?.code ?? null;
-}
-
 function hasText(value: string): boolean {
     return value.trim().length > 0;
 }
 
-export function CreateTransportOrderPage() {
+export function ManagerCreateTransportOrderPage() {
     const navigate = useNavigate();
 
     const [form, setForm] = useState<FormState>(initialFormState);
@@ -68,6 +62,11 @@ export function CreateTransportOrderPage() {
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
+        if (!hasText(form.plannedDate)) {
+            setErrorMessage("Podaj datę realizacji zlecenia.");
+            return;
+        }
+
         if (!hasText(form.pickupAddress)) {
             setErrorMessage("Podaj adres odbioru pacjenta.");
             return;
@@ -77,6 +76,7 @@ export function CreateTransportOrderPage() {
             setErrorMessage("Podaj adres docelowy");
             return;
         }
+
 
         const hasPatientFirstName = hasText(form.patientFirstName);
         const hasPatientLastName = hasText(form.patientLastName);
@@ -90,7 +90,14 @@ export function CreateTransportOrderPage() {
             setSubmitting(true);
             setErrorMessage(null);
 
-            const createdOrder = await createTransportOrderByUser({
+            const createdOrder = await createTransportOrderByManager({
+                plannedDate: form.plannedDate,
+                plannedDepartureTime: hasText(form.plannedDepartureTime)
+                    ? form.plannedDepartureTime
+                    : null,
+                orderNumber: hasText(form.orderNumber)
+                    ? form.orderNumber.trim()
+                    : null,
                 orderType: form.orderType,
                 source: form.source,
                 priority: form.priority,
@@ -114,12 +121,6 @@ export function CreateTransportOrderPage() {
             navigate(`/transport-orders/${createdOrder.id}/preview`, { replace: true });
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                const errorCode = getApiErrorCode(error);
-
-                if (errorCode === "SHIFT_NOT_ACTIVE") {
-                    setErrorMessage("Najpierw utwórz aktywną zmianę.");
-                    return;
-                }
 
                 if (error.response?.status === 400) {
                     setErrorMessage("Nieprawidłowe dane zlecenia.");
@@ -175,6 +176,7 @@ export function CreateTransportOrderPage() {
 
                 <form className="create-transport-order-form" onSubmit={handleSubmit}>
                     <div className="create-transport-order-form__grid">
+
                         <label className="create-transport-order-form__field">
                             <span>Typ transportu</span>
                             <select
@@ -217,6 +219,30 @@ export function CreateTransportOrderPage() {
                             </select>
                         </label>
                     </div>
+
+                    <label className="create-transport-order-form__field">
+                        <span>Data realizacji</span>
+                        <input className="create-transport-order-form__input-with-button"
+                            value={form.plannedDate}
+                            type="date"
+                            lang="pl=PL"
+                            onChange={(event) => updateField("plannedDate", event.target.value)}
+                            placeholder="12.07.2026"
+                        />
+               
+                    </label>
+
+                    <label className="create-transport-order-form__field">
+                        <span>Godzina realizacji</span>
+                        <input className="create-transport-order-form__input-with-button"
+                            value={form.plannedDepartureTime ?? ""}
+                            type="time"
+                            lang="pl=PL"
+                            onChange={(event) => updateField("plannedDepartureTime", event.target.value)}
+                        
+                        />
+                    </label>
+
 
                     <label className="create-transport-order-form__field">
                         <span>Skąd</span>

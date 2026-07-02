@@ -1,14 +1,24 @@
 package pl.jakub.ambulancemanagement.transport_orders.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.Setter;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrderType;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportPriority;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportSource;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Getter
 @Setter
 public class UpdateTransportOrderByManagerRequest {
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate plannedDate;
+
+    @JsonFormat(pattern = "HH:mm")
+    private LocalTime plannedDepartureTime;
 
     private String orderNumber;
 

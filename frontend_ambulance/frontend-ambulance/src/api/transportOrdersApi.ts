@@ -4,6 +4,7 @@ import type {
     TransportOrderCrewPreviewResponse,
     CreateTransportOrderByUserRequest,
     TransportOrderDetailsResponse,
+    CreateTransportOrderByManagerRequest,
 } from "../types/transportOrder";
 
 export async function getAvailableTransportOrdersForCrew(): Promise<TransportOrderResponse[]> {
@@ -32,7 +33,7 @@ export async function createTransportOrderByUser(
     return response.data;
 }
 
-export async function getMyTransportOrders(): Promise<TransportOrderResponse[]>{
+export async function getMyTransportOrders(): Promise<TransportOrderResponse[]> {
     const response = await axiosClient.get<TransportOrderResponse[]>(
         `/api/v1/transport-orders/me`
     );
@@ -40,10 +41,19 @@ export async function getMyTransportOrders(): Promise<TransportOrderResponse[]>{
 }
 
 export async function getTransportOrderDetails(
-    orderId:number
-): Promise <TransportOrderDetailsResponse>{
+    orderId: number
+): Promise<TransportOrderDetailsResponse> {
     const response = await axiosClient.get<TransportOrderDetailsResponse>(
         `/api/v1/transport-orders/${orderId}/details`
+    );
+    return response.data;
+}
+
+export async function createTransportOrderByManager(
+    request: CreateTransportOrderByManagerRequest): Promise<TransportOrderResponse> {
+    const response = await axiosClient.post<TransportOrderResponse>(
+        `/api/v1/transport-orders/manager`,
+        request
     );
     return response.data;
 }

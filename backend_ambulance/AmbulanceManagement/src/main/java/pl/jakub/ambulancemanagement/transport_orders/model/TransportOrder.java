@@ -8,7 +8,9 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import pl.jakub.ambulancemanagement.users.model.User;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @NoArgsConstructor
 @Getter
@@ -20,6 +22,12 @@ public class TransportOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "planned_date")
+    private LocalDate plannedDate;
+
+    @Column(name = "planned_departure_time")
+    private LocalTime plannedDepartureTime;
 
     @Column(name = "order_number", length = 100)
     private String orderNumber;

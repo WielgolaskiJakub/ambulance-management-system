@@ -6,9 +6,12 @@ import {
   enableNewOrderSound,
   isNewOrderSoundEnabled,
 } from "../../utils/newOrderSound";
+import { getCurrentUserRole } from "../../utils/auth";
 
 export function TopNavigation() {
+
   const navigate = useNavigate();
+  const userRole = getCurrentUserRole();
 
   const [soundEnabled, setSoundEnabled] = useState(isNewOrderSoundEnabled());
   const [soundError, setSoundError] = useState<string | null>(null);
@@ -55,10 +58,17 @@ export function TopNavigation() {
         <NavLink className="top-navigation__link" to="/refuelings">
           Tankowanie
         </NavLink>
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/transport-orders/create">
+            Utwórz zlecenie
+          </NavLink>
+        )}
 
-        <NavLink className="top-navigation__link" to="/transport-orders/create">
-          Utwórz zlecenie
-        </NavLink>
+        {userRole === "MANAGER" && "ADMIN" && (
+          <NavLink className="top-navigation__link" to="/manager/transport-orders/create">
+            Utwórz zlecenie
+          </NavLink>
+        )}
 
         <NavLink className="top-navigation__link" to="/shifts/create">
           Utwórz zmianę

@@ -23,6 +23,7 @@ import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRe
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -159,6 +160,8 @@ public class TransportOrderService {
         }
 
         TransportOrder transportOrder = buildTransportOrderByUser(request, user);
+        transportOrder.setPlannedDate(LocalDate.now());
+        transportOrder.setPlannedDepartureTime(null);
 
         TransportOrder savedTransportOrder = transportOrderRepository.save(transportOrder);
 
@@ -322,6 +325,8 @@ public class TransportOrderService {
                                                String pickupAddress, String destinationAddress) {
         TransportOrder transportOrder = new TransportOrder();
 
+        transportOrder.setPlannedDate(request.getPlannedDate());
+        transportOrder.setPlannedDepartureTime(request.getPlannedDepartureTime());
         transportOrder.setOrderNumber(orderNumber);
         transportOrder.setOrderType(request.getOrderType());
         transportOrder.setSource(request.getSource());
@@ -388,6 +393,10 @@ public class TransportOrderService {
         if (request.getDestinationAddress() != null) {
             transportOrderToUpdate.setDestinationAddress(request.getDestinationAddress().trim());
         }
+        if (request.getPlannedDate() != null) {
+            transportOrderToUpdate.setPlannedDate(request.getPlannedDate());
+        }
+        transportOrderToUpdate.setPlannedDepartureTime(request.getPlannedDepartureTime());
     }
 
     private void updateTransportOrderByUserFields(UpdateTransportOrderByUserRequest request,
@@ -406,6 +415,12 @@ public class TransportOrderService {
 
         if (request.getDescription() != null) {
             transportOrderToUpdate.setDescription(normalizeNullableText(request.getDescription()));
+        }
+        if (request.getPickupAddress() != null) {
+            transportOrderToUpdate.setPickupAddress(request.getPickupAddress().trim());
+        }
+        if (request.getDestinationAddress() != null) {
+            transportOrderToUpdate.setDestinationAddress(request.getDestinationAddress().trim());
         }
 
     }
