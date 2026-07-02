@@ -1,5 +1,85 @@
-.orders-section {
-  max-width: 1180px;
+.dashboard-page {
+  padding: 16px 24px 32px;
+}
+
+.dashboard-summary--compact {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2.4fr) auto;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.dashboard-summary__compact-user {
+  min-width: 0;
+}
+
+.dashboard-summary--compact .dashboard-summary__title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.dashboard-summary--compact .dashboard-summary__subtitle {
+  margin: 4px 0 0;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.dashboard-summary__compact-details {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.dashboard-summary__compact-item {
+  min-width: 118px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: #111827;
+}
+
+.dashboard-summary__compact-item--wide {
+  min-width: 150px;
+}
+
+.dashboard-summary__compact-item span,
+.dashboard-summary__compact-item small {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.dashboard-summary__compact-item strong {
+  display: block;
+  margin: 2px 0;
+  color: #f8fafc;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.dashboard-summary__compact-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dashboard-summary--compact .dashboard-summary__finish-button {
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.orders-dashboard-list {
+  gap: 18px;
+}
+
+.orders-overview {
+  display: none;
 }
 
 .transport-work-plan {
@@ -210,6 +290,17 @@
   background: #dcfce7;
 }
 
+@media (max-width: 980px) {
+  .dashboard-summary--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-summary__compact-details,
+  .dashboard-summary__compact-actions {
+    justify-content: flex-start;
+  }
+}
+
 @media (max-width: 900px) {
   .transport-plan__actions {
     flex-wrap: wrap;
@@ -223,5 +314,11 @@
 
   .transport-plan-date-group__count {
     align-self: flex-start;
+  }
+
+  .dashboard-summary__compact-item,
+  .dashboard-summary__compact-item--wide {
+    min-width: 0;
+    flex: 1 1 140px;
   }
 }
