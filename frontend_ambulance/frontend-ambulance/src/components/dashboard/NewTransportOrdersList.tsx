@@ -126,17 +126,31 @@ function getDateGroupTitle(plannedDate: string | null): string {
   return `Plan na ${formattedDate}`;
 }
 
-function hasExactPlannedDepartureTime(order: TransportOrderResponse): boolean {
-  if (!hasText(order.plannedDepartureTime)) {
-    return false;
+function getExactPlannedDepartureTime(
+  order: TransportOrderResponse
+): string | null {
+  const plannedDepartureTime = order.plannedDepartureTime;
+
+  if (!hasText(plannedDepartureTime)) {
+    return null;
   }
 
-  return order.plannedDepartureTime !== "00:00" && order.plannedDepartureTime !== "00:00:00";
+  if (plannedDepartureTime === "00:00" || plannedDepartureTime === "00:00:00") {
+    return null;
+  }
+
+  return plannedDepartureTime.slice(0, 5);
+}
+
+function hasExactPlannedDepartureTime(order: TransportOrderResponse): boolean {
+  return getExactPlannedDepartureTime(order) !== null;
 }
 
 function getPlannedDepartureTimeLabel(order: TransportOrderResponse): string {
-  if (hasExactPlannedDepartureTime(order)) {
-    return order.plannedDepartureTime.slice(0, 5);
+  const exactPlannedDepartureTime = getExactPlannedDepartureTime(order);
+
+  if (exactPlannedDepartureTime !== null) {
+    return exactPlannedDepartureTime;
   }
 
   if (order.status === "WAITING_FOR_PICKUP") {
@@ -155,11 +169,7 @@ function getOrderAdditionalInfo(order: TransportOrderResponse): string {
 }
 
 function getSortTime(order: TransportOrderResponse): string {
-  if (!hasExactPlannedDepartureTime(order)) {
-    return "99:99";
-  }
-
-  return order.plannedDepartureTime.slice(0, 5);
+  return getExactPlannedDepartureTime(order) ?? "99:99";
 }
 
 function compareTransportOrdersByPlan(
