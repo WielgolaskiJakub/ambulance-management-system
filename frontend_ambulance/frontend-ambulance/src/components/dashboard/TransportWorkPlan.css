@@ -1,0 +1,215 @@
+.orders-section {
+  max-width: 1180px;
+}
+
+.transport-work-plan {
+  display: grid;
+  gap: 20px;
+}
+
+.transport-plan-date-group {
+  overflow: hidden;
+  border: 1px solid #374151;
+  border-radius: 16px;
+  background: #111827;
+}
+
+.transport-plan-date-group__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #374151;
+  background: #1f2937;
+}
+
+.transport-plan-date-group__title {
+  margin: 0;
+  color: #f9fafb;
+  font-size: 22px;
+}
+
+.transport-plan-date-group__subtitle {
+  margin: 6px 0 0;
+  color: #d1d5db;
+}
+
+.transport-plan-date-group__count {
+  min-width: 44px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #f9fafb;
+  color: #111827;
+  text-align: center;
+  font-size: 20px;
+}
+
+.transport-plan-table-wrapper {
+  overflow-x: auto;
+  background: #f8fafc;
+}
+
+.transport-plan-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  background: #f8fafc;
+  color: #111827;
+  font-size: 14px;
+}
+
+.transport-plan-table th,
+.transport-plan-table td {
+  border: 1px solid #94a3b8;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.transport-plan-table th {
+  background: #e5e7eb;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.transport-plan__row:hover td {
+  background: #eef2ff;
+}
+
+.transport-plan__row--urgent td {
+  background: #fef2f2;
+}
+
+.transport-plan__row--urgent:hover td {
+  background: #fee2e2;
+}
+
+.transport-plan__row--waiting td {
+  background: #eff6ff;
+}
+
+.transport-plan__row--waiting:hover td {
+  background: #dbeafe;
+}
+
+.transport-plan__row--critical-confirmed td {
+  box-shadow: inset 4px 0 0 #16a34a;
+}
+
+.transport-plan__time-cell {
+  width: 130px;
+  white-space: nowrap;
+}
+
+.transport-plan__time-cell strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.transport-plan__time-cell span,
+.transport-plan__order-meta {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  font-size: 12px;
+}
+
+.transport-plan__order-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.transport-plan__priority-label,
+.transport-plan__status-label {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 8px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.transport-plan__row--urgent .transport-plan__priority-label {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.transport-plan__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.transport-plan__details-link,
+.transport-plan__accept-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.transport-plan__details-link {
+  background: #334155;
+  color: #ffffff;
+}
+
+.transport-plan__details-link:hover {
+  background: #1e293b;
+}
+
+.transport-plan__accept-button {
+  border: none;
+  background: #0f172a;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.transport-plan__accept-button:hover {
+  background: #020617;
+}
+
+.transport-plan__accept-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.transport-plan__critical-row td,
+.transport-plan__confirmed-row td {
+  padding: 0;
+  background: #fff7ed;
+}
+
+.transport-plan__critical-row .orders-list__critical-alarm {
+  margin: 12px;
+}
+
+.transport-plan__confirmed-row .orders-list__feedback {
+  margin: 12px;
+  color: #166534;
+  background: #dcfce7;
+}
+
+@media (max-width: 760px) {
+  .transport-plan-date-group__header {
+    flex-direction: column;
+  }
+
+  .transport-plan-date-group__count {
+    align-self: flex-start;
+  }
+}
