@@ -44,7 +44,7 @@ export function TopNavigation() {
 
       <nav className="top-navigation__links">
         <NavLink className="top-navigation__link" to="/dashboard">
-          Dashboard
+          Harmonogram
         </NavLink>
 
         <NavLink className="top-navigation__link" to="/routes/me">

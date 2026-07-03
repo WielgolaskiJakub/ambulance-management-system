@@ -47,6 +47,6 @@ public class CreateTransportOrderByManagerRequest {
      @NotBlank
      private String destinationAddress;
 
-     @NotEmpty
+
      private List<@Valid TransportOrderPatientCreateItemRequest> patients;
 }

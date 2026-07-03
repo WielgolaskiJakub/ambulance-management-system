@@ -44,6 +44,11 @@ export function LoginPage() {
               className="login-form__input"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
+              onKeyDown={(event)=> {
+                if (event.key === "Enter") {
+                  handleSubmit(event as any);
+                }
+              }}
             />
           </div>
 
