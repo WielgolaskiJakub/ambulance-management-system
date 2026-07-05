@@ -47,14 +47,31 @@ const ACKNOWLEDGED_CRITICAL_ORDER_IDS_STORAGE_KEY =
   "ambulance:acknowledged-critical-order-ids";
 const NO_PLANNED_DATE_GROUP_KEY = "__NO_PLANNED_DATE__";
 
-function isNightAlarmTime(date = new Date()): boolean {
+function isDateInNightAlarmTime(date: Date): boolean {
   const hour = date.getHours();
 
   return hour >= NIGHT_ALARM_START_HOUR || hour < NIGHT_ALARM_END_HOUR;
 }
 
+function wasOrderCreatedAtNight(order: TransportOrderResponse): boolean {
+  if (!hasText(order.createdAt)) {
+    return false;
+  }
+
+  const createdAtDate = new Date(order.createdAt);
+
+  if (Number.isNaN(createdAtDate.getTime())) {
+    return false;
+  }
+
+  return isDateInNightAlarmTime(createdAtDate);
+}
+
 function shouldUseCriticalAlarm(order: TransportOrderResponse): boolean {
-  return order.priority === "URGENT" || isNightAlarmTime();
+  return (
+    order.status === "NEW" &&
+    (order.priority === "URGENT" || wasOrderCreatedAtNight(order))
+  );
 }
 
 function formatCriticalOrderName(order: TransportOrderResponse): string {
@@ -63,17 +80,17 @@ function formatCriticalOrderName(order: TransportOrderResponse): string {
 
 function getCriticalAlarmMessage(order: TransportOrderResponse): string {
   const urgent = order.priority === "URGENT";
-  const night = isNightAlarmTime();
+  const night = wasOrderCreatedAtNight(order);
 
   if (urgent && night) {
-    return "Priorytet pilny oraz zlecenie w godzinach nocnych 22:00–06:00.";
+    return "Zlecenie pilne zostało utworzone w godzinach nocnych 22:00–06:00. Alarm działa do ręcznego potwierdzenia.";
   }
 
   if (urgent) {
     return "Zlecenie ma priorytet pilny. Alarm działa do ręcznego potwierdzenia.";
   }
 
-  return "Nowe zlecenie pojawiło się w godzinach nocnych 22:00–06:00. Alarm działa do ręcznego potwierdzenia.";
+  return "Nowe zlecenie zostało utworzone w godzinach nocnych 22:00–06:00. Alarm działa do ręcznego potwierdzenia.";
 }
 
 function formatLocalIsoDate(date: Date): string {
