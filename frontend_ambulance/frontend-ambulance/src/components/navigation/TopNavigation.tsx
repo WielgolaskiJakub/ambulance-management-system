@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import "./TopNavigation.css"
+import "./TopNavigation.css";
 import { useState } from "react";
 import {
   disableNewOrderSound,
@@ -9,12 +9,14 @@ import {
 import { getCurrentUserRole } from "../../utils/auth";
 
 export function TopNavigation() {
-
   const navigate = useNavigate();
   const userRole = getCurrentUserRole();
 
   const [soundEnabled, setSoundEnabled] = useState(isNewOrderSoundEnabled());
   const [soundError, setSoundError] = useState<string | null>(null);
+
+  const isCrewUser = userRole === "DRIVER" || userRole === "SANITARY";
+  const isManagerUser = userRole === "MANAGER" || userRole === "ADMIN";
 
   async function handleToggleSound() {
     try {
@@ -43,42 +45,49 @@ export function TopNavigation() {
       <div className="top-navigation__brand">System transportu</div>
 
       <nav className="top-navigation__links">
-        <NavLink className="top-navigation__link" to="/dashboard">
-          Harmonogram
-        </NavLink>
+        {isCrewUser && (
+          <>
+            <NavLink className="top-navigation__link" to="/dashboard">
+              Harmonogram
+            </NavLink>
 
-        <NavLink className="top-navigation__link" to="/routes/me">
-          Moje trasy
-        </NavLink>
+            <NavLink className="top-navigation__link" to="/routes/me">
+              Moje trasy
+            </NavLink>
 
-        <NavLink className="top-navigation__link" to="/transport-orders/me">
-          Moje zlecenia
-        </NavLink>
+            <NavLink className="top-navigation__link" to="/transport-orders/me">
+              Moje zlecenia
+            </NavLink>
 
-        <NavLink className="top-navigation__link" to="/refuelings">
-          Tankowanie
-        </NavLink>
-        {userRole === "DRIVER" && "SANITARY" && (
-          <NavLink className="top-navigation__link" to="/transport-orders/create">
+            <NavLink className="top-navigation__link" to="/refuelings">
+              Tankowanie
+            </NavLink>
+
+            <NavLink className="top-navigation__link" to="/transport-orders/create">
+              Utwórz zlecenie
+            </NavLink>
+
+            <NavLink className="top-navigation__link" to="/shifts/create">
+              Utwórz zmianę
+            </NavLink>
+          </>
+        )}
+
+        {isManagerUser && (
+          <NavLink
+            className="top-navigation__link"
+            to="/manager/transport-orders/create"
+          >
             Utwórz zlecenie
           </NavLink>
         )}
-
-        {userRole === "MANAGER" && "ADMIN" && (
-          <NavLink className="top-navigation__link" to="/manager/transport-orders/create">
-            Utwórz zlecenie
-          </NavLink>
-        )}
-
-        <NavLink className="top-navigation__link" to="/shifts/create">
-          Utwórz zmianę
-        </NavLink>
       </nav>
 
       <div className="top-navigation__actions">
         <button
-          className={`top-navigation__sound-button ${soundEnabled ? "top-navigation__sound-button--enabled" : ""
-            }`}
+          className={`top-navigation__sound-button ${
+            soundEnabled ? "top-navigation__sound-button--enabled" : ""
+          }`}
           type="button"
           onClick={handleToggleSound}
           title={
