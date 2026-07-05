@@ -3,6 +3,15 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
 import "./LoginPage.css";
+import { jwtDecode } from "jwt-decode";
+
+type JwtPayload = {
+  sub: string;
+  userId: number;
+  role: "ADMIN" | "MANAGER" | "DRIVER" | "SANITARY";
+  exp: number;
+  iat: number;
+};
 
 export function LoginPage() {
   const [username, setUsername] = useState("");
@@ -15,7 +24,20 @@ export function LoginPage() {
     try {
       const response = await login({ username, password });
       localStorage.setItem("token", response.token);
-      navigate("/dashboard");
+      
+      const decodedToken = jwtDecode<JwtPayload>(response.token);
+
+      if(decodedToken.role === "ADMIN" || decodedToken.role === "MANAGER") {
+        navigate("/manager/transport-orders/create");
+        return;
+      }
+      if(decodedToken.role === "DRIVER" || decodedToken.role === "SANITARY") {
+        navigate("/dashboard");
+        return;
+      }
+
+      navigate("/unauthorized");
+      
     } catch (error) {
       if (axios.isAxiosError(error)) {
         console.log("STATUS:", error.response?.status);

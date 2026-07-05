@@ -43,36 +43,42 @@ export function TopNavigation() {
       <div className="top-navigation__brand">System transportu</div>
 
       <nav className="top-navigation__links">
-        <NavLink className="top-navigation__link" to="/dashboard">
-          Harmonogram
-        </NavLink>
-
-        <NavLink className="top-navigation__link" to="/routes/me">
-          Moje trasy
-        </NavLink>
-
-        <NavLink className="top-navigation__link" to="/transport-orders/me">
-          Moje zlecenia
-        </NavLink>
-
-        <NavLink className="top-navigation__link" to="/refuelings">
-          Tankowanie
-        </NavLink>
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/dashboard">
+            Harmonogram
+          </NavLink>
+        )}
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/routes/me">
+            Moje trasy
+          </NavLink>
+        )}
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/transport-orders/me">
+            Moje zlecenia
+          </NavLink>
+        )}
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/refuelings">
+            Tankowanie
+          </NavLink>
+        )}
         {userRole === "DRIVER" && "SANITARY" && (
           <NavLink className="top-navigation__link" to="/transport-orders/create">
             Utwórz zlecenie
           </NavLink>
         )}
+        {userRole === "DRIVER" && "SANITARY" && (
+          <NavLink className="top-navigation__link" to="/shifts/create">
+            Utwórz zmianę
+          </NavLink>
+        )}
 
-        {userRole === "MANAGER" && "ADMIN" && (
+          {userRole === "MANAGER" && "ADMIN" && (
           <NavLink className="top-navigation__link" to="/manager/transport-orders/create">
             Utwórz zlecenie
           </NavLink>
         )}
-
-        <NavLink className="top-navigation__link" to="/shifts/create">
-          Utwórz zmianę
-        </NavLink>
       </nav>
 
       <div className="top-navigation__actions">
