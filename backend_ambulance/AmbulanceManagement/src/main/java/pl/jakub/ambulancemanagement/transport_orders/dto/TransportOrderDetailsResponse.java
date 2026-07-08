@@ -8,12 +8,16 @@ import pl.jakub.ambulancemanagement.transport_orders.model.TransportSource;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrderType;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 public record TransportOrderDetailsResponse(
         Long id,
         String orderNumber,
+        LocalDate plannedDate,
+        LocalTime plannedDepartureTime,
         TransportOrderType orderType,
         TransportSource source,
         TransportPriority priority,
@@ -35,6 +39,8 @@ public record TransportOrderDetailsResponse(
         return new TransportOrderDetailsResponse(
                 transportOrder.getId(),
                 transportOrder.getOrderNumber(),
+                transportOrder.getPlannedDate(),
+                transportOrder.getPlannedDepartureTime(),
                 transportOrder.getOrderType(),
                 transportOrder.getSource(),
                 transportOrder.getPriority(),

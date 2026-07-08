@@ -28,7 +28,7 @@ export function LoginPage() {
       const decodedToken = jwtDecode<JwtPayload>(response.token);
 
       if(decodedToken.role === "ADMIN" || decodedToken.role === "MANAGER") {
-        navigate("/manager/transport-orders/create");
+        navigate("/manager/dashboard");
         return;
       }
       if(decodedToken.role === "DRIVER" || decodedToken.role === "SANITARY") {

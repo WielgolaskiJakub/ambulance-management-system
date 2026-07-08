@@ -107,6 +107,8 @@ export type TransportOrderRouteSummaryResponse = {
 export type TransportOrderDetailsResponse = {
   id: number;
   orderNumber: string | null;
+  plannedDate: string;
+  plannedDepartureTime: string | null;
   orderType: string;
   source: string;
   priority: string;
@@ -119,4 +121,30 @@ export type TransportOrderDetailsResponse = {
   cancelledAt: string | null;
   patients: TransportOrderPatientDataResponse[];
   routes: TransportOrderRouteSummaryResponse[];
+};
+
+export type TransportOrderPatientDataUpdateRequest = {
+  id: number | null;
+  patientFirstName: string;
+  patientLastName: string;
+  pickupDetails: string | null;
+};
+
+
+export type  UpdateTransportOrderByManagerRequest = {
+  plannedDate: string | null;
+  plannedDepartureTime: string | null;
+  orderNumber: string | null;
+  orderType: string;
+  source: string;
+  priority: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  description: string | null;
+  patients: TransportOrderPatientDataUpdateRequest[];
+};
+
+export type CancelTransportOrderRequest = {
+  cancelReason: string;
+  cancelDescription: string | null;
 };

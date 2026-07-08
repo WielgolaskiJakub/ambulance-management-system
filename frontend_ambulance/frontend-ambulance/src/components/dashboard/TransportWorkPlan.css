@@ -322,3 +322,141 @@
     flex: 1 1 140px;
   }
 }
+.transport-plan__cancel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #64748b;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.transport-plan__cancel-button:hover {
+  background: #475569;
+}
+
+.transport-plan__cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.manager-cancel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.manager-cancel-modal {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 16px;
+  padding: 24px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.32);
+}
+
+.manager-cancel-modal__header {
+  margin-bottom: 18px;
+}
+
+.manager-cancel-modal__header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.manager-cancel-modal__header p {
+  margin: 8px 0 0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.manager-cancel-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: #334155;
+  font-weight: 800;
+}
+
+.manager-cancel-modal__field select,
+.manager-cancel-modal__field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 600;
+}
+
+.manager-cancel-modal__field select:focus,
+.manager-cancel-modal__field textarea:focus {
+  outline: none;
+  border-color: #334155;
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.14);
+}
+
+.manager-cancel-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.manager-cancel-modal__button {
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.manager-cancel-modal__button--secondary {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.manager-cancel-modal__button--secondary:hover {
+  background: #e2e8f0;
+}
+
+.manager-cancel-modal__button--danger {
+  background: #991b1b;
+  color: #ffffff;
+}
+
+.manager-cancel-modal__button--danger:hover {
+  background: #7f1d1d;
+}
+
+.manager-cancel-modal__button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+@media (max-width: 640px) {
+  .manager-cancel-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .manager-cancel-modal__button {
+    width: 100%;
+  }
+}

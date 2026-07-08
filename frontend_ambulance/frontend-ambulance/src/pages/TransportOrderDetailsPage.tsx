@@ -12,6 +12,8 @@ import {
 } from "../utils/transportOrderLabels";
 import "./TransportOrderDetailsPage.css";
 import { getRouteStatusLabel } from "../utils/routeLabels";
+import { getCurrentUserRole } from "../utils/auth";
+
 
 function hasText(value: string | null | undefined): value is string {
   return value !== null && value !== undefined && value.trim().length > 0;
@@ -24,6 +26,12 @@ export function TransportOrderDetailsPage() {
   const [order, setOrder] = useState<TransportOrderDetailsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const currentUserRole = getCurrentUserRole();
+  const isManagerUser = currentUserRole === "MANAGER" || currentUserRole === "ADMIN";
+
+  const backPath = isManagerUser ? "/manager/dashboard" : "/transport-orders/me";
+
 
   useEffect(() => {
     async function loadDetails() {
@@ -59,8 +67,7 @@ export function TransportOrderDetailsPage() {
           }
 
           setErrorMessage(
-            `Błąd pobierania szczegółów: ${
-              error.response?.status ?? "brak odpowiedzi"
+            `Błąd pobierania szczegółów: ${error.response?.status ?? "brak odpowiedzi"
             }`
           );
           return;
@@ -91,7 +98,7 @@ export function TransportOrderDetailsPage() {
         <button
           className="transport-order-details-page__back-button"
           type="button"
-          onClick={() => navigate("/transport-orders/me")}
+          onClick={() => navigate(backPath)}
         >
           Wróć
         </button>
@@ -120,7 +127,7 @@ export function TransportOrderDetailsPage() {
           <button
             className="transport-order-details-page__back-button"
             type="button"
-            onClick={() => navigate("/transport-orders/me")}
+            onClick={() => navigate(backPath)}
           >
             Wróć
           </button>
@@ -146,6 +153,16 @@ export function TransportOrderDetailsPage() {
             </span>
           </div>
         </header>
+
+        {isManagerUser && (
+          <Link
+            className="transport-order-details-card__edit-link"
+            to={`/manager/transport-orders/${order.id}/edit`}
+          >
+            Edytuj zlecenie
+          </Link>
+        )}
+
 
         <section className="transport-order-details-section">
           <h2>Informacje o zleceniu</h2>
@@ -280,12 +297,18 @@ export function TransportOrderDetailsPage() {
                     </p>
                   )}
 
-                  <Link
-                    className="transport-order-details-route-card__link"
-                    to="/routes/me"
-                  >
-                    Przejdź do moich tras
-                  </Link>
+                  {isManagerUser ? (
+                    <p className="transport-order-details-route-card__manager-note">
+                      Trasa powiązana ze zleceniem. Szczegóły trasy dostępne z panelu tras.
+                    </p>
+                  ) : (
+                    <Link
+                      className="transport-order-details-route-card__link"
+                      to="/routes/me"
+                    >
+                      Przejdź do moich tras
+                    </Link>
+                  )}
                 </article>
               ))}
             </div>

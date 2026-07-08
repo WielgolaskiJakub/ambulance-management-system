@@ -34,8 +34,9 @@ public class TransportOrderController {
 
     @GetMapping("/queue")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public List<TransportOrderResponse> getTransportOrdersByStatus(@RequestParam TransportStatus status) {
-        return transportOrderService.getOrderByStatus(status)
+    public List<TransportOrderResponse> getTransportOrdersByStatus(
+            @RequestParam(name = "status", required = false) List<TransportStatus> statuses) {
+        return transportOrderService.getOrderByStatuses(statuses)
                 .stream()
                 .map(TransportOrderResponse::fromEntity)
                 .toList();

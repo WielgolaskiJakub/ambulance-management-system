@@ -74,12 +74,18 @@ export function TopNavigation() {
         )}
 
         {isManagerUser && (
+            <>
+          <NavLink className="top-navigation__link" to="manager/dashboard">
+            Harmonogram
+          </NavLink>
+       
           <NavLink
             className="top-navigation__link"
             to="/manager/transport-orders/create"
           >
             Utwórz zlecenie
           </NavLink>
+          </>
         )}
       </nav>
 

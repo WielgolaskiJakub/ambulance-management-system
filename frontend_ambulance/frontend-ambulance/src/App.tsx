@@ -13,6 +13,8 @@ import { RefuelingsPage } from "./pages/RefuelingsPage";
 import { ManagerCreateTransportOrderPage } from "./pages/ManagerCreateTransportOrderPage";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
+import { ManagerDashboardPage } from "./pages/ManagerDashboardPage";
+import { ManagerEditTransportOrderPage } from "./pages/ManagerEditTransportOrderPage";
 
 function App() {
   return (
@@ -20,16 +22,25 @@ function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
+<Route
+  element={
+    <ProtectedRoute allowedRoles={["ADMIN", "MANAGER", "DRIVER", "SANITARY"]} />
+  }
+>
+  <Route element={<MainLayout />}>
+    <Route
+      path="/transport-orders/:orderId/details"
+      element={<TransportOrderDetailsPage />}
+    />
+  </Route>
+</Route>
+
       <Route element={<ProtectedRoute allowedRoles={["DRIVER", "SANITARY"]} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/shifts/create" element={<CreateShiftPage />} />
-          <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />
+          <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />k
           <Route path="/transport-orders/me" element={<MyTransportOrdersPage />} />
-          <Route
-            path="/transport-orders/:orderId/details"
-            element={<TransportOrderDetailsPage />}
-          />
           <Route
             path="/transport-orders/:orderId/preview"
             element={<TransportOrderCrewPreviewPage />}
@@ -41,10 +52,13 @@ function App() {
 
       <Route element={<ProtectedRoute allowedRoles={["MANAGER", "ADMIN"]} />}>
         <Route element={<MainLayout />}>
+          <Route path="/manager/dashboard" element={<ManagerDashboardPage />} />
           <Route
             path="/manager/transport-orders/create"
             element={<ManagerCreateTransportOrderPage />}
           />
+          <Route path="/manager/transport-orders/:orderId/edit" element={<ManagerEditTransportOrderPage />} />
+      
         </Route>
       </Route>
 

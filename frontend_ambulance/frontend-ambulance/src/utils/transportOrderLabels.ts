@@ -64,3 +64,14 @@ export function getTransportStatusLabel(status: string): string {
 export function getTransportOrderTypeLabel(orderType: string): string {
   return transportOrderTypeLabels[orderType] ?? orderType;
 }
+
+export function getTransportCancelLabel(cancelReason: string): string {
+  return transportCancelLabels[cancelReason] ?? cancelReason;
+}
+
+export function getTransportCancelOptions() {
+  return Object.entries(transportCancelLabels).map(([value, label]) => ({
+    value,
+    label,
+  }));
+}

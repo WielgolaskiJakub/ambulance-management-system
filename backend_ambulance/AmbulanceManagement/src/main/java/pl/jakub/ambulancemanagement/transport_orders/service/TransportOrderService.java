@@ -14,6 +14,7 @@ import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -273,6 +275,18 @@ public class TransportOrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<TransportOrder> getOrderByStatuses(List<TransportStatus> statuses) {
+        if(statuses==null || statuses.isEmpty()){
+            statuses=List.of(
+                    TransportStatus.NEW,
+                    TransportStatus.WAITING_FOR_PICKUP,
+                    TransportStatus.IN_PROGRESS
+            );
+        }
+        return transportOrderRepository.findByStatusInOrderByCreatedAtAsc(statuses);
+    }
+
+    @Transactional(readOnly = true)
     public TransportOrderCrewPreviewResponse getTransportOrderCrewPreviewById(Long id){
         TransportOrder transportOrder = getTransportOrderById(id);
 
@@ -396,7 +410,12 @@ public class TransportOrderService {
         if (request.getPlannedDate() != null) {
             transportOrderToUpdate.setPlannedDate(request.getPlannedDate());
         }
-        transportOrderToUpdate.setPlannedDepartureTime(request.getPlannedDepartureTime());
+        if(request.getPatients() != null) {
+            syncPatientDataForTransportOrder(transportOrderToUpdate, request.getPatients());
+        }
+        if(request.getPlannedDepartureTime() != null) {
+            transportOrderToUpdate.setPlannedDepartureTime(request.getPlannedDepartureTime());
+        }
     }
 
     private void updateTransportOrderByUserFields(UpdateTransportOrderByUserRequest request,
@@ -541,5 +560,60 @@ public class TransportOrderService {
     }
     private void validateCurrentUserCanCancelTransportOrder(TransportOrder transportOrder) {
         validateCurrentUserCanAccessTransportOrder(transportOrder);
+    }
+    private void syncPatientDataForTransportOrder(
+            TransportOrder transportOrder,
+            List<TransportOrderPatientDataUpdateRequest> patientRequests
+    ) {
+        List<TransportOrderPatientData> existingPatients =
+                transportOrderPatientDataRepository.findByTransportOrderId(transportOrder.getId());
+
+        List<Long> requestPatientIds = patientRequests.stream()
+                .map(TransportOrderPatientDataUpdateRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<TransportOrderPatientData> patientsToDelete = existingPatients.stream()
+                .filter(patient -> patient.getId() != null)
+                .filter(patient -> !requestPatientIds.contains(patient.getId()))
+                .toList();
+
+        transportOrderPatientDataRepository.deleteAll(patientsToDelete);
+
+        for (TransportOrderPatientDataUpdateRequest patientRequest : patientRequests) {
+            validatePatientUpdateRequest(patientRequest);
+
+            if (patientRequest.getId() == null) {
+                TransportOrderPatientData newPatient = new TransportOrderPatientData();
+
+                newPatient.setTransportOrder(transportOrder);
+                newPatient.setPatientFirstName(normalizeRequiredText(patientRequest.getPatientFirstName()));
+                newPatient.setPatientLastName(normalizeRequiredText(patientRequest.getPatientLastName()));
+                newPatient.setPickupDetails(normalizeNullableText(patientRequest.getPickupDetails()));
+
+                transportOrderPatientDataRepository.save(newPatient);
+                continue;
+            }
+
+            TransportOrderPatientData patientToUpdate = existingPatients.stream()
+                    .filter(patient -> patient.getId().equals(patientRequest.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST));
+
+            if (patientToUpdate.getAnonymizedAt() != null) {
+                throw new ApiException(ErrorCode.PATIENT_ALREADY_ANONYMIZED);
+            }
+
+            patientToUpdate.setPatientFirstName(normalizeRequiredText(patientRequest.getPatientFirstName()));
+            patientToUpdate.setPatientLastName(normalizeRequiredText(patientRequest.getPatientLastName()));
+            patientToUpdate.setPickupDetails(normalizeNullableText(patientRequest.getPickupDetails()));
+
+            transportOrderPatientDataRepository.save(patientToUpdate);
+        }
+    }
+
+    private void validatePatientUpdateRequest(TransportOrderPatientDataUpdateRequest request) {
+        normalizeRequiredText(request.getPatientFirstName());
+        normalizeRequiredText(request.getPatientLastName());
     }
 }

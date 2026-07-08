@@ -51,10 +51,10 @@ public class TransportOrderPatientDataService {
         validatePatientDataNotAnonymized(patientDataToUpdate);
         validateTransportOrderCanReceivePatientData(patientDataToUpdate.getTransportOrder());
 
-        if (request.getTransportOrderId() != null) {
+        if (request.getId() != null) {
 
             TransportOrder transportOrder = transportOrderService
-                    .getTransportOrderByIdWithAccessCheck(request.getTransportOrderId());
+                    .getTransportOrderByIdWithAccessCheck(request.getId());
 
             validateTransportOrderCanReceivePatientData(transportOrder);
 

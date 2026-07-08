@@ -1,0 +1,245 @@
+.manager-edit-order-page {
+  width: 100%;
+  padding: 32px 16px;
+  color: #0f172a;
+}
+
+.manager-edit-order-card {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.manager-edit-order-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.manager-edit-order-card__title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.manager-edit-order-card__subtitle {
+  margin: 6px 0 0;
+  color: #475569;
+}
+
+.manager-edit-order-card__back-button,
+.manager-edit-order-form__cancel-button,
+.manager-edit-order-form__secondary-button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.manager-edit-order-card__back-button:hover,
+.manager-edit-order-form__cancel-button:hover,
+.manager-edit-order-form__secondary-button:hover {
+  background: #e2e8f0;
+}
+
+.manager-edit-order-card__message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.manager-edit-order-card__message--error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.manager-edit-order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.manager-edit-order-form__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.manager-edit-order-form__grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.manager-edit-order-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.manager-edit-order-form__field span {
+  color: #334155;
+  font-size: 14px;
+}
+
+.manager-edit-order-form__field input,
+.manager-edit-order-form__field select,
+.manager-edit-order-form__field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+
+.manager-edit-order-form__field textarea {
+  resize: vertical;
+}
+
+.manager-edit-order-form__field input::placeholder,
+.manager-edit-order-form__field textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.manager-edit-order-form__field input:focus,
+.manager-edit-order-form__field select:focus,
+.manager-edit-order-form__field textarea:focus {
+  outline: none;
+  border-color: #334155;
+  box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.14);
+}
+
+.manager-edit-order-form__section {
+  padding: 18px;
+  border-radius: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.manager-edit-order-form__section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.manager-edit-order-form__section h2 {
+  margin: 0 0 6px;
+  color: #0f172a;
+  font-size: 20px;
+}
+
+.manager-edit-order-form__section p {
+  margin: 0;
+  color: #475569;
+}
+
+.manager-edit-order-form__empty-state {
+  padding: 14px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.manager-edit-order-form__patients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.manager-edit-order-form__patient-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.manager-edit-order-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.manager-edit-order-form__submit-button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #0f172a;
+  color: #ffffff;
+}
+
+.manager-edit-order-form__submit-button:hover {
+  background: #1e293b;
+}
+
+.manager-edit-order-form__submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.manager-edit-order-form__danger-button {
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.manager-edit-order-form__danger-button:hover {
+  background: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .manager-edit-order-form__grid,
+  .manager-edit-order-form__grid--three,
+  .manager-edit-order-form__patient-row {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-edit-order-form__section-header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 760px) {
+  .manager-edit-order-card__header {
+    flex-direction: column;
+  }
+
+  .manager-edit-order-form__actions {
+    flex-direction: column-reverse;
+  }
+
+  .manager-edit-order-form__submit-button,
+  .manager-edit-order-form__cancel-button,
+  .manager-edit-order-form__secondary-button,
+  .manager-edit-order-form__danger-button {
+    width: 100%;
+  }
+}
