@@ -3,8 +3,9 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { TransportOrderResponse } from "../../types/transportOrder";
 import {
-  getManagerTransportOrdersQueue,
+  getTransportOrdersQueue,
   cancelTransportOrder,
+  type TransportOrderStatus,
 } from "../../api/transportOrdersApi";
 import {
   getTransportOrderTypeLabel,
@@ -225,6 +226,26 @@ function isOverdueTransportOrder(
   return order.plannedDate < todayIsoDate && isActiveTransportOrder(order);
 }
 
+type ManagerOrdersViewMode = "ACTIVE" | "COMPLETED" | "CANCELLED" | "ALL";
+
+const managerOrdersViewModeLabels: Record<ManagerOrdersViewMode, string> = {
+  ACTIVE: "Aktywne",
+  COMPLETED: "Zrealizowane",
+  CANCELLED: "Anulowane",
+  ALL: "Wszystkie",
+};
+
+const managerOrdersViewModeStatuses: Record<
+  ManagerOrdersViewMode,
+  TransportOrderStatus[]
+> = {
+  ACTIVE: ["NEW", "WAITING_FOR_PICKUP", "IN_PROGRESS"],
+  COMPLETED: ["COMPLETED"],
+  CANCELLED: ["CANCELLED"],
+  ALL: ["NEW", "WAITING_FOR_PICKUP", "IN_PROGRESS", "COMPLETED", "CANCELLED"],
+};
+
+
 export function ManagerTransportOrdersSchedule() {
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -251,6 +272,7 @@ export function ManagerTransportOrdersSchedule() {
   const [cancelDescription, setCancelDescription] = useState("");
   const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
 
+  const [viewMode, setViewMode] = useState<ManagerOrdersViewMode>("ACTIVE");
 
   function updateSelectedPlannedDate(nextDate: string | null) {
     setSelectedPlannedDate(nextDate);
@@ -294,13 +316,24 @@ export function ManagerTransportOrdersSchedule() {
     updateSelectedPlannedDate(formatLocalIsoDate(addDays(baseDate, days)));
   }
 
+  function changeViewMode(nextViewMode: ManagerOrdersViewMode) {
+    setViewMode(nextViewMode);
+    setSuccess(null);
+
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("createdOrderId");
+    setSearchParams(nextParams);
+  }
+
   useEffect(() => {
     async function loadOrders() {
       try {
         setLoading(true);
         setErrorMessage(null);
 
-        const ordersData = await getManagerTransportOrdersQueue();
+        const ordersData = await getTransportOrdersQueue(
+          managerOrdersViewModeStatuses[viewMode]
+        );
 
         setOrders(ordersData);
       } catch (error) {
@@ -333,7 +366,7 @@ export function ManagerTransportOrdersSchedule() {
     }
 
     loadOrders();
-  }, []);
+  }, [viewMode]);
 
   if (loading) {
     return <p className="orders-list__message">Ładowanie harmonogramu...</p>;
@@ -348,7 +381,7 @@ export function ManagerTransportOrdersSchedule() {
 
   const visibleOrders = selectedPlannedDate === null
     ? orders
-    : selectedPlannedDate === todayIsoDate
+    : viewMode === "ACTIVE" && selectedPlannedDate === todayIsoDate
       ? orders.filter(
         (order) =>
           order.plannedDate === todayIsoDate
@@ -409,52 +442,74 @@ export function ManagerTransportOrdersSchedule() {
   return (
     <div className="orders-dashboard-list">
       <section className="orders-subsection">
-        <div className="transport-plan-filters">
-          <button
-            className="transport-plan-filters__button"
-            type="button"
-            onClick={() => changeSelectedDateByDays(-1)}
-          >
-            ← Poprzedni dzień
-          </button>
+        <div className="transport-plan-toolbar">
+          <div className="transport-plan-filters">
+            <button
+              className="transport-plan-filters__button"
+              type="button"
+              onClick={() => changeSelectedDateByDays(-1)}
+            >
+              ← Poprzedni dzień
+            </button>
 
-          <label className="transport-plan-filters__field">
-            <span>Data harmonogramu</span>
-            <input
-              type="date"
-              value={selectedPlannedDate ?? ""}
-              onChange={(event) =>
-                updateSelectedPlannedDate(
-                  event.target.value.length > 0 ? event.target.value : null
-                )
-              }
-            />
-          </label>
+            <label className="transport-plan-filters__field">
+              <span>Data harmonogramu</span>
+              <input
+                type="date"
+                value={selectedPlannedDate ?? ""}
+                onChange={(event) =>
+                  updateSelectedPlannedDate(
+                    event.target.value.length > 0 ? event.target.value : null
+                  )
+                }
+              />
+            </label>
 
-          <button
-            className="transport-plan-filters__button"
-            type="button"
-            onClick={() => changeSelectedDateByDays(1)}
-          >
-            Następny dzień →
-          </button>
+            <button
+              className="transport-plan-filters__button"
+              type="button"
+              onClick={() => changeSelectedDateByDays(1)}
+            >
+              Następny dzień →
+            </button>
 
-          <button
-            className="transport-plan-filters__button"
-            type="button"
-            onClick={() => updateSelectedPlannedDate(getTodayIsoDate())}
-          >
-            Dzisiaj
-          </button>
+            <button
+              className="transport-plan-filters__button"
+              type="button"
+              onClick={() => updateSelectedPlannedDate(getTodayIsoDate())}
+            >
+              Dzisiaj
+            </button>
 
-          <button
-            className="transport-plan-filters__button transport-plan-filters__button--secondary"
-            type="button"
-            onClick={() => updateSelectedPlannedDate(null)}
-          >
-            Pokaż wszystko
-          </button>
+            <button
+              className="transport-plan-filters__button transport-plan-filters__button--secondary"
+              type="button"
+              onClick={() => updateSelectedPlannedDate(null)}
+            >
+              Pokaż wszystko
+            </button>
+          </div>
+
+          <div className="manager-orders-view-tabs">
+            {(Object.keys(managerOrdersViewModeLabels) as ManagerOrdersViewMode[]).map(
+              (mode) => (
+                <button
+                  key={mode}
+                  className={
+                    viewMode === mode
+                      ? "manager-orders-view-tabs__button manager-orders-view-tabs__button--active"
+                      : "manager-orders-view-tabs__button"
+                  }
+                  type="button"
+                  onClick={() => changeViewMode(mode)}
+                >
+                  {managerOrdersViewModeLabels[mode]}
+                </button>
+              )
+            )}
+          </div>
         </div>
+
 
         {success && (
           <p className="orders-list__message orders-list__message--success">
@@ -502,6 +557,9 @@ export function ManagerTransportOrdersSchedule() {
 
                     <tbody>
                       {dateGroup.orders.map((order) => {
+                        const canModifyOrder =
+                          order.status !== "COMPLETED" && order.status !== "CANCELLED";
+
                         const rowClassName = [
                           "transport-plan__row",
                           order.priority === "URGENT"
@@ -528,7 +586,7 @@ export function ManagerTransportOrdersSchedule() {
 
                               {isOverdueTransportOrder(order, todayIsoDate) && (
                                 <span>Zaległe</span>
-                                )}
+                              )}
                             </td>
 
                             <td>
@@ -565,21 +623,25 @@ export function ManagerTransportOrdersSchedule() {
                                   Podgląd
                                 </Link>
 
-                                <Link
-                                  className="transport-plan__details-link"
-                                  to={`/manager/transport-orders/${order.id}/edit`}
-                                >
-                                  Edytuj
-                                </Link>
+                                {canModifyOrder && (
+                                  <Link
+                                    className="transport-plan__details-link"
+                                    to={`/manager/transport-orders/${order.id}/edit`}
+                                  >
+                                    Edytuj
+                                  </Link>
+                                )}
 
-                                <button
-                                  className="transport-plan__cancel-button"
-                                  type="button"
-                                  onClick={() => openCancelModal(order)}
-                                  disabled={cancellingOrderId === order.id}
-                                >
-                                  {cancellingOrderId === order.id ? "Anulowanie..." : "Anuluj"}
-                                </button>
+                                {canModifyOrder && (
+                                  <button
+                                    className="transport-plan__cancel-button"
+                                    type="button"
+                                    onClick={() => openCancelModal(order)}
+                                    disabled={cancellingOrderId === order.id}
+                                  >
+                                    {cancellingOrderId === order.id ? "Anulowanie..." : "Anuluj"}
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
