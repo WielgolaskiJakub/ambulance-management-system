@@ -113,12 +113,24 @@ export type TransportOrderDetailsResponse = {
   source: string;
   priority: string;
   status: string;
+
+  createdById: number;
+  createdByFullName: string;
+  createdByRole: string;
+
   pickupAddress: string | null;
   destinationAddress: string | null;
   description: string | null;
+
   createdAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
+
+  cancelledById: number | null;
+  cancelledByFullName: string | null;
+  cancelReason: string | null;
+  cancelDescription: string | null;
+
   patients: TransportOrderPatientDataResponse[];
   routes: TransportOrderRouteSummaryResponse[];
 };

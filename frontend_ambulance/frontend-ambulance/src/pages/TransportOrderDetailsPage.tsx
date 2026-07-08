@@ -9,10 +9,12 @@ import {
   getTransportPriorityLabel,
   getTransportSourceLabel,
   getTransportStatusLabel,
+  getTransportCancelLabel,
 } from "../utils/transportOrderLabels";
 import "./TransportOrderDetailsPage.css";
 import { getRouteStatusLabel } from "../utils/routeLabels";
 import { getCurrentUserRole } from "../utils/auth";
+import { getUserRoleLabel } from "../utils/userRoleLabels";
 
 
 function hasText(value: string | null | undefined): value is string {
@@ -119,53 +121,73 @@ export function TransportOrderDetailsPage() {
       </main>
     );
   }
+  
+  const canModifyOrder= 
+  order.status !== "COMPLETED" && order.status !== "CANCELLED";
 
   return (
     <main className="transport-order-details-page">
       <article className="transport-order-details-card">
-        <header className="transport-order-details-card__header">
-          <button
-            className="transport-order-details-page__back-button"
-            type="button"
-            onClick={() => navigate(backPath)}
-          >
-            Wróć
-          </button>
+   <header className="transport-order-details-card__header">
+  <div className="transport-order-details-card__header-left">
+    <button
+      className="transport-order-details-page__back-button"
+      type="button"
+      onClick={() => navigate(backPath)}
+    >
+      Wróć
+    </button>
 
-          <div className="transport-order-details-card__title-group">
-            <h1 className="transport-order-details-card__title">
-              {order.orderNumber ?? `Zlecenie #${order.id}`}
-            </h1>
+    <div className="transport-order-details-card__title-group">
+      <h1 className="transport-order-details-card__title">
+        {order.orderNumber ?? `Zlecenie #${order.id}`}
+      </h1>
 
-            <p className="transport-order-details-card__subtitle">
-              {getTransportOrderTypeLabel(order.orderType)} •{" "}
-              {getTransportSourceLabel(order.source)}
-            </p>
-          </div>
+      <p className="transport-order-details-card__subtitle">
+        {getTransportOrderTypeLabel(order.orderType)} •{" "}
+        {getTransportSourceLabel(order.source)}
+      </p>
 
-          <div className="transport-order-details-card__badges">
-            <span className="transport-order-details-card__status">
-              {getTransportStatusLabel(order.status)}
-            </span>
+      {isManagerUser && canModifyOrder && (
+        <Link
+          className="transport-order-details-card__edit-button"
+          to={`/manager/transport-orders/${order.id}/edit`}
+        >
+          Edytuj zlecenie
+        </Link>
+      )}
+    </div>
+  </div>
 
-            <span className="transport-order-details-card__priority">
-              {getTransportPriorityLabel(order.priority)}
-            </span>
-          </div>
-        </header>
+  <div className="transport-order-details-card__badges">
+    <span className="transport-order-details-card__status">
+      {getTransportStatusLabel(order.status)}
+    </span>
 
-        {isManagerUser && (
-          <Link
-            className="transport-order-details-card__edit-link"
-            to={`/manager/transport-orders/${order.id}/edit`}
-          >
-            Edytuj zlecenie
-          </Link>
-        )}
+    <span className="transport-order-details-card__priority">
+      {getTransportPriorityLabel(order.priority)}
+    </span>
+  </div>
+</header>
 
 
         <section className="transport-order-details-section">
           <h2>Informacje o zleceniu</h2>
+          <p>
+            <strong>Utworzył:</strong> {order.createdByFullName}: {(getUserRoleLabel(order.createdByRole))}
+          </p>
+
+          {order.plannedDate && (
+            <p>
+              <strong>Data realizacji:</strong> {order.plannedDate}
+            </p>
+          )}
+
+          {order.plannedDepartureTime && (
+            <p>
+              <strong>Godzina realizacji:</strong> {order.plannedDepartureTime.slice(0, 5)}
+            </p>
+          )}
 
           <div className="transport-order-details-section__rows">
             <p>
@@ -189,6 +211,38 @@ export function TransportOrderDetailsPage() {
             )}
           </div>
         </section>
+
+        {order.status === "CANCELLED" && (
+          <section className="transport-order-details-section transport-order-details-section--cancelled">
+            <h2>Anulowanie zlecenia</h2>
+
+            <div className="transport-order-details-section__rows">
+              {order.cancelledAt && (
+                <p>
+                  <strong>Anulowano:</strong> {formatDateTime(order.cancelledAt)}
+                </p>
+              )}
+
+              {order.cancelledByFullName && (
+                <p>
+                  <strong>Anulował:</strong> {order.cancelledByFullName}
+                </p>
+              )}
+
+              {order.cancelReason && (
+                <p>
+                  <strong>Powód:</strong> {getTransportCancelLabel(order.cancelReason)}
+                </p>
+              )}
+
+              {hasText(order.cancelDescription) && (
+                <p>
+                  <strong>Opis:</strong> {order.cancelDescription}
+                </p>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="transport-order-details-section">
           <h2>Przejazd</h2>
