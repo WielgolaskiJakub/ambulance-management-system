@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import type { TransportOrderResponse } from "../../types/transportOrder";
 import {
@@ -15,6 +15,17 @@ import {
 } from "../../utils/transportOrderLabels";
 import "../dashboard/TransportWorkPlan.css";
 
+
+
+function parseOptionalNumber(value: string | null): number | null {
+  if (value === null || value.trim().length === 0) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isInteger(parsedValue) ? parsedValue : null;
+}
 
 
 function hasText(value: string | null | undefined): value is string {
@@ -54,6 +65,15 @@ function addDays(date: Date, days: number): Date {
   nextDate.setDate(nextDate.getDate() + days);
 
   return nextDate;
+}
+
+function parseIsoDateToLocalDate(isoDate: string): Date {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function getTodayIsoDate(): string {
+  return formatLocalIsoDate(new Date());
 }
 
 function formatPlanDate(plannedDate: string | null | undefined): string {
@@ -187,16 +207,66 @@ function groupOrdersByPlannedDate(
   return [...groups.values()];
 }
 
+function isActiveTransportOrder(order: TransportOrderResponse): boolean {
+  return (
+    order.status === "WAITING_FOR_PICKUP" ||
+    order.status === "IN_PROGRESS" ||
+    order.status === "NEW"
+  );
+}
+
+function isOverdueTransportOrder(
+  order: TransportOrderResponse,
+  todayIsoDate: string
+): boolean {
+  if (!hasText(order.plannedDate)) {
+    return false;
+  }
+  return order.plannedDate < todayIsoDate && isActiveTransportOrder(order);
+}
 
 export function ManagerTransportOrdersSchedule() {
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const createdOrderId = parseOptionalNumber(searchParams.get("createdOrderId"));
+  const dateFromUrl = searchParams.get("date");
+
   const [orders, setOrders] = useState<TransportOrderResponse[]>([]);
+  const [selectedPlannedDate, setSelectedPlannedDate] = useState<string | null>(
+    () => dateFromUrl ?? formatLocalIsoDate(new Date())
+  );
+
+
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+
+  const [success, setSuccess] = useState<string | null>(
+    () => createdOrderId !== null
+      ? `Zlecenie #${createdOrderId} zostało utworzone i dodane do harmonogramu.`
+      : null);
+
+
   const [orderToCancel, setOrderToCancel] = useState<TransportOrderResponse | null>(null);
   const [cancelReason, setCancelReason] = useState<string>("CANCELLED_BY_WARD");
   const [cancelDescription, setCancelDescription] = useState("");
   const [cancellingOrderId, setCancellingOrderId] = useState<number | null>(null);
+
+
+  function updateSelectedPlannedDate(nextDate: string | null) {
+    setSelectedPlannedDate(nextDate);
+    setSuccess(null);
+
+    const nextParams = new URLSearchParams(searchParams);
+
+    if (nextDate === null) {
+      nextParams.delete("date");
+    } else {
+      nextParams.set("date", nextDate);
+    }
+
+    nextParams.delete("createdOrderId");
+    setSearchParams(nextParams);
+  }
 
   function openCancelModal(order: TransportOrderResponse) {
     setOrderToCancel(order);
@@ -213,6 +283,15 @@ export function ManagerTransportOrdersSchedule() {
     setOrderToCancel(null);
     setCancelReason("CANCELLED_BY_WARD");
     setCancelDescription("");
+  }
+
+  function changeSelectedDateByDays(days: number) {
+    const baseDate =
+      selectedPlannedDate !== null
+        ? parseIsoDateToLocalDate(selectedPlannedDate)
+        : new Date();
+
+    updateSelectedPlannedDate(formatLocalIsoDate(addDays(baseDate, days)));
   }
 
   useEffect(() => {
@@ -264,7 +343,20 @@ export function ManagerTransportOrdersSchedule() {
     return <p className="orders-list__message">{errorMessage}</p>;
   }
 
-  const ordersByDate = groupOrdersByPlannedDate(orders);
+  const todayIsoDate = getTodayIsoDate();
+
+
+  const visibleOrders = selectedPlannedDate === null
+    ? orders
+    : selectedPlannedDate === todayIsoDate
+      ? orders.filter(
+        (order) =>
+          order.plannedDate === todayIsoDate
+          || isOverdueTransportOrder(order, todayIsoDate)
+      )
+      : orders.filter((order) => order.plannedDate === selectedPlannedDate);
+
+  const ordersByDate = groupOrdersByPlannedDate(visibleOrders);
 
   async function handleCancelTransportOrder() {
     if (orderToCancel === null) {
@@ -317,7 +409,60 @@ export function ManagerTransportOrdersSchedule() {
   return (
     <div className="orders-dashboard-list">
       <section className="orders-subsection">
-        {orders.length === 0 ? (
+        <div className="transport-plan-filters">
+          <button
+            className="transport-plan-filters__button"
+            type="button"
+            onClick={() => changeSelectedDateByDays(-1)}
+          >
+            ← Poprzedni dzień
+          </button>
+
+          <label className="transport-plan-filters__field">
+            <span>Data harmonogramu</span>
+            <input
+              type="date"
+              value={selectedPlannedDate ?? ""}
+              onChange={(event) =>
+                updateSelectedPlannedDate(
+                  event.target.value.length > 0 ? event.target.value : null
+                )
+              }
+            />
+          </label>
+
+          <button
+            className="transport-plan-filters__button"
+            type="button"
+            onClick={() => changeSelectedDateByDays(1)}
+          >
+            Następny dzień →
+          </button>
+
+          <button
+            className="transport-plan-filters__button"
+            type="button"
+            onClick={() => updateSelectedPlannedDate(getTodayIsoDate())}
+          >
+            Dzisiaj
+          </button>
+
+          <button
+            className="transport-plan-filters__button transport-plan-filters__button--secondary"
+            type="button"
+            onClick={() => updateSelectedPlannedDate(null)}
+          >
+            Pokaż wszystko
+          </button>
+        </div>
+
+        {success && (
+          <p className="orders-list__message orders-list__message--success">
+            {success}
+          </p>
+        )}
+
+        {visibleOrders.length === 0 ? (
           <p className="orders-list__message">Brak zleceń w harmonogramie.</p>
         ) : (
           <div className="transport-work-plan">
@@ -365,6 +510,10 @@ export function ManagerTransportOrdersSchedule() {
                           order.status === "WAITING_FOR_PICKUP"
                             ? "transport-plan__row--waiting"
                             : "",
+                          order.id === createdOrderId ? "transport-plan__row--highlighted" : "",
+                          isOverdueTransportOrder(order, todayIsoDate)
+                            ? "transport-plan__row--overdue"
+                            : "",
                         ]
                           .filter(Boolean)
                           .join(" ");
@@ -376,6 +525,10 @@ export function ManagerTransportOrdersSchedule() {
                               {!hasExactPlannedDepartureTime(order) && (
                                 <span>bez konkretnej godziny</span>
                               )}
+
+                              {isOverdueTransportOrder(order, todayIsoDate) && (
+                                <span>Zaległe</span>
+                                )}
                             </td>
 
                             <td>

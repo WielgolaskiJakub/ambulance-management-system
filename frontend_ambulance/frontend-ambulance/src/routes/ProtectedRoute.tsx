@@ -24,14 +24,19 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   }
 
   let decodedToken: JwtPayload;
-
   try {
     decodedToken = jwtDecode<JwtPayload>(token);
-  } catch {
+  } catch (error) {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+  
+  if (decodedToken.exp * 1000 < Date.now()) {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  return <Navigate to="/login" state={{ from: location }} replace />;
+}
 
   if (allowedRoles && !allowedRoles.includes(decodedToken.role)) {
     return <Navigate to="/unauthorized" replace />;

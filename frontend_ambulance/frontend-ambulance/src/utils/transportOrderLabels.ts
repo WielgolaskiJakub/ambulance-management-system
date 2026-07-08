@@ -20,11 +20,11 @@ export const transportCancelLabels: Record<string, string> = {
     CANCELLED_BY_WARD: "Anulowane przez oddział",
     CANCELLED_BY_DOCTOR: "Anulowane przez lekarza",
     PATIENT_USED_OWN_TRANSPORT: "Pacjent skorzystał z własnego transportu",
-    PATIENT_TAKEN_BY_INTERNAL_TRANSPORT: "Pacjent zabrany przez transport zewnętrzny",
+    PATIENT_TAKEN_BY_EXTERNAL_TRANSPORT: "Pacjent zabrany przez transport zewnętrzny",
     PATIENT_REFUSED_TRANSPORT: "Pacjent odmówił transportu",
     PATIENT_NOT_READY: "Pacjent nie był gotowy do transportu",
     PATIENT_NOT_FOUND: "Nie znaleziono pacjenta",
-    WRONG_ORDER_DATA: "Nieprawidłowa data zlecenia",
+    WRONG_ORDER_DATA: "Nieprawidłowe dane zlecenia",
     DUPLICATE_ORDER: "Zduplikowane zlecenie",
     OTHER: "Inny powód",
 };

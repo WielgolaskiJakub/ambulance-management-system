@@ -75,7 +75,7 @@ export function TopNavigation() {
 
         {isManagerUser && (
             <>
-          <NavLink className="top-navigation__link" to="manager/dashboard">
+          <NavLink className="top-navigation__link" to="/manager/dashboard">
             Harmonogram
           </NavLink>
        

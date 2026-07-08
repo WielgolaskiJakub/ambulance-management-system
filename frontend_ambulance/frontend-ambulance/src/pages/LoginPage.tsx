@@ -1,5 +1,4 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
 import "./LoginPage.css";
@@ -39,12 +38,7 @@ export function LoginPage() {
       navigate("/unauthorized");
       
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log("STATUS:", error.response?.status);
-        console.log("DATA:", error.response?.data);
-        console.log("URL:", error.config?.baseURL, error.config?.url);
-      }
-
+    
       alert("Nie udało się zalogować");
     }
   }
@@ -66,11 +60,6 @@ export function LoginPage() {
               className="login-form__input"
               value={username}
               onChange={(event) => setUsername(event.target.value)}
-              onKeyDown={(event)=> {
-                if (event.key === "Enter") {
-                  handleSubmit(event as any);
-                }
-              }}
             />
           </div>
 

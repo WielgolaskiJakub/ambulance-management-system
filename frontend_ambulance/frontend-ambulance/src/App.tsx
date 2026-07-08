@@ -39,7 +39,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/shifts/create" element={<CreateShiftPage />} />
-          <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />k
+          <Route path="/transport-orders/create" element={<CreateTransportOrderPage />} />
           <Route path="/transport-orders/me" element={<MyTransportOrdersPage />} />
           <Route
             path="/transport-orders/:orderId/preview"

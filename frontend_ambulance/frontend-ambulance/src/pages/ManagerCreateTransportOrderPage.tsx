@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate} from "react-router-dom";
 import axios from "axios";
 import { createTransportOrderByManager } from "../api/transportOrdersApi";
 import {
@@ -118,7 +118,7 @@ export function ManagerCreateTransportOrderPage() {
                         : [],
             });
 
-            navigate(`/transport-orders/${createdOrder.id}/preview`, { replace: true });
+            navigate(`/manager/dashboard?date=${createdOrder.plannedDate}&createdOrderId=${createdOrder.id}`);
         } catch (error) {
             if (axios.isAxiosError(error)) {
 

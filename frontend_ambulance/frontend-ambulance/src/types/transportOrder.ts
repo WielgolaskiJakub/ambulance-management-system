@@ -1,6 +1,6 @@
 export type TransportOrderResponse = {
   id: number;
-  plannedDate: string;
+  plannedDate: string | null;
   plannedDepartureTime: string | null;
   orderNumber: string | null;
   orderType: string;
@@ -107,7 +107,7 @@ export type TransportOrderRouteSummaryResponse = {
 export type TransportOrderDetailsResponse = {
   id: number;
   orderNumber: string | null;
-  plannedDate: string;
+  plannedDate: string | null;
   plannedDepartureTime: string | null;
   orderType: string;
   source: string;
