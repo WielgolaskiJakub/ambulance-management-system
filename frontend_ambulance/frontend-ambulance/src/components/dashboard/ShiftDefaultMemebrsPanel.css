@@ -1,114 +1,123 @@
-.shift-crew-overview {
-    margin-top: 18px;
+.shift-crew-sidebar {
+    height: 100%;
     padding: 18px;
     border: 1px solid rgba(148, 163, 184, 0.22);
     border-radius: 18px;
-    background: rgba(15, 23, 42, 0.42);
+    background: rgba(15, 23, 42, 0.48);
 }
 
-.shift-crew-overview__header {
+.shift-crew-sidebar__header {
     margin-bottom: 16px;
 }
 
-.shift-crew-overview__header h2 {
-    margin: 0;
-    font-size: 22px;
-    color: #f8fafc;
-}
-
-.shift-crew-overview__header p {
-    margin: 4px 0 0;
-    font-size: 13px;
-    color: #94a3b8;
-}
-
-.shift-crew-overview__grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-}
-
-.shift-crew-column {
-    padding: 14px;
-    border-radius: 14px;
-    background: rgba(30, 41, 59, 0.62);
-    border: 1px solid rgba(148, 163, 184, 0.16);
-}
-
-.shift-crew-column h3 {
-    margin: 0 0 12px;
-    font-size: 14px;
-    color: #cbd5e1;
+.shift-crew-sidebar__eyebrow {
+    margin: 0 0 6px;
+    color: #93c5fd;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
-.shift-person-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-}
-
-.shift-person-card strong {
-    display: block;
-    font-size: 16px;
+.shift-crew-sidebar__header h2 {
+    margin: 0;
     color: #f8fafc;
+    font-size: 22px;
+    line-height: 1.1;
 }
 
-.shift-person-card span {
-    display: block;
-    margin-top: 3px;
+.shift-crew-sidebar__header p:last-child {
+    margin: 6px 0 0;
+    color: #94a3b8;
     font-size: 13px;
-    color: #bfdbfe;
 }
 
-.shift-person-card small {
+.shift-crew-sidebar__message,
+.shift-crew-sidebar__empty,
+.shift-crew-sidebar__error {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.shift-crew-sidebar__error {
+    margin-bottom: 12px;
+    color: #fecaca;
+    font-weight: 700;
+}
+
+.shift-crew-sidebar__list {
+    display: grid;
+    gap: 12px;
+}
+
+.shift-crew-sidebar__member {
+    display: grid;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 16px;
+    background: rgba(30, 41, 59, 0.64);
+}
+
+.shift-crew-sidebar__member-main strong {
     display: block;
-    margin-top: 6px;
-    font-size: 13px;
+    color: #f8fafc;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.shift-crew-sidebar__member-main span {
+    display: inline-flex;
+    width: fit-content;
+    margin-top: 8px;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: rgba(148, 163, 184, 0.18);
+    color: #dbeafe;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.shift-crew-sidebar__member-main small {
+    display: block;
+    margin-top: 10px;
     color: #cbd5e1;
+    font-size: 13px;
+    font-weight: 700;
 }
 
-.shift-person-card__actions {
+.shift-crew-sidebar__actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
-.shift-person-card button {
+.shift-crew-sidebar__button {
     border: none;
     border-radius: 10px;
     padding: 8px 11px;
-    font-size: 12px;
-    font-weight: 800;
-    cursor: pointer;
     background: #334155;
     color: #f8fafc;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
 }
 
-.shift-person-card button:hover {
+.shift-crew-sidebar__button:hover:not(:disabled) {
     background: #475569;
 }
 
-.shift-person-card__danger,
-.shift-person-card button:last-child {
+.shift-crew-sidebar__button--danger {
     background: #b91c1c;
-    color: white;
+    color: #ffffff;
 }
 
-.shift-person-card__danger:hover,
-.shift-person-card button:last-child:hover {
+.shift-crew-sidebar__button--danger:hover:not(:disabled) {
     background: #dc2626;
 }
 
-.shift-crew-empty {
-    margin: 0;
-    color: #94a3b8;
-    font-size: 14px;
-}
-
-@media (max-width: 900px) {
-    .shift-crew-overview__grid {
-        grid-template-columns: 1fr;
-    }
+.shift-crew-sidebar__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
 }
