@@ -190,63 +190,57 @@ export function DashboardSummary() {
 
     return (
         <section className="dashboard-summary driver-dashboard-overview">
-            <div className="driver-dashboard-overview__main">
-                <div className="driver-dashboard-identity">
-                    <span>Kierowca</span>
-                    <strong>{dashboard.loggedUserFullName}</strong>
-                    <small>
-                        {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
-                    </small>
-                </div>
+            <div className="driver-dashboard-identity">
+                <span>Kierowca</span>
+                <strong>{dashboard.loggedUserFullName}</strong>
+                <small>
+                    {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
+                </small>
+            </div>
 
-                <div className="driver-dashboard-metrics">
-                    <div className="dashboard-summary__compact-item">
-                        <span>Zmiana</span>
-                        <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
-                        <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
-                    </div>
+            <div className="dashboard-summary__compact-item">
+                <span>Zmiana</span>
+                <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
+                <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
+            </div>
 
-                    <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
-                        <span>Karetka</span>
-                        <strong>{dashboard.registrationPlates}</strong>
-                        <small>{dashboard.carBrand} {dashboard.model}</small>
-                    </div>
+            <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
+                <span>Karetka</span>
+                <strong>{dashboard.registrationPlates}</strong>
+                <small>{dashboard.carBrand} {dashboard.model}</small>
+            </div>
 
-                    <div className="dashboard-summary__compact-item">
-                        <span>Przebieg</span>
-                        <strong>{dashboard.mileage} km</strong>
-                    </div>
+            <div className="dashboard-summary__compact-item">
+                <span>Przebieg</span>
+                <strong>{dashboard.mileage} km</strong>
+            </div>
 
-                    <div className="dashboard-summary__compact-item">
-                        <span>Paliwo</span>
-                        <strong>
-                            {dashboard.estimatedFuelLitersDisplay !== null
-                                ? `${dashboard.estimatedFuelLitersDisplay} l`
-                                : "Brak danych"}
-                        </strong>
-                        {dashboard.tankCapacityLiters !== null && (
-                            <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
-                        )}
-                    </div>
-                </div>
-
-                <button
-                    className="dashboard-summary__finish-button driver-dashboard-finish-button"
-                    type="button"
-                    disabled={finishingShift}
-                    onClick={handleFinishShift}
-                >
-                    {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
-                </button>
-
-                {successMessage && (
-                    <p className="dashboard-summary__success-message">{successMessage}</p>
+            <div className="dashboard-summary__compact-item">
+                <span>Paliwo</span>
+                <strong>
+                    {dashboard.estimatedFuelLitersDisplay !== null
+                        ? `${dashboard.estimatedFuelLitersDisplay} l`
+                        : "Brak danych"}
+                </strong>
+                {dashboard.tankCapacityLiters !== null && (
+                    <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
                 )}
             </div>
 
-            <aside className="driver-dashboard-overview__side">
-                <ShiftDefaultMembersPanel shiftId={dashboard.shiftId} />
-            </aside>
+            <ShiftDefaultMembersPanel shiftId={dashboard.shiftId} />
+
+            <button
+                className="dashboard-summary__finish-button driver-dashboard-finish-button"
+                type="button"
+                disabled={finishingShift}
+                onClick={handleFinishShift}
+            >
+                {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
+            </button>
+
+            {successMessage && (
+                <p className="dashboard-summary__success-message">{successMessage}</p>
+            )}
         </section>
     );
 }
