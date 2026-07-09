@@ -8,6 +8,7 @@ import { getUserRoleLabel } from "../../utils/userRoleLabels";
 import { formatDate } from "../../utils/dateTimeFormat";
 import { finishShift } from "../../api/shiftsApi";
 import { ShiftDefaultMembersPanel } from "./ShiftDefaultMembersPanel";
+import "./DashboardSummary.css";
 
 type ApiErrorResponse = {
     code?: string;
@@ -106,7 +107,7 @@ export function DashboardSummary() {
                         state: {
                             warningMessage:
                                 "Nie można zakończyć zmiany, ponieważ masz niezakończone trasy.",
-                        }
+                        },
                     });
                     return;
                 }
@@ -188,66 +189,70 @@ export function DashboardSummary() {
     }
 
     return (
-        <section className="dashboard-summary dashboard-summary--compact">
-            <div className="dashboard-summary__compact-user">
-                <div>
-                    <h2 className="dashboard-summary__title">
-                        {dashboard.loggedUserFullName}
-                    </h2>
+        <section className="dashboard-summary driver-dashboard-overview">
+            <div className="driver-dashboard-overview__main">
+                <header className="driver-dashboard-overview__header">
+                    <div>
+                        <p className="driver-dashboard-overview__eyebrow">Dashboard kierowcy</p>
 
-                    <p className="dashboard-summary__subtitle">
-                        {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
-                    </p>
+                        <h2 className="dashboard-summary__title">
+                            {dashboard.loggedUserFullName}
+                        </h2>
+
+                        <p className="dashboard-summary__subtitle">
+                            {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
+                        </p>
+                    </div>
+
+                    <button
+                        className="dashboard-summary__finish-button"
+                        type="button"
+                        disabled={finishingShift}
+                        onClick={handleFinishShift}
+                    >
+                        {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
+                    </button>
+                </header>
+
+                <div className="driver-dashboard-metrics">
+                    <div className="dashboard-summary__compact-item">
+                        <span>Zmiana</span>
+                        <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
+                        <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
+                    </div>
+
+                    <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
+                        <span>Karetka</span>
+                        <strong>{dashboard.registrationPlates}</strong>
+                        <small>{dashboard.carBrand} {dashboard.model}</small>
+                    </div>
+
+                    <div className="dashboard-summary__compact-item">
+                        <span>Przebieg</span>
+                        <strong>{dashboard.mileage} km</strong>
+                    </div>
+
+                    <div className="dashboard-summary__compact-item">
+                        <span>Paliwo</span>
+                        <strong>
+                            {dashboard.estimatedFuelLitersDisplay !== null
+                                ? `${dashboard.estimatedFuelLitersDisplay} l`
+                                : "Brak danych"}
+                        </strong>
+                        {dashboard.tankCapacityLiters !== null && (
+                            <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
+                        )}
+                    </div>
                 </div>
+
+                {successMessage && (
+                    <p className="dashboard-summary__success-message">{successMessage}</p>
+                )}
             </div>
 
-            <div className="dashboard-summary__compact-details">
-                <div className="dashboard-summary__compact-item">
-                    <span>Zmiana</span>
-                    <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
-                    <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
-                </div>
-
-                <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
-                    <span>Karetka</span>
-                    <strong>{dashboard.registrationPlates}</strong>
-                    <small>{dashboard.carBrand} {dashboard.model}</small>
-                </div>
-
-                <div className="dashboard-summary__compact-item">
-                    <span>Przebieg</span>
-                    <strong>{dashboard.mileage} km</strong>
-                </div>
-
-                <div className="dashboard-summary__compact-item">
-                    <span>Paliwo</span>
-                    <strong>
-                        {dashboard.estimatedFuelLitersDisplay !== null
-                            ? `${dashboard.estimatedFuelLitersDisplay} l`
-                            : "Brak danych"}
-                    </strong>
-                    {dashboard.tankCapacityLiters !== null && (
-                        <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
-                    )}
-                </div>
-
+            <aside className="driver-dashboard-overview__side">
                 <ShiftDefaultMembersPanel shiftId={dashboard.shiftId} />
-            </div>
-
-            <div className="dashboard-summary__compact-actions">
-                <button
-                    className="dashboard-summary__finish-button"
-                    type="button"
-                    disabled={finishingShift}
-                    onClick={handleFinishShift}
-                >
-                    {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
-                </button>
-            </div>
-
-            {successMessage && (
-                <p className="dashboard-summary__success-message">{successMessage}</p>
-            )}
+            </aside>
         </section>
     );
 }
