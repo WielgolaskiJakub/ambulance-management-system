@@ -191,28 +191,13 @@ export function DashboardSummary() {
     return (
         <section className="dashboard-summary driver-dashboard-overview">
             <div className="driver-dashboard-overview__main">
-                <header className="driver-dashboard-overview__header">
-                    <div>
-                        <p className="driver-dashboard-overview__eyebrow">Dashboard kierowcy</p>
-
-                        <h2 className="dashboard-summary__title">
-                            {dashboard.loggedUserFullName}
-                        </h2>
-
-                        <p className="dashboard-summary__subtitle">
-                            {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
-                        </p>
-                    </div>
-
-                    <button
-                        className="dashboard-summary__finish-button"
-                        type="button"
-                        disabled={finishingShift}
-                        onClick={handleFinishShift}
-                    >
-                        {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
-                    </button>
-                </header>
+                <div className="driver-dashboard-identity">
+                    <span>Kierowca</span>
+                    <strong>{dashboard.loggedUserFullName}</strong>
+                    <small>
+                        {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
+                    </small>
+                </div>
 
                 <div className="driver-dashboard-metrics">
                     <div className="dashboard-summary__compact-item">
@@ -244,6 +229,15 @@ export function DashboardSummary() {
                         )}
                     </div>
                 </div>
+
+                <button
+                    className="dashboard-summary__finish-button driver-dashboard-finish-button"
+                    type="button"
+                    disabled={finishingShift}
+                    onClick={handleFinishShift}
+                >
+                    {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
+                </button>
 
                 {successMessage && (
                     <p className="dashboard-summary__success-message">{successMessage}</p>
