@@ -163,15 +163,15 @@ public class ShiftDefaultMemberService {
             LocalDateTime endTime,
             Shift shift
     ) {
-        if (startTime == null || endTime == null) {
+        if (startTime == null ) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
 
-        if (!endTime.isAfter(startTime)) {
+        if (endTime != null && !endTime.isAfter(startTime)) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
 
-        if (startTime.isBefore(shift.getStartTime()) || endTime.isAfter(shift.getEndTime())) {
+        if (startTime.isBefore(shift.getStartTime())) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
     }

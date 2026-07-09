@@ -11,6 +11,7 @@ public record RouteMemberResponse(
         Long id,
         Long routeId,
         Long userId,
+        Long originShiftId,
         String memberName,
         String fullName,
         RouteMemberRole role,
@@ -29,10 +30,16 @@ public record RouteMemberResponse(
         } else {
             fullName = routeMember.getMemberName();
         }
+
+        Long originShiftId = routeMember.getOriginShift() != null
+                ? routeMember.getOriginShift().getId()
+                : null;
+
         return new RouteMemberResponse(
                 routeMember.getId(),
                 routeMember.getRoute().getId(),
                 userId,
+                originShiftId,
                 routeMember.getMemberName(),
                 fullName,
                 routeMember.getRole(),

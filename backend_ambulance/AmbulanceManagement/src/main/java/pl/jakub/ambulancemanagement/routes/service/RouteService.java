@@ -20,6 +20,8 @@ import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteOrderFinishAction;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
+import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
+import pl.jakub.ambulancemanagement.shift_default_members.repository.ShiftDefaultMemberRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
@@ -50,6 +52,7 @@ public class RouteService {
     private final TransportOrderPatientDataRepository transportOrderPatientDataRepository;
     private final RouteMemberRepository routeMemberRepository;
     private final CurrentUserService currentUserService;
+    private final ShiftDefaultMemberRepository shiftDefaultMemberRepository;
 
     public List<Route> getAllRoutes() {
         return routeRepository.findAll();
@@ -62,8 +65,8 @@ public class RouteService {
 
     @Transactional(readOnly = true)
     public List<RouteResponse> getMyRoutes() {
-        User currentUser= currentUserService.getCurrentUser();
-        return  routeRepository.findMyRoutes(currentUser.getId())
+        User currentUser = currentUserService.getCurrentUser();
+        return routeRepository.findMyRoutes(currentUser.getId())
                 .stream()
                 .map(RouteResponse::fromEntity)
                 .toList();
@@ -71,11 +74,11 @@ public class RouteService {
 
     @Transactional(readOnly = true)
     public RouteResponse getMyRouteById(Long routeId) {
-        User currentUser= currentUserService.getCurrentUser();
+        User currentUser = currentUserService.getCurrentUser();
 
-        Route route = routeRepository.findMyRouteById(routeId,currentUser.getId())
-                .orElseThrow(()-> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
-    return RouteResponse.fromEntity(route);
+        Route route = routeRepository.findMyRouteById(routeId, currentUser.getId())
+                .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
+        return RouteResponse.fromEntity(route);
     }
 
     @Transactional
@@ -138,6 +141,7 @@ public class RouteService {
 
         return savedRoute;
     }
+
     @Transactional
     public Route createRouteFromOrder(Long transportOrderId, RouteCreateFromOrderRequest request) {
         Shift shift = shiftRepository.findById(request.getShiftId())
@@ -189,7 +193,9 @@ public class RouteService {
 
         savedRoute.setRouteOrders(List.of(routeOrder));
 
-        addDriverAsRouteMember(savedRoute);
+        LocalDateTime routeCreatedAt = LocalDateTime.now();
+
+        addDefaultCrewAsRouteMembers(savedRoute, routeCreatedAt);
 
         return savedRoute;
     }
@@ -461,6 +467,7 @@ public class RouteService {
                 .multiply(fuelConsumptionNorm)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
     }
+
     private void subtractEstimatedFuelAfterRoute(Ambulance ambulance, BigDecimal estimatedFuelConsumed) {
         if (ambulance.getEstimatedFuelLiters() == null) {
             return;
@@ -475,6 +482,7 @@ public class RouteService {
         ambulance.setEstimatedFuelLiters(newEstimatedFuel);
         ambulance.setFuelEstimateUpdatedAt(LocalDateTime.now());
     }
+
     private void validateCurrentUserCanAccessRoute(Route route) {
         User currentUser = currentUserService.getCurrentUser();
 
@@ -498,6 +506,7 @@ public class RouteService {
 
         throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
     }
+
     private void addDriverAsRouteMember(Route route) {
         User driver = route.getShift().getDriver();
 
@@ -528,6 +537,7 @@ public class RouteService {
         return routeRepository.findMyRouteById(routeId, currentUser.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_NOT_FOUND));
     }
+
     private void validateCurrentUserCanUseShift(Shift shift) {
         User currentUser = currentUserService.getCurrentUser();
 
@@ -540,7 +550,61 @@ public class RouteService {
             throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
         }
     }
+
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private void addDefaultCrewAsRouteMembers(Route route, LocalDateTime routeTime) {
+        Shift shift = route.getShift();
+
+        addUserAsRouteMember(
+                route,
+                shift,
+                shift.getDriver(),
+                RouteMemberRole.DRIVER,
+                RouteMemberSource.SHIFT_TEAM
+        );
+
+        List<ShiftDefaultMember> activeMembers =
+                shiftDefaultMemberRepository.findActiveMembersForShiftAt(shift.getId(), routeTime);
+
+        for (ShiftDefaultMember activeMember : activeMembers) {
+            addUserAsRouteMember(
+                    route,
+                    shift,
+                    activeMember.getUser(),
+                    activeMember.getRole(),
+                    RouteMemberSource.SHIFT_TEAM
+            );
+        }
+    }
+
+    private void addUserAsRouteMember(
+            Route route,
+            Shift originShift,
+            User user,
+            RouteMemberRole role,
+            RouteMemberSource source
+    ) {
+        boolean alreadyAdded = routeMemberRepository.existsByRouteIdAndUserId(
+                route.getId(),
+                user.getId()
+        );
+        if (alreadyAdded) {
+            return;
+        }
+
+        RouteMember routeMember = new RouteMember();
+
+        routeMember.setRoute(route);
+        routeMember.setOriginShift(originShift);
+        routeMember.setUser(user);
+        routeMember.setMemberName(null);
+        routeMember.setRole(role);
+        routeMember.setSource(source);
+        routeMember.setCreatedAt(LocalDateTime.now());
+
+        routeMemberRepository.save(routeMember);
     }
 }

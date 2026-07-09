@@ -51,20 +51,25 @@ public class RouteMemberService {
         routeMember.setRole(request.getMemberRole());
         routeMember.setCreatedAt(LocalDateTime.now());
 
-        if(request.getUserId() != null){
+        if (request.getUserId() != null) {
             User memberUser = userService.getUserById(request.getUserId());
 
-            if(!Boolean.TRUE.equals(memberUser.getActive())){
+            if (!Boolean.TRUE.equals(memberUser.getActive())) {
                 throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
             }
             routeMember.setUser(memberUser);
             routeMember.setMemberName(null);
             routeMember.setSource(RouteMemberSource.SHIFT_TEAM);
-        }else{
+        } else {
             routeMember.setUser(null);
             routeMember.setMemberName(request.getMemberName().trim());
             routeMember.setSource(request.getMemberSource());
         }
+
+        if (routeMember.getSource() == RouteMemberSource.SHIFT_TEAM) {
+            routeMember.setOriginShift(route.getShift());
+        }
+        validateRouteMemberEntity(routeMember);
 
         return routeMemberRepository.save(routeMember);
     }
@@ -122,7 +127,7 @@ public class RouteMemberService {
 
         Route route = routeService.getRouteById(routeId);
 
-      validateCurrentUserCanAccessRoute(route);
+        validateCurrentUserCanAccessRoute(route);
 
         RouteMember routeMemberToDelete = routeMemberRepository.findByIdAndRouteId(memberId, routeId)
                 .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_MEMBER_NOT_FOUND));
@@ -132,7 +137,8 @@ public class RouteMemberService {
 
     private void validateRouteMemberEntity(RouteMember routeMember) {
         boolean hasUser = routeMember.getUser() != null;
-        boolean hasMemberName = routeMember.getMemberName() != null && !routeMember.getMemberName().isBlank();
+        boolean hasMemberName = routeMember.getMemberName() != null
+                && !routeMember.getMemberName().isBlank();
 
         if (hasUser == hasMemberName) {
             throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
@@ -145,7 +151,20 @@ public class RouteMemberService {
         if (routeMember.getSource() == null) {
             throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
         }
+
+        boolean isSystemCrewSource =
+                routeMember.getSource() == RouteMemberSource.SHIFT_TEAM
+                        || routeMember.getSource() == RouteMemberSource.SUPPORT_SHIFT_TEAM;
+
+        if (isSystemCrewSource && hasMemberName) {
+            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+        }
+
+        if (!isSystemCrewSource && hasUser) {
+            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+        }
     }
+
     private void validateRouteMemberCreateRequest(RouteMemberCreateRequest request) {
         boolean hasUserId = request.getUserId() != null;
         boolean hasMemberName = request.getMemberName() != null && !request.getMemberName().isBlank();
@@ -154,6 +173,7 @@ public class RouteMemberService {
             throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
         }
     }
+
     private void validateCurrentUserCanAccessRoute(Route route) {
         User currentUser = currentUserService.getCurrentUser();
 
