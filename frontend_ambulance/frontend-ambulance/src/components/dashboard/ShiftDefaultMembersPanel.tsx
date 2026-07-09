@@ -5,58 +5,57 @@ import {
     getShiftDefaultMembersByShiftId,
 } from "../../api/shiftDefaultMemberApi";
 import type { ShiftDefaultMemberResponse } from "../../types/shiftDefaultMember";
-import "./ShiftDefaultMemebrsPanel.css"
 import { routeMemberRoleLabels } from "../../utils/routeMemberLabels";
 import { formatTime } from "../../utils/dateTimeFormat";
+import "./ShiftDefaultMemebrsPanel.css";
 
 type Props = {
-    shiftId:number
-}
+    shiftId: number;
+};
 
-export function ShiftDefaultMembersPanel({shiftId}: Props){
+export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     const [members, setMembers] = useState<ShiftDefaultMemberResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionInProgressId, setActionInProgressId] = useState<number | null>(null);
 
-
     async function loadMembers() {
-        try{
+        try {
             setLoading(true);
             setErrorMessage(null);
 
             const data = await getShiftDefaultMembersByShiftId(shiftId);
             setMembers(data);
-        }catch{
-            setErrorMessage("Nie udało się pobrac załogi zmiany.");
-        }finally{
+        } catch {
+            setErrorMessage("Nie udało się pobrać załogi zmiany.");
+        } finally {
             setLoading(false);
         }
     }
 
-    useEffect(() =>{
+    useEffect(() => {
         loadMembers();
     }, [shiftId]);
 
-    async function handleFinishMember(memberId: number){
-        try{
+    async function handleFinishMember(memberId: number) {
+        try {
             setActionInProgressId(memberId);
 
             const updatedMember = await finishShiftDefaultMember(memberId);
 
             setMembers((currentMembers) =>
-            currentMembers.map((member) =>
-            member.id === updatedMember.id ? updatedMember : member
-        )
-    );
-        }catch{
+                currentMembers.map((member) =>
+                    member.id === updatedMember.id ? updatedMember : member
+                )
+            );
+        } catch {
             setErrorMessage("Nie udało się zakończyć udziału członka załogi.");
-        }finally{
+        } finally {
             setActionInProgressId(null);
         }
     }
 
-   async function handleExtendOpenEnded(memberId: number) {
+    async function handleExtendOpenEnded(memberId: number) {
         try {
             setActionInProgressId(memberId);
 
@@ -74,66 +73,76 @@ export function ShiftDefaultMembersPanel({shiftId}: Props){
         }
     }
 
-    if(loading){
-        return <p>Ładowanie załogi zmiany...</p>
+    if (loading) {
+        return (
+            <section className="shift-crew-sidebar">
+                <p className="shift-crew-sidebar__message">Ładowanie załogi zmiany...</p>
+            </section>
+        );
     }
 
-   return (
-   <section className="shift-crew-overview">
-    <header className="shift-crew-overview__header">
-        <h2>Obsada zmiany</h2>
-        <p>Kierowca i domyślna załoga przypisana do aktywnej zmiany.</p>
-    </header>
+    return (
+        <section className="shift-crew-sidebar">
+            <header className="shift-crew-sidebar__header">
+                <p className="shift-crew-sidebar__eyebrow">Załoga</p>
+                <h2>Załoga zmiany</h2>
+                <p>Domyślna obsada przypisana do aktywnej zmiany.</p>
+            </header>
 
-    <div className="shift-crew-overview__grid">
-        <div className="shift-crew-column">
-            <h3>Załoga</h3>
+            {errorMessage && (
+                <p className="shift-crew-sidebar__error">{errorMessage}</p>
+            )}
 
             {members.length === 0 ? (
-                <p className="shift-crew-empty">Brak członków załogi.</p>
+                <p className="shift-crew-sidebar__empty">
+                    Brak domyślnych członków załogi.
+                </p>
             ) : (
-                members.map((member) => (
-                    <article key={member.id} className="shift-person-card">
-                        <div>
-                            <strong>{member.firstName} {member.lastName}</strong>
-                            <span>Sanitariusz</span>
-                            <small>{formatTime(member.startTime)}–{formatTime(member.endTime)}</small>
-                        </div>
+                <div className="shift-crew-sidebar__list">
+                    {members.map((member) => {
+                        const isOpenEnded = member.endTime === null;
+                        const isBusy = actionInProgressId === member.id;
 
-                        <div className="shift-person-card__actions">
-                            {!member.endTime && null}
+                        return (
+                            <article key={member.id} className="shift-crew-sidebar__member">
+                                <div className="shift-crew-sidebar__member-main">
+                                    <strong>
+                                        {member.firstName} {member.lastName}
+                                    </strong>
 
-                            {member.endTime && (
-                                <button type="button" onClick={() => handleExtendOpenEnded(member.id)}>
-                                    Przedłuż
-                                </button>
-                            )}
+                                    <span>{routeMemberRoleLabels[member.role]}</span>
 
-                            <button type="button" onClick={() => handleFinishMember(member.id)}>
-                                Zakończ
-                            </button>
-                        </div>
-                    </article>
-                ))
-            )}
-        </div>
+                                    <small>
+                                        {formatTime(member.startTime)}–{formatTime(member.endTime)}
+                                    </small>
+                                </div>
 
-        <div className="shift-crew-column shift-crew-column--driver">
-            <h3>Kierowca</h3>
+                                <div className="shift-crew-sidebar__actions">
+                                    {!isOpenEnded && (
+                                        <button
+                                            className="shift-crew-sidebar__button"
+                                            type="button"
+                                            disabled={isBusy}
+                                            onClick={() => handleExtendOpenEnded(member.id)}
+                                        >
+                                            Przedłuż
+                                        </button>
+                                    )}
 
-            <article className="shift-person-card shift-person-card--driver">
-                <div>
-                    <strong>Jan Kierowca</strong>
-                    <span>Kierowca</span>
-                    <small>Aktywny</small>
+                                    <button
+                                        className="shift-crew-sidebar__button shift-crew-sidebar__button--danger"
+                                        type="button"
+                                        disabled={isBusy}
+                                        onClick={() => handleFinishMember(member.id)}
+                                    >
+                                        Zakończ
+                                    </button>
+                                </div>
+                            </article>
+                        );
+                    })}
                 </div>
-
-                <button className="shift-person-card__danger" type="button">
-                    Zakończ zmianę
-                </button>
-            </article>
-        </div>
-    </div>
-</section>
-   );
+            )}
+        </section>
+    );
 }
