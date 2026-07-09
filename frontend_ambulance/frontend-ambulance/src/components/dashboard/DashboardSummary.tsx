@@ -7,6 +7,7 @@ import type { AmbulanceDashboardResponse } from "../../types/dashboard";
 import { getUserRoleLabel } from "../../utils/userRoleLabels";
 import { formatDate } from "../../utils/dateTimeFormat";
 import { finishShift } from "../../api/shiftsApi";
+import { ShiftDefaultMembersPanel } from "./ShiftDefaultMembersPanel";
 
 type ApiErrorResponse = {
     code?: string;
@@ -229,6 +230,8 @@ export function DashboardSummary() {
                         <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
                     )}
                 </div>
+
+                <ShiftDefaultMembersPanel shiftId={dashboard.shiftId} />
             </div>
 
             <div className="dashboard-summary__compact-actions">

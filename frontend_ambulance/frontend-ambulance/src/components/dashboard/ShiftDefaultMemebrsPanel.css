@@ -1,0 +1,114 @@
+.shift-crew-overview {
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.42);
+}
+
+.shift-crew-overview__header {
+    margin-bottom: 16px;
+}
+
+.shift-crew-overview__header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #f8fafc;
+}
+
+.shift-crew-overview__header p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.shift-crew-overview__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.shift-crew-column {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(30, 41, 59, 0.62);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.shift-crew-column h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.shift-person-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+}
+
+.shift-person-card strong {
+    display: block;
+    font-size: 16px;
+    color: #f8fafc;
+}
+
+.shift-person-card span {
+    display: block;
+    margin-top: 3px;
+    font-size: 13px;
+    color: #bfdbfe;
+}
+
+.shift-person-card small {
+    display: block;
+    margin-top: 6px;
+    font-size: 13px;
+    color: #cbd5e1;
+}
+
+.shift-person-card__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.shift-person-card button {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    background: #334155;
+    color: #f8fafc;
+}
+
+.shift-person-card button:hover {
+    background: #475569;
+}
+
+.shift-person-card__danger,
+.shift-person-card button:last-child {
+    background: #b91c1c;
+    color: white;
+}
+
+.shift-person-card__danger:hover,
+.shift-person-card button:last-child:hover {
+    background: #dc2626;
+}
+
+.shift-crew-empty {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+@media (max-width: 900px) {
+    .shift-crew-overview__grid {
+        grid-template-columns: 1fr;
+    }
+}
