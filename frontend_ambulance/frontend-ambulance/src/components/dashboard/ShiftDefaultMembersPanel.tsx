@@ -13,6 +13,8 @@ type Props = {
     shiftId: number;
 };
 
+type CrewAction = "" | "extend-open-ended" | "finish";
+
 export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     const [members, setMembers] = useState<ShiftDefaultMemberResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -37,17 +39,20 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
         loadMembers();
     }, [shiftId]);
 
+    function replaceMember(updatedMember: ShiftDefaultMemberResponse) {
+        setMembers((currentMembers) =>
+            currentMembers.map((member) =>
+                member.id === updatedMember.id ? updatedMember : member
+            )
+        );
+    }
+
     async function handleFinishMember(memberId: number) {
         try {
             setActionInProgressId(memberId);
 
             const updatedMember = await finishShiftDefaultMember(memberId);
-
-            setMembers((currentMembers) =>
-                currentMembers.map((member) =>
-                    member.id === updatedMember.id ? updatedMember : member
-                )
-            );
+            replaceMember(updatedMember);
         } catch {
             setErrorMessage("Nie udało się zakończyć udziału członka załogi.");
         } finally {
@@ -60,12 +65,7 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
             setActionInProgressId(memberId);
 
             const updatedMember = await extendShiftDefaultMemberOpenEnded(memberId);
-
-            setMembers((currentMembers) =>
-                currentMembers.map((member) =>
-                    member.id === updatedMember.id ? updatedMember : member
-                )
-            );
+            replaceMember(updatedMember);
         } catch {
             setErrorMessage("Nie udało się przedłużyć udziału do odwołania.");
         } finally {
@@ -73,30 +73,37 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
         }
     }
 
+    async function handleCrewAction(member: ShiftDefaultMemberResponse, action: CrewAction) {
+        if (!action) {
+            return;
+        }
+
+        if (action === "extend-open-ended") {
+            await handleExtendOpenEnded(member.id);
+            return;
+        }
+
+        if (action === "finish") {
+            await handleFinishMember(member.id);
+        }
+    }
+
     if (loading) {
         return (
             <section className="shift-crew-sidebar">
-                <p className="shift-crew-sidebar__message">Ładowanie załogi zmiany...</p>
+                <p className="shift-crew-sidebar__message">Ładowanie...</p>
             </section>
         );
     }
 
     return (
         <section className="shift-crew-sidebar">
-            <header className="shift-crew-sidebar__header">
-                <p className="shift-crew-sidebar__eyebrow">Załoga</p>
-                <h2>Załoga zmiany</h2>
-                <p>Domyślna obsada przypisana do aktywnej zmiany.</p>
-            </header>
-
             {errorMessage && (
                 <p className="shift-crew-sidebar__error">{errorMessage}</p>
             )}
 
             {members.length === 0 ? (
-                <p className="shift-crew-sidebar__empty">
-                    Brak domyślnych członków załogi.
-                </p>
+                <p className="shift-crew-sidebar__empty">Brak załogi</p>
             ) : (
                 <div className="shift-crew-sidebar__list">
                     {members.map((member) => {
@@ -109,38 +116,37 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
                         return (
                             <article key={member.id} className="shift-crew-sidebar__member">
                                 <div className="shift-crew-sidebar__member-main">
+                                    <span className="shift-crew-sidebar__role">
+                                        {routeMemberRoleLabels[member.role]}
+                                    </span>
+
                                     <strong>
                                         {member.firstName} {member.lastName}
                                     </strong>
-
-                                    <span>{routeMemberRoleLabels[member.role]}</span>
 
                                     <small>
                                         {formatTime(member.startTime)} – {endTimeLabel}
                                     </small>
                                 </div>
 
-                                <div className="shift-crew-sidebar__actions">
+                                <select
+                                    className="shift-crew-sidebar__action-select"
+                                    value=""
+                                    disabled={isBusy}
+                                    onChange={(event) => {
+                                        const action = event.target.value as CrewAction;
+                                        void handleCrewAction(member, action);
+                                    }}
+                                    aria-label={`Akcje dla ${member.firstName} ${member.lastName}`}
+                                >
+                                    <option value="">Akcje</option>
                                     {!isOpenEnded && (
-                                        <button
-                                            className="shift-crew-sidebar__button"
-                                            type="button"
-                                            disabled={isBusy}
-                                            onClick={() => handleExtendOpenEnded(member.id)}
-                                        >
-                                            Przedłuż
-                                        </button>
+                                        <option value="extend-open-ended">
+                                            Przedłuż do odwołania
+                                        </option>
                                     )}
-
-                                    <button
-                                        className="shift-crew-sidebar__button shift-crew-sidebar__button--danger"
-                                        type="button"
-                                        disabled={isBusy}
-                                        onClick={() => handleFinishMember(member.id)}
-                                    >
-                                        Zakończ
-                                    </button>
-                                </div>
+                                    <option value="finish">Zakończ udział</option>
+                                </select>
                             </article>
                         );
                     })}
