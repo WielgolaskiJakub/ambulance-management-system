@@ -1,27 +1,16 @@
 .driver-dashboard-overview {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 310px;
-    gap: 14px;
+    grid-template-columns: 190px 110px 150px 115px 105px minmax(230px, 1fr) 145px;
+    gap: 10px;
     align-items: center;
     margin-bottom: 20px;
     padding: 14px;
 }
 
-.driver-dashboard-overview__main,
-.driver-dashboard-overview__side {
-    min-width: 0;
-}
-
-.driver-dashboard-overview__main {
-    display: grid;
-    grid-template-columns: 190px minmax(0, 1fr) 150px;
-    gap: 12px;
-    align-items: center;
-}
-
 .driver-dashboard-identity,
 .driver-dashboard-finish-button,
-.driver-dashboard-overview .dashboard-summary__compact-item {
+.driver-dashboard-overview .dashboard-summary__compact-item,
+.driver-dashboard-overview .shift-crew-sidebar {
     height: 78px;
 }
 
@@ -33,6 +22,7 @@
     border: 1px solid rgba(148, 163, 184, 0.22);
     border-radius: 12px;
     background: #111827;
+    overflow: hidden;
 }
 
 .driver-dashboard-identity span,
@@ -59,13 +49,6 @@
     color: #bfdbfe;
     font-size: 12px;
     line-height: 1.15;
-}
-
-.driver-dashboard-metrics {
-    display: grid;
-    grid-template-columns: minmax(100px, 0.9fr) minmax(150px, 1.25fr) minmax(115px, 1fr) minmax(105px, 0.95fr);
-    gap: 10px;
-    align-items: center;
 }
 
 .driver-dashboard-overview .dashboard-summary__compact-item {
@@ -103,29 +86,20 @@
 
 @media (max-width: 1180px) {
     .driver-dashboard-overview {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (max-width: 920px) {
-    .driver-dashboard-overview__main {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .driver-dashboard-identity,
     .driver-dashboard-finish-button,
-    .driver-dashboard-overview .dashboard-summary__compact-item {
+    .driver-dashboard-overview .dashboard-summary__compact-item,
+    .driver-dashboard-overview .shift-crew-sidebar {
         height: auto;
-        min-height: 72px;
-    }
-
-    .driver-dashboard-metrics {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        min-height: 78px;
     }
 }
 
 @media (max-width: 640px) {
-    .driver-dashboard-metrics {
+    .driver-dashboard-overview {
         grid-template-columns: 1fr;
     }
 }
