@@ -1,13 +1,17 @@
 .shift-crew-sidebar {
-    height: 100%;
-    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
     border: 1px solid rgba(148, 163, 184, 0.22);
-    border-radius: 14px;
-    background: rgba(15, 23, 42, 0.48);
+    border-radius: 12px;
+    background: #111827;
+    overflow: hidden;
 }
 
 .shift-crew-sidebar__header {
-    margin-bottom: 10px;
+    flex: 0 0 54px;
+    margin: 0;
 }
 
 .shift-crew-sidebar__eyebrow {
@@ -22,8 +26,8 @@
 .shift-crew-sidebar__header h2 {
     margin: 0;
     color: #f8fafc;
-    font-size: 18px;
-    line-height: 1.1;
+    font-size: 13px;
+    line-height: 1.05;
 }
 
 .shift-crew-sidebar__header p:last-child {
@@ -35,44 +39,52 @@
 .shift-crew-sidebar__error {
     margin: 0;
     color: #94a3b8;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .shift-crew-sidebar__error {
-    margin-bottom: 10px;
     color: #fecaca;
     font-weight: 700;
 }
 
 .shift-crew-sidebar__list {
+    min-width: 0;
+    flex: 1;
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .shift-crew-sidebar__member {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
-    padding: 12px;
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 12px;
-    background: rgba(30, 41, 59, 0.64);
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+.shift-crew-sidebar__member-main {
+    min-width: 0;
 }
 
 .shift-crew-sidebar__member-main strong {
     display: block;
     color: #f8fafc;
     font-size: 15px;
-    line-height: 1.2;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .shift-crew-sidebar__member-main span {
     display: inline-flex;
     width: fit-content;
-    margin-top: 6px;
+    margin-top: 4px;
     border-radius: 999px;
-    padding: 3px 7px;
+    padding: 2px 6px;
     background: rgba(148, 163, 184, 0.18);
     color: #dbeafe;
     font-size: 10px;
@@ -81,22 +93,23 @@
 
 .shift-crew-sidebar__member-main small {
     display: block;
-    margin-top: 8px;
+    margin-top: 5px;
     color: #cbd5e1;
     font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .shift-crew-sidebar__actions {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 6px;
 }
 
 .shift-crew-sidebar__button {
     border: none;
-    border-radius: 9px;
-    padding: 7px 9px;
+    border-radius: 8px;
+    padding: 6px 8px;
     background: #334155;
     color: #f8fafc;
     font-size: 11px;
@@ -124,6 +137,15 @@
 }
 
 @media (max-width: 1180px) {
+    .shift-crew-sidebar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .shift-crew-sidebar__header {
+        flex: 0 0 auto;
+    }
+
     .shift-crew-sidebar__member {
         grid-template-columns: minmax(0, 1fr);
     }
