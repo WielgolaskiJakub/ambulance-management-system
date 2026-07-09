@@ -13,6 +13,7 @@ import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
 import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
+import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.service.UserService;
@@ -28,6 +29,7 @@ public class RouteMemberService {
     private final RouteService routeService;
     private final UserService userService;
     private final CurrentUserService currentUserService;
+
 
 
     public List<RouteMember> getRouteMembersByRoute(Long routeId) {
@@ -122,7 +124,6 @@ public class RouteMemberService {
 
         return routeMemberRepository.save(routeMemberToUpdate);
     }
-
     public void deleteRouteMember(Long routeId, Long memberId) {
 
         Route route = routeService.getRouteById(routeId);

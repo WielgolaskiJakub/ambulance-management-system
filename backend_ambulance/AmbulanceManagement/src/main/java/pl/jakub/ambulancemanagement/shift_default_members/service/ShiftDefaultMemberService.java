@@ -12,6 +12,7 @@ import pl.jakub.ambulancemanagement.shift_default_members.dto.UpdateShiftDefault
 import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
 import pl.jakub.ambulancemanagement.shift_default_members.repository.ShiftDefaultMemberRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
@@ -131,6 +132,39 @@ public class ShiftDefaultMemberService {
 
         return shiftDefaultMemberRepository.save(shiftDefaultMemberToUpdate);
     }
+    @Transactional
+    public ShiftDefaultMember extendShiftDefaultMemberOpenEnded(long id) {
+        ShiftDefaultMember shiftDefaultMember = getShiftDefaultMemberById(id);
+
+        validateCurrentUserCanManageShift(shiftDefaultMember.getShift());
+
+        if (shiftDefaultMember.getShift().getStatus() != ShiftStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
+        }
+
+        shiftDefaultMember.setEndTime(null);
+
+        return shiftDefaultMemberRepository.save(shiftDefaultMember);
+    }
+
+    @Transactional
+    public ShiftDefaultMember finishShiftDefaultMember(long id) {
+        ShiftDefaultMember shiftDefaultMember = getShiftDefaultMemberById(id);
+
+        validateCurrentUserCanManageShift(shiftDefaultMember.getShift());
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if(shiftDefaultMember.getEndTime() != null
+        && !shiftDefaultMember.getEndTime().isAfter(now)){
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED);
+        }
+
+        shiftDefaultMember.setEndTime(now);
+
+        return shiftDefaultMemberRepository.save(shiftDefaultMember);
+    }
+
 
     @Transactional
     public void deleteShiftDefaultMemberById(long id) {

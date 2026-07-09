@@ -62,6 +62,22 @@ public class ShiftDefaultMemberController {
         return ShiftDefaultMemberResponse.fromEntity(shiftDefaultMember);
     }
 
+    @PatchMapping("/{id}/finish")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'DRIVER')")
+    public ShiftDefaultMemberResponse finishShiftDefaultMember(@PathVariable long id) {
+        ShiftDefaultMember shiftDefaultMember = shiftDefaultMemberService.finishShiftDefaultMember(id);
+        return ShiftDefaultMemberResponse.fromEntity(shiftDefaultMember);
+    }
+
+    @PatchMapping("/{id}/extend-open-ended")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'DRIVER')")
+    public ShiftDefaultMemberResponse extendShiftDefaultMemberOpenEnded(@PathVariable long id) {
+        ShiftDefaultMember shiftDefaultMember =
+                shiftDefaultMemberService.extendShiftDefaultMemberOpenEnded(id);
+
+        return ShiftDefaultMemberResponse.fromEntity(shiftDefaultMember);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'DRIVER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

@@ -140,6 +140,8 @@ public enum ErrorCode {
             "error.patient.already_anonymized", HttpStatus.BAD_REQUEST),
     SHIFT_HAS_ACTIVE_ROUTES("SHIFT_HAS_ACTIVE_ROUTES",
             "error.shift.has_active_routes", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED("SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED",
+            "error.shift_default_member_already_finished", HttpStatus.BAD_REQUEST),
     ;
 
     private final String code;
