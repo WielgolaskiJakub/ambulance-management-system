@@ -102,6 +102,9 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
                     {members.map((member) => {
                         const isOpenEnded = member.endTime === null;
                         const isBusy = actionInProgressId === member.id;
+                        const endTimeLabel = member.endTime
+                            ? formatTime(member.endTime)
+                            : "do odwołania";
 
                         return (
                             <article key={member.id} className="shift-crew-sidebar__member">
@@ -113,7 +116,7 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
                                     <span>{routeMemberRoleLabels[member.role]}</span>
 
                                     <small>
-                                        {formatTime(member.startTime)}–{formatTime(member.endTime)}
+                                        {formatTime(member.startTime)} – {endTimeLabel}
                                     </small>
                                 </div>
 
