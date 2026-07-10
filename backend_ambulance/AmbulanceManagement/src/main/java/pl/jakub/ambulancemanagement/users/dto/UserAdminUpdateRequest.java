@@ -28,4 +28,7 @@ public class UserAdminUpdateRequest {
 
     @NotNull
     private Boolean active;
+
+    @NotNull
+    private Boolean canWorkAsSanitary;
 }

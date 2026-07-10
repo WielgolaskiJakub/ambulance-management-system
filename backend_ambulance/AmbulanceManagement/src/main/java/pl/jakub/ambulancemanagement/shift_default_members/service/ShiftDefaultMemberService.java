@@ -52,6 +52,7 @@ public class ShiftDefaultMemberService {
     @Transactional
     public ShiftDefaultMember createShiftDefaultMember(CreateShiftDefaultMemberRequest request){
 
+        //TODO to trzeba bedzie zrobić razem z createShift jako jedna metoda transational żeby nie łaczyć dwoch postów w jednym formularzu
         User user =  userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 

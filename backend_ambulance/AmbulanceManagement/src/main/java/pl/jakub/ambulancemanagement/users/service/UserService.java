@@ -29,6 +29,9 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
     }
 
+    public List<User> getAvailableSanitaryMembers(){
+        return userRepository.findByActiveTrueAndCanWorkAsSanitaryTrueOrderByLastNameAscFirstNameAsc();
+    }
     public User createUser(UserCreateRequest request) {
 
         String username = request.getUsername().trim();
@@ -56,6 +59,7 @@ public class UserService {
         user.setUserRole(request.getUserRole());
         user.setActive(true);
         user.setMustChangePassword(true);
+        user.setCanWorkAsSanitary(Boolean.TRUE.equals(request.getCanWorkAsSanitary()));
         return userRepository.save(user);
     }
 
@@ -90,6 +94,7 @@ public class UserService {
         userToUpdate.setEmail(email);
         userToUpdate.setUserRole(request.getUserRole());
         userToUpdate.setActive(request.getActive());
+        userToUpdate.setCanWorkAsSanitary(Boolean.TRUE.equals(request.getCanWorkAsSanitary()));
 
         return userRepository.save(userToUpdate);
     }
@@ -140,6 +145,9 @@ public class UserService {
 
         if (request.getActive() != null) {
             userToUpdate.setActive(request.getActive());
+        }
+        if (request.getCanWorkAsSanitary() != null) {
+            userToUpdate.setCanWorkAsSanitary(request.getCanWorkAsSanitary());
         }
 
         return userRepository.save(userToUpdate);

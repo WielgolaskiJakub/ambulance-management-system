@@ -32,6 +32,15 @@ public class UserController {
         return UserResponse.fromEntity(user);
     }
 
+    @GetMapping("/available-sanitary-members")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DRIVER')")
+    public List<CrewMemberOptionResponse> getAvailableSanitaryMembers() {
+        return userService.getAvailableSanitaryMembers()
+                .stream()
+                .map(CrewMemberOptionResponse::fromEntity)
+                .toList();
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)

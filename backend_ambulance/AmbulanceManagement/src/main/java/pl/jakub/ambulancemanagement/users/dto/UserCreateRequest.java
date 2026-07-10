@@ -31,5 +31,8 @@ public class UserCreateRequest {
 
     @NotNull
     private UserRole userRole;
+
+    @NotNull
+    private Boolean canWorkAsSanitary;
 }
 

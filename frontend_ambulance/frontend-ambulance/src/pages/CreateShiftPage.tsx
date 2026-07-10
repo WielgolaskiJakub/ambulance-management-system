@@ -1,13 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getAvailableAmbulances } from "../api/ambulancesApi";
 import { createShift } from "../api/shiftsApi";
+import { createShiftDefaultMember } from "../api/shiftDefaultMemberApi";
+import {
+    getAvailableSanitaryMembers,
+    type CrewMemberOptionResponse,
+} from "../api/crewMemberApi";
 import type { AmbulanceShortResponse } from "../types/ambulance";
 import type { ShiftType } from "../types/shift";
 import { shiftTypeLabels } from "../utils/shiftLabels";
-import "./CreateShiftPage.css";
 import { formatDateTime } from "../utils/dateTimeFormat";
+import "./CreateShiftPage.css";
 
 type FormState = {
     ambulanceId: string;
@@ -15,6 +20,9 @@ type FormState = {
     shiftDate: string;
     startTime: string;
     endTime: string;
+    defaultMemberUserId: string;
+    defaultMemberStartTime: string;
+    defaultMemberEndTime: string;
 };
 
 type ApiErrorResponse = {
@@ -40,7 +48,6 @@ function getDateTime(date: string, time: string): string {
 
 function getNextDayDate(date: string): string {
     const [year, month, day] = date.split("-").map(Number);
-
     const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
 
     return nextDate.toISOString().slice(0, 10);
@@ -74,7 +81,25 @@ function calculateShiftTimes(shiftType: ShiftType, shiftDate: string) {
     };
 }
 
+function calculateDefaultMemberTimes(shiftType: ShiftType, shiftDate: string) {
+    if (shiftType === "FULL_24H") {
+        return {
+            defaultMemberStartTime: getDateTime(shiftDate, "07:00"),
+            defaultMemberEndTime: getDateTime(shiftDate, "19:00"),
+        };
+    }
+
+    const calculatedShiftTimes = calculateShiftTimes(shiftType, shiftDate);
+
+    return {
+        defaultMemberStartTime: calculatedShiftTimes.startTime,
+        defaultMemberEndTime: calculatedShiftTimes.endTime,
+    };
+}
+
 const today = getTodayDate();
+
+const initialDefaultMemberTimes = calculateDefaultMemberTimes("FULL_24H", today);
 
 const initialFormState: FormState = {
     ambulanceId: "",
@@ -82,12 +107,16 @@ const initialFormState: FormState = {
     shiftDate: today,
     startTime: getDateTime(today, "07:00"),
     endTime: getDateTime(getNextDayDate(today), "07:00"),
+    defaultMemberUserId: "",
+    defaultMemberStartTime: initialDefaultMemberTimes.defaultMemberStartTime,
+    defaultMemberEndTime: initialDefaultMemberTimes.defaultMemberEndTime,
 };
 
 export function CreateShiftPage() {
     const navigate = useNavigate();
 
     const [ambulances, setAmbulances] = useState<AmbulanceShortResponse[]>([]);
+    const [crewMembers, setCrewMembers] = useState<CrewMemberOptionResponse[]>([]);
     const [form, setForm] = useState<FormState>(initialFormState);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -102,18 +131,23 @@ export function CreateShiftPage() {
     );
 
     useEffect(() => {
-        async function loadAmbulances() {
+        async function loadInitialData() {
             try {
                 setLoading(true);
                 setErrorMessage(null);
 
-                const data = await getAvailableAmbulances();
-                setAmbulances(data);
+                const [ambulancesData, crewMembersData] = await Promise.all([
+                    getAvailableAmbulances(),
+                    getAvailableSanitaryMembers(),
+                ]);
 
-                if (data.length > 0) {
+                setAmbulances(ambulancesData);
+                setCrewMembers(crewMembersData);
+
+                if (ambulancesData.length > 0) {
                     setForm((currentForm) => ({
                         ...currentForm,
-                        ambulanceId: String(data[0].id),
+                        ambulanceId: String(ambulancesData[0].id),
                     }));
                 }
             } catch (error) {
@@ -124,24 +158,25 @@ export function CreateShiftPage() {
                     }
 
                     if (error.response?.status === 403) {
-                        setErrorMessage("Brak uprawnień do pobrania karetek.");
+                        setErrorMessage("Brak uprawnień do pobrania danych formularza.");
                         return;
                     }
 
                     setErrorMessage(
-                        `Błąd pobierania karetek: ${error.response?.status ?? "brak odpowiedzi"
+                        `Błąd pobierania danych formularza: ${
+                            error.response?.status ?? "brak odpowiedzi"
                         }`
                     );
                     return;
                 }
 
-                setErrorMessage("Nieznany błąd pobierania karetek.");
+                setErrorMessage("Nieznany błąd pobierania danych formularza.");
             } finally {
                 setLoading(false);
             }
         }
 
-        loadAmbulances();
+        loadInitialData();
     }, []);
 
     function updateShiftType(shiftType: ShiftType) {
@@ -154,12 +189,18 @@ export function CreateShiftPage() {
         }
 
         const calculatedTimes = calculateShiftTimes(shiftType, form.shiftDate);
+        const defaultMemberTimes = calculateDefaultMemberTimes(
+            shiftType,
+            form.shiftDate
+        );
 
         setForm((currentForm) => ({
             ...currentForm,
             shiftType,
             startTime: calculatedTimes.startTime,
             endTime: calculatedTimes.endTime,
+            defaultMemberStartTime: defaultMemberTimes.defaultMemberStartTime,
+            defaultMemberEndTime: defaultMemberTimes.defaultMemberEndTime,
         }));
     }
 
@@ -173,16 +214,45 @@ export function CreateShiftPage() {
         }
 
         const calculatedTimes = calculateShiftTimes(form.shiftType, shiftDate);
+        const defaultMemberTimes = calculateDefaultMemberTimes(
+            form.shiftType,
+            shiftDate
+        );
 
         setForm((currentForm) => ({
             ...currentForm,
             shiftDate,
             startTime: calculatedTimes.startTime,
             endTime: calculatedTimes.endTime,
+            defaultMemberStartTime: defaultMemberTimes.defaultMemberStartTime,
+            defaultMemberEndTime: defaultMemberTimes.defaultMemberEndTime,
         }));
     }
 
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    function validateDefaultMemberTimes(): boolean {
+        if (!form.defaultMemberUserId) {
+            return true;
+        }
+
+        if (!form.defaultMemberStartTime || !form.defaultMemberEndTime) {
+            setErrorMessage("Podaj godziny pracy członka załogi.");
+            return false;
+        }
+
+        if (new Date(form.defaultMemberEndTime) <= new Date(form.defaultMemberStartTime)) {
+            setErrorMessage("Koniec pracy członka załogi musi być późniejszy niż start.");
+            return false;
+        }
+
+        if (new Date(form.defaultMemberStartTime) < new Date(form.startTime)) {
+            setErrorMessage("Członek załogi nie może zaczynać przed początkiem zmiany.");
+            return false;
+        }
+
+        return true;
+    }
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         const ambulanceId = Number(form.ambulanceId);
@@ -207,17 +277,47 @@ export function CreateShiftPage() {
             return;
         }
 
+        if (!validateDefaultMemberTimes()) {
+            return;
+        }
+
         try {
             setSubmitting(true);
             setErrorMessage(null);
 
-            await createShift({
+            const createdShift = await createShift({
                 ambulanceId,
                 shiftType: form.shiftType,
                 shiftDate: form.shiftDate,
                 startTime: form.startTime,
                 endTime: form.endTime,
             });
+
+            try {
+                if (form.defaultMemberUserId) {
+                    await createShiftDefaultMember({
+                        shiftId: createdShift.id,
+                        userId: Number(form.defaultMemberUserId),
+                        role: "SANITARY_WORKER",
+                        startTime: form.defaultMemberStartTime,
+                        endTime: form.defaultMemberEndTime,
+                    });
+                }
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    console.log("createShiftDefaultMember status:", error.response?.status);
+                    console.log("createShiftDefaultMember data:", error.response?.data);
+                }
+
+                navigate("/dashboard", {
+                    replace: true,
+                    state: {
+                        warningMessage:
+                            "Zmiana została utworzona, ale nie udało się dodać członka załogi.",
+                    },
+                });
+                return;
+            }
 
             navigate("/dashboard", { replace: true });
         } catch (error) {
@@ -277,7 +377,6 @@ export function CreateShiftPage() {
             }
 
             setErrorMessage("Nieznany błąd tworzenia zmiany.");
-
         } finally {
             setSubmitting(false);
         }
@@ -286,7 +385,9 @@ export function CreateShiftPage() {
     if (loading) {
         return (
             <main className="create-shift-page">
-                <p className="create-shift-page__message">Ładowanie dostępnych karetek...</p>
+                <p className="create-shift-page__message">
+                    Ładowanie dostępnych karetek...
+                </p>
             </main>
         );
     }
@@ -397,6 +498,7 @@ export function CreateShiftPage() {
                                             setForm((currentForm) => ({
                                                 ...currentForm,
                                                 startTime: event.target.value,
+                                                defaultMemberStartTime: event.target.value,
                                             }))
                                         }
                                     />
@@ -411,6 +513,7 @@ export function CreateShiftPage() {
                                             setForm((currentForm) => ({
                                                 ...currentForm,
                                                 endTime: event.target.value,
+                                                defaultMemberEndTime: event.target.value,
                                             }))
                                         }
                                     />
@@ -425,6 +528,59 @@ export function CreateShiftPage() {
                                     <strong>Koniec:</strong> {formatDateTime(form.endTime)}
                                 </p>
                             </article>
+                        )}
+
+                        <label className="create-shift-form__field">
+                            <span>Członek załogi</span>
+                            <select
+                                value={form.defaultMemberUserId}
+                                onChange={(event) =>
+                                    setForm((currentForm) => ({
+                                        ...currentForm,
+                                        defaultMemberUserId: event.target.value,
+                                    }))
+                                }
+                            >
+                                <option value="">Brak / dyżur bez sanitariusza</option>
+
+                                {crewMembers.map((member) => (
+                                    <option key={member.id} value={member.id}>
+                                        {member.firstName} {member.lastName}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+
+                        {form.defaultMemberUserId && (
+                            <div className="create-shift-form__grid">
+                                <label className="create-shift-form__field">
+                                    <span>Start członka załogi</span>
+                                    <input
+                                        type="datetime-local"
+                                        value={form.defaultMemberStartTime}
+                                        onChange={(event) =>
+                                            setForm((currentForm) => ({
+                                                ...currentForm,
+                                                defaultMemberStartTime: event.target.value,
+                                            }))
+                                        }
+                                    />
+                                </label>
+
+                                <label className="create-shift-form__field">
+                                    <span>Koniec członka załogi</span>
+                                    <input
+                                        type="datetime-local"
+                                        value={form.defaultMemberEndTime}
+                                        onChange={(event) =>
+                                            setForm((currentForm) => ({
+                                                ...currentForm,
+                                                defaultMemberEndTime: event.target.value,
+                                            }))
+                                        }
+                                    />
+                                </label>
+                            </div>
                         )}
 
                         <div className="create-shift-form__actions">
