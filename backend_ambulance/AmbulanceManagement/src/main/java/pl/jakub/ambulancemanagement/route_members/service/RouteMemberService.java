@@ -13,7 +13,6 @@ import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
 import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
-import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.service.UserService;
@@ -40,6 +39,14 @@ public class RouteMemberService {
         return routeMemberRepository.findByRouteIdOrderByCreatedAtAsc(routeId);
     }
 
+    public List<User> getRouteMemberCandidates(Long routeId) {
+        Route route = routeService.getRouteById(routeId);
+
+        validateCurrentUserCanAccessRoute(route);
+
+        return userService.getRouteMemberCandidates(routeId);
+    }
+
     public RouteMember addRouteMemberToRoute(Long routeId, RouteMemberCreateRequest request) {
 
         Route route = routeService.getRouteById(routeId);
@@ -59,9 +66,14 @@ public class RouteMemberService {
             if (!Boolean.TRUE.equals(memberUser.getActive())) {
                 throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
             }
+
+            if(request.getMemberSource() != RouteMemberSource.SHIFT_TEAM &&
+            request.getMemberSource() != RouteMemberSource.SUPPORT_SHIFT_TEAM){
+                throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+            }
             routeMember.setUser(memberUser);
             routeMember.setMemberName(null);
-            routeMember.setSource(RouteMemberSource.SHIFT_TEAM);
+            routeMember.setSource(request.getMemberSource());
         } else {
             routeMember.setUser(null);
             routeMember.setMemberName(request.getMemberName().trim());
@@ -124,7 +136,7 @@ public class RouteMemberService {
 
         return routeMemberRepository.save(routeMemberToUpdate);
     }
-    public void deleteRouteMember(Long routeId, Long memberId) {
+    public void deleteRouteMemberFromRoute(Long routeId, Long memberId) {
 
         Route route = routeService.getRouteById(routeId);
 

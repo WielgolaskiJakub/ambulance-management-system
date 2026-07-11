@@ -15,6 +15,14 @@ type Props = {
 
 type CrewAction = "" | "extend-open-ended" | "finish";
 
+function isActiveShiftDefaultMember(member: ShiftDefaultMemberResponse) {
+    if (member.endTime === null) {
+        return true;
+    }
+
+    return new Date(member.endTime).getTime() > Date.now();
+}
+
 export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     const [members, setMembers] = useState<ShiftDefaultMemberResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -27,7 +35,7 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
             setErrorMessage(null);
 
             const data = await getShiftDefaultMembersByShiftId(shiftId);
-            setMembers(data);
+            setMembers(data.filter(isActiveShiftDefaultMember));
         } catch {
             setErrorMessage("Nie udało się pobrać załogi zmiany.");
         } finally {
@@ -50,9 +58,13 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     async function handleFinishMember(memberId: number) {
         try {
             setActionInProgressId(memberId);
+            setErrorMessage(null);
 
-            const updatedMember = await finishShiftDefaultMember(memberId);
-            replaceMember(updatedMember);
+            await finishShiftDefaultMember(memberId);
+
+            setMembers((currentMembers) =>
+                currentMembers.filter((member) => member.id !== memberId)
+            );
         } catch {
             setErrorMessage("Nie udało się zakończyć udziału członka załogi.");
         } finally {
@@ -95,6 +107,7 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
             </section>
         );
     }
+
 
     return (
         <section className="shift-crew-sidebar">
@@ -145,7 +158,9 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
                                             Przedłuż do odwołania
                                         </option>
                                     )}
+
                                     <option value="finish">Zakończ udział</option>
+
                                 </select>
                             </article>
                         );

@@ -1,3 +1,5 @@
+import type { RouteMemberResponse } from "./routeMember";
+
 export type TransportOrderResponse = {
   id: number;
   plannedDate: string | null;
@@ -101,7 +103,7 @@ export type TransportOrderRouteSummaryResponse = {
   finishedAt: string | null;
   notes: string | null;
   status: string;
-  routeMembers: TransportOrderRouteMemberResponse[];
+  routeMembers: RouteMemberResponse[];
 };
 
 export type TransportOrderDetailsResponse = {

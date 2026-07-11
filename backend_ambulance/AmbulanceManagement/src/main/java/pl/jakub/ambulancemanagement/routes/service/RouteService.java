@@ -137,7 +137,9 @@ public class RouteService {
 
         savedRoute.setRouteOrders(routeOrders);
 
-        addDriverAsRouteMember(savedRoute);
+        LocalDateTime routeCreatedAt = LocalDateTime.now();
+
+        addDefaultCrewAsRouteMembers(savedRoute, routeCreatedAt);
 
         return savedRoute;
     }
@@ -505,30 +507,6 @@ public class RouteService {
         }
 
         throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
-    }
-
-    private void addDriverAsRouteMember(Route route) {
-        User driver = route.getShift().getDriver();
-
-        boolean alreadyAdded = routeMemberRepository.existsByRouteIdAndUserId(
-                route.getId(),
-                driver.getId()
-        );
-
-        if (alreadyAdded) {
-            return;
-        }
-
-        RouteMember driverMember = new RouteMember();
-
-        driverMember.setRoute(route);
-        driverMember.setUser(driver);
-        driverMember.setMemberName(null);
-        driverMember.setRole(RouteMemberRole.DRIVER);
-        driverMember.setSource(RouteMemberSource.SHIFT_TEAM);
-        driverMember.setCreatedAt(LocalDateTime.now());
-
-        routeMemberRepository.save(driverMember);
     }
 
     private Route getRouteForCurrentUser(Long routeId) {

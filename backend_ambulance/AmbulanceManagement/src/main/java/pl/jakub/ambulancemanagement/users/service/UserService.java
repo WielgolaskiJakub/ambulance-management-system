@@ -6,10 +6,12 @@ import org.springframework.stereotype.Service;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 import pl.jakub.ambulancemanagement.users.dto.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -27,6 +29,13 @@ public class UserService {
     public User getUserById(long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+    public List<User> getRouteMemberCandidates(Long routeId) {
+        return userRepository.findRouteMemberCandidates(
+                routeId,
+                LocalDateTime.now(),
+                ShiftStatus.ACTIVE
+        );
     }
 
     public List<User> getAvailableSanitaryMembers(){

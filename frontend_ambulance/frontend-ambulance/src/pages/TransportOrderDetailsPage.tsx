@@ -15,6 +15,12 @@ import "./TransportOrderDetailsPage.css";
 import { getRouteStatusLabel } from "../utils/routeLabels";
 import { getCurrentUserRole } from "../utils/auth";
 import { getUserRoleLabel } from "../utils/userRoleLabels";
+import {
+  routeMemberRoleLabels,
+  routeMemberSourceLabels,
+} from "../utils/routeMemberLabels";
+
+
 
 
 function hasText(value: string | null | undefined): value is string {
@@ -121,54 +127,54 @@ export function TransportOrderDetailsPage() {
       </main>
     );
   }
-  
-  const canModifyOrder= 
-  order.status !== "COMPLETED" && order.status !== "CANCELLED";
+
+  const canModifyOrder =
+    order.status !== "COMPLETED" && order.status !== "CANCELLED";
 
   return (
     <main className="transport-order-details-page">
       <article className="transport-order-details-card">
-   <header className="transport-order-details-card__header">
-  <div className="transport-order-details-card__header-left">
-    <button
-      className="transport-order-details-page__back-button"
-      type="button"
-      onClick={() => navigate(backPath)}
-    >
-      Wróć
-    </button>
+        <header className="transport-order-details-card__header">
+          <div className="transport-order-details-card__header-left">
+            <button
+              className="transport-order-details-page__back-button"
+              type="button"
+              onClick={() => navigate(backPath)}
+            >
+              Wróć
+            </button>
 
-    <div className="transport-order-details-card__title-group">
-      <h1 className="transport-order-details-card__title">
-        {order.orderNumber ?? `Zlecenie #${order.id}`}
-      </h1>
+            <div className="transport-order-details-card__title-group">
+              <h1 className="transport-order-details-card__title">
+                {order.orderNumber ?? `Zlecenie #${order.id}`}
+              </h1>
 
-      <p className="transport-order-details-card__subtitle">
-        {getTransportOrderTypeLabel(order.orderType)} •{" "}
-        {getTransportSourceLabel(order.source)}
-      </p>
+              <p className="transport-order-details-card__subtitle">
+                {getTransportOrderTypeLabel(order.orderType)} •{" "}
+                {getTransportSourceLabel(order.source)}
+              </p>
 
-      {isManagerUser && canModifyOrder && (
-        <Link
-          className="transport-order-details-card__edit-button"
-          to={`/manager/transport-orders/${order.id}/edit`}
-        >
-          Edytuj zlecenie
-        </Link>
-      )}
-    </div>
-  </div>
+              {isManagerUser && canModifyOrder && (
+                <Link
+                  className="transport-order-details-card__edit-button"
+                  to={`/manager/transport-orders/${order.id}/edit`}
+                >
+                  Edytuj zlecenie
+                </Link>
+              )}
+            </div>
+          </div>
 
-  <div className="transport-order-details-card__badges">
-    <span className="transport-order-details-card__status">
-      {getTransportStatusLabel(order.status)}
-    </span>
+          <div className="transport-order-details-card__badges">
+            <span className="transport-order-details-card__status">
+              {getTransportStatusLabel(order.status)}
+            </span>
 
-    <span className="transport-order-details-card__priority">
-      {getTransportPriorityLabel(order.priority)}
-    </span>
-  </div>
-</header>
+            <span className="transport-order-details-card__priority">
+              {getTransportPriorityLabel(order.priority)}
+            </span>
+          </div>
+        </header>
 
 
         <section className="transport-order-details-section">
@@ -350,6 +356,23 @@ export function TransportOrderDetailsPage() {
                       <strong>Koniec:</strong> {formatDateTime(route.finishedAt)}
                     </p>
                   )}
+
+                  <div className="transport-order-details-route-card__crew">
+                    <strong>Załoga:</strong>
+
+                    {route.routeMembers.length === 0 ? (
+                      <p>Brak zapisanej załogi trasy.</p>
+                    ) : (
+                      <ul>
+                        {route.routeMembers.map((member) => (
+                          <li key={member.id}>
+                            {routeMemberRoleLabels[member.role]}: {member.fullName}{" "}
+                            <span>({routeMemberSourceLabels[member.source]})</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
 
                   {isManagerUser ? (
                     <p className="transport-order-details-route-card__manager-note">

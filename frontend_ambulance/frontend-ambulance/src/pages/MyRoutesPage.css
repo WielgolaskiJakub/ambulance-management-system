@@ -290,3 +290,246 @@
     flex-direction: column;
   }
 }
+.my-route-card__crew,
+.my-route-card__add-member {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #374151;
+}
+
+.my-route-card__section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #f9fafb;
+}
+
+.my-route-card__empty-text {
+  margin: 0;
+  color: #9ca3af;
+}
+
+.my-route-card__crew-list {
+  display: grid;
+  gap: 8px;
+}
+
+.my-route-card__crew-item {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 170px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #111827;
+}
+
+.my-route-card__crew-item strong {
+  color: #93c5fd;
+}
+
+.my-route-card__crew-item span {
+  color: #f9fafb;
+  font-weight: 700;
+}
+
+.my-route-card__crew-item small {
+  color: #d1d5db;
+  text-align: right;
+}
+
+.my-route-card__add-member-mode {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.my-route-card__mode-button {
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+  color: #d1d5db;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-route-card__mode-button--active {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.my-route-card__add-member-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 150px 150px auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.my-route-card__add-member-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #111827;
+  color: #f9fafb;
+  outline: none;
+}
+
+.my-route-card__add-member-input:focus {
+  border-color: #9ca3af;
+}
+
+@media (max-width: 900px) {
+  .my-route-card__crew-item {
+    grid-template-columns: 1fr;
+  }
+
+  .my-route-card__crew-item small {
+    text-align: left;
+  }
+
+  .my-route-card__add-member-form {
+    grid-template-columns: 1fr;
+  }
+
+  .my-route-card__add-member-mode {
+    flex-direction: column;
+  }
+}
+.my-route-card__crew-item {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.my-route-card__crew-role {
+  color: #93c5fd;
+}
+
+.my-route-card__crew-name {
+  font-weight: 700;
+}
+
+.my-route-card__crew-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  justify-self: end;
+}
+
+.my-route-card__crew-source {
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+.my-route-card__crew-delete-button {
+  padding: 4px 8px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+}
+.my-routes-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.my-routes-modal {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: #1e293b;
+  color: #f8fafc;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.my-routes-modal h2 {
+  margin: 0 0 18px;
+}
+
+.my-routes-modal__field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.my-routes-modal__field input {
+  max-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.my-routes-modal__orders {
+  display: grid;
+  gap: 12px;
+}
+
+.my-routes-modal__orders h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.my-routes-modal__order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.my-routes-modal__order-row select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.my-routes-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.my-routes-modal__cancel-button,
+.my-routes-modal__confirm-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-routes-modal__cancel-button {
+  border: 1px solid #475569;
+  background: transparent;
+  color: #f8fafc;
+}
+
+.my-routes-modal__confirm-button {
+  border: 1px solid #f8fafc;
+  background: #f8fafc;
+  color: #0f172a;
+}
