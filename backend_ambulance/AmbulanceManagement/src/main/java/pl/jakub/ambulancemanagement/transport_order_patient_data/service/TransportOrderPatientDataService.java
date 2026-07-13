@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataPatchRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
@@ -44,22 +45,12 @@ public class TransportOrderPatientDataService {
 
     @Transactional
     public TransportOrderPatientData updateTransportOrderPatientData(
-            TransportOrderPatientDataUpdateRequest request, long id) {
+            TransportOrderPatientDataPatchRequest request, long id) {
 
         TransportOrderPatientData patientDataToUpdate = getTransportOrderPatientDataById(id);
 
         validatePatientDataNotAnonymized(patientDataToUpdate);
         validateTransportOrderCanReceivePatientData(patientDataToUpdate.getTransportOrder());
-
-        if (request.getId() != null) {
-
-            TransportOrder transportOrder = transportOrderService
-                    .getTransportOrderByIdWithAccessCheck(request.getId());
-
-            validateTransportOrderCanReceivePatientData(transportOrder);
-
-            patientDataToUpdate.setTransportOrder(transportOrder);
-        }
 
         if (request.getPatientFirstName() != null) {
             patientDataToUpdate.setPatientFirstName(normalizeRequiredText(request.getPatientFirstName()));

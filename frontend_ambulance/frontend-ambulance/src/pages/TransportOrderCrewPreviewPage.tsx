@@ -87,13 +87,6 @@ export function TransportOrderCrewPreviewPage() {
         }
         loadPreview();
     }, [orderId]);
-    {
-        successMessage && (
-            <p className="transport-order-preview-page__message">
-                {successMessage}
-            </p>
-        )
-    }
     async function handleAcceptOrder() {
         if (!order) {
             return;
@@ -189,6 +182,13 @@ export function TransportOrderCrewPreviewPage() {
 
     return (
         <main className="transport-order-preview-page">
+                {
+        successMessage && (
+            <p className="transport-order-preview-page__message">
+                {successMessage}
+            </p>
+        )
+    }
             <article className="transport-order-preview">
                 <header className="transport-order-preview__header">
                     <div className="transport-order-preview__title-group">

@@ -575,7 +575,7 @@ export function NewTransportOrdersList() {
                       {dateGroup.orders.map((order) => {
                         const hasCriticalAlarm = shouldUseCriticalAlarm(order);
                         const isCriticalAlarmAcknowledged =
-                          acknowledgedCriticalOrderIdsRef.current.has(order.id);
+                          hasCriticalAlarm && !criticalAlarmOrderIds.has(order.id);
                         const shouldShowCriticalAlarm = criticalAlarmOrderIds.has(
                           order.id
                         );

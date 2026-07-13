@@ -29,23 +29,37 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionInProgressId, setActionInProgressId] = useState<number | null>(null);
 
+useEffect(() => {
+    let isCurrent = true;
+
     async function loadMembers() {
         try {
-            setLoading(true);
-            setErrorMessage(null);
-
             const data = await getShiftDefaultMembersByShiftId(shiftId);
+
+            if (!isCurrent) {
+                return;
+            }
+
             setMembers(data.filter(isActiveShiftDefaultMember));
+            setErrorMessage(null);
         } catch {
-            setErrorMessage("Nie udało się pobrać załogi zmiany.");
+            if (isCurrent) {
+                setErrorMessage("Nie udało się pobrać załogi zmiany.");
+            }
         } finally {
-            setLoading(false);
+            if (isCurrent) {
+                setLoading(false);
+            }
         }
     }
 
-    useEffect(() => {
-        loadMembers();
-    }, [shiftId]);
+    void loadMembers();
+
+    return () => {
+        isCurrent = false;
+    };
+}, [shiftId]);
+    
 
     function replaceMember(updatedMember: ShiftDefaultMemberResponse) {
         setMembers((currentMembers) =>

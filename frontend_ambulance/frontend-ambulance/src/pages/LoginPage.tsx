@@ -37,7 +37,7 @@ export function LoginPage() {
 
       navigate("/unauthorized");
       
-    } catch (error) {
+    } catch {
     
       alert("Nie udało się zalogować");
     }
