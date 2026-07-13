@@ -7,7 +7,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.jakub.ambulancemanagement.dashboards.dto.AmbulanceDashboardResponse;
+import pl.jakub.ambulancemanagement.dashboards.dto.ManagerAmbulanceDashboardResponse;
 import pl.jakub.ambulancemanagement.dashboards.service.DashboardService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/dashboards")
@@ -26,5 +29,10 @@ public class DashboardController {
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public AmbulanceDashboardResponse getDashboardByShiftId(@PathVariable Long shiftId) {
         return service.getDashboardByShiftIdForAdmin(shiftId);
+    }
+    @GetMapping("/shifts/view")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public List<ManagerAmbulanceDashboardResponse> getDashboardByManager(){
+        return service.getDashboardByManager();
     }
 }

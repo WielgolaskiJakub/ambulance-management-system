@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
+import pl.jakub.ambulancemanagement.shifts.model.Shift;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,4 +42,8 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
 
 
     boolean existsByShift_IdAndStatusIn(Long shiftId, List<RouteStatus> statuses);
+
+    Optional<Route> findFirstByShift_IdAndStatusInOrderByStartedAtDesc(
+            Long shiftId,
+            List<RouteStatus> statuses);
 }
