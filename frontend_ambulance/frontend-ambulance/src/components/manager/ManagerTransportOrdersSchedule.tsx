@@ -15,6 +15,7 @@ import {
   getTransportCancelOptions,
 } from "../../utils/transportOrderLabels";
 import "../dashboard/TransportWorkPlan.css";
+import { ManagerAmbulanceDashboard } from "./ManagerAmbulanceDashboard";
 
 
 
@@ -510,6 +511,7 @@ export function ManagerTransportOrdersSchedule() {
           </div>
         </div>
 
+          <ManagerAmbulanceDashboard/>
 
         {success && (
           <p className="orders-list__message orders-list__message--success">

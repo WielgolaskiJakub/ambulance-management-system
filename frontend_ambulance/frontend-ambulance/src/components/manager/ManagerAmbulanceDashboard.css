@@ -1,0 +1,149 @@
+.manager-ambulance-dashboard {
+  margin: 18px 0;
+  overflow: hidden;
+  border: 1px solid #374151;
+  border-radius: 16px;
+  background: #111827;
+}
+
+.manager-ambulance-dashboard__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 0;
+  padding: 15px 18px;
+  color: #f9fafb;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.manager-ambulance-dashboard__toggle:hover {
+  background: #172033;
+}
+
+.manager-ambulance-dashboard__toggle-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.manager-ambulance-dashboard__summary {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.manager-ambulance-dashboard__content {
+  border-top: 1px solid #374151;
+  padding: 18px;
+}
+
+.manager-ambulance-dashboard__content h2 {
+  margin: 0 0 14px;
+  font-size: 18px;
+}
+
+.manager-ambulance-dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.manager-ambulance-card {
+  border: 1px solid #334155;
+  border-left: 4px solid #64748b;
+  border-radius: 12px;
+  padding: 15px;
+  background: #0f172a;
+}
+
+.manager-ambulance-card--available {
+  border-left-color: #22c55e;
+}
+
+.manager-ambulance-card--busy {
+  border-left-color: #38bdf8;
+}
+
+.manager-ambulance-card h3 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.manager-ambulance-card p {
+  margin: 6px 0;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+  .manager-ambulance-dashboard__toggle {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+}
+.manager-ambulance-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.manager-ambulance-card__vehicle {
+  margin: 3px 0 0 !important;
+  color: #94a3b8 !important;
+}
+
+.manager-ambulance-card__status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 8px;
+  font-size: 11px !important;
+  font-weight: 700;
+}
+
+.manager-ambulance-card__status--available {
+  color: #bbf7d0;
+  background: #14532d;
+}
+
+.manager-ambulance-card__status--busy {
+  color: #bae6fd;
+  background: #0c4a6e;
+}
+
+.manager-ambulance-card__crew {
+  margin-top: 15px;
+}
+
+.manager-ambulance-card__crew p {
+  display: flex;
+  gap: 8px;
+}
+
+.manager-ambulance-card__crew span {
+  min-width: 88px;
+  color: #94a3b8;
+}
+
+.manager-ambulance-card__operation {
+  margin-top: 15px;
+  border-top: 1px solid #334155;
+  padding-top: 12px;
+}
+.manager-ambulance-card--accepted {
+  border-left-color: #f59e0b;
+}
+
+.manager-ambulance-card__status--accepted {
+  color: #fef3c7;
+  background: #92400e;
+}
+.manager-ambulance-card--available,
+.manager-ambulance-card--busy,
+.manager-ambulance-card--accepted {
+  background: #0f172a;
+}

@@ -1,3 +1,11 @@
+export type RouteStaus = 
+  | "CREATED"
+  | "IN_PROGRESS"
+  | "WAITING"
+  | "COMPLETED"
+
+
+
 export type RouteResponse = {
   id: number;
   transportOrderIds: number[];
