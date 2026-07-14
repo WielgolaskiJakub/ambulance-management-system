@@ -8,6 +8,7 @@ import type { ShiftDefaultMemberResponse } from "../../types/shiftDefaultMember"
 import { routeMemberRoleLabels } from "../../utils/routeMemberLabels";
 import { formatTime } from "../../utils/dateTimeFormat";
 import "./ShiftDefaultMemebrsPanel.css";
+import axios from "axios";
 
 type Props = {
     shiftId: number;
@@ -15,12 +16,26 @@ type Props = {
 
 type CrewAction = "" | "extend-open-ended" | "finish";
 
-function isActiveShiftDefaultMember(member: ShiftDefaultMemberResponse) {
-    if (member.endTime === null) {
-        return true;
+type ApiErrorResponse = {
+    code?: string;
+};
+
+function getApiErrorCode(error: unknown): string | null {
+    if (!axios.isAxiosError(error)) {
+        return null;
     }
 
-    return new Date(member.endTime).getTime() > Date.now();
+    return (error.response?.data as ApiErrorResponse | undefined)?.code ?? null;
+}
+
+function isActiveShiftDefaultMember(member: ShiftDefaultMemberResponse) {
+    const now = Date.now();
+    const started = new Date(member.startTime).getTime() <= now;
+    const notFinished =
+        member.endTime === null ||
+        new Date(member.endTime).getTime() > now;
+
+    return started && notFinished;
 }
 
 export function ShiftDefaultMembersPanel({ shiftId }: Props) {
@@ -29,37 +44,37 @@ export function ShiftDefaultMembersPanel({ shiftId }: Props) {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [actionInProgressId, setActionInProgressId] = useState<number | null>(null);
 
-useEffect(() => {
-    let isCurrent = true;
+    useEffect(() => {
+        let isCurrent = true;
 
-    async function loadMembers() {
-        try {
-            const data = await getShiftDefaultMembersByShiftId(shiftId);
+        async function loadMembers() {
+            try {
+                const data = await getShiftDefaultMembersByShiftId(shiftId);
 
-            if (!isCurrent) {
-                return;
-            }
+                if (!isCurrent) {
+                    return;
+                }
 
-            setMembers(data.filter(isActiveShiftDefaultMember));
-            setErrorMessage(null);
-        } catch {
-            if (isCurrent) {
-                setErrorMessage("Nie udało się pobrać załogi zmiany.");
-            }
-        } finally {
-            if (isCurrent) {
-                setLoading(false);
+                setMembers(data.filter(isActiveShiftDefaultMember));
+                setErrorMessage(null);
+            } catch {
+                if (isCurrent) {
+                    setErrorMessage("Nie udało się pobrać załogi zmiany.");
+                }
+            } finally {
+                if (isCurrent) {
+                    setLoading(false);
+                }
             }
         }
-    }
 
-    void loadMembers();
+        void loadMembers();
 
-    return () => {
-        isCurrent = false;
-    };
-}, [shiftId]);
-    
+        return () => {
+            isCurrent = false;
+        };
+    }, [shiftId]);
+
 
     function replaceMember(updatedMember: ShiftDefaultMemberResponse) {
         setMembers((currentMembers) =>
@@ -79,7 +94,12 @@ useEffect(() => {
             setMembers((currentMembers) =>
                 currentMembers.filter((member) => member.id !== memberId)
             );
-        } catch {
+        } catch (error) {
+            const errorCode = getApiErrorCode(error);
+
+            console.log("finishShiftDefaultMember error code:", errorCode);
+            console.log("finishShiftDefaultMember response:", error);
+
             setErrorMessage("Nie udało się zakończyć udziału członka załogi.");
         } finally {
             setActionInProgressId(null);

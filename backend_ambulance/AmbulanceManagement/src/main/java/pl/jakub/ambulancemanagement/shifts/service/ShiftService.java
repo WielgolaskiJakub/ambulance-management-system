@@ -9,9 +9,14 @@ import pl.jakub.ambulancemanagement.ambulances.repository.AmbulanceRepository;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMemberRole;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
+import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
+import pl.jakub.ambulancemanagement.shift_default_members.repository.ShiftDefaultMemberRepository;
+import pl.jakub.ambulancemanagement.shift_default_members.service.ShiftDefaultMemberService;
 import pl.jakub.ambulancemanagement.shifts.dto.ShiftCreateRequest;
+import pl.jakub.ambulancemanagement.shifts.dto.ShiftDefaultMemberCreateRequest;
 import pl.jakub.ambulancemanagement.shifts.dto.ShiftUpdateByUserRequest;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
@@ -19,9 +24,12 @@ import pl.jakub.ambulancemanagement.shifts.model.ShiftType;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.model.User;
+import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 
@@ -33,6 +41,9 @@ public class ShiftService {
     private final AmbulanceRepository ambulanceRepository;
     private final CurrentUserService currentUserService;
     private final RouteRepository routeRepository;
+    private final ShiftDefaultMemberRepository shiftDefaultMemberRepository;
+    private final UserRepository userRepository;
+    private final ShiftDefaultMemberService shiftDefaultMemberService;
 
     public List<Shift> getAllShifts() {
         return shiftRepository.findAll();
@@ -68,16 +79,20 @@ public class ShiftService {
             startTime = request.getStartTime();
             endTime = request.getEndTime();
         } else {
-            if (request.getShiftDate() == null) {
-                throw new ApiException(ErrorCode.SHIFT_DATE_REQUIRED);
-            }
+            LocalDate shiftDate = LocalDate.now();
 
-            startTime = calculateStartTime(request.getShiftDate(), request.getShiftType());
-            endTime = calculateEndTime(request.getShiftDate(), request.getShiftType());
+            startTime = calculateStartTime(shiftDate, request.getShiftType());
+            endTime = calculateEndTime(shiftDate, request.getShiftType());
         }
 
         if (!endTime.isAfter(startTime)) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
+        }
+
+        validateShiftTypeAvailability(request.getShiftType());
+
+        if(!endTime.isAfter(LocalDateTime.now())) {
+            throw new ApiException(ErrorCode.SHIFT_END_TIME_IN_PAST);
         }
 
         User driver = currentUserService.getCurrentUser();
@@ -120,7 +135,11 @@ public class ShiftService {
         ambulance.setStatus(AmbulanceStatus.IN_USE);
         ambulanceRepository.save(ambulance);
 
-        return shiftRepository.save(shift);
+       Shift savedShift = shiftRepository.save(shift);
+
+       createDefaultMemberIfPresent(savedShift, request.getDefaultMember());
+
+       return savedShift;
     }
 
     @Transactional
@@ -193,6 +212,10 @@ public class ShiftService {
                 throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
             }
 
+            if(!endTime.isAfter(LocalDateTime.now())) {
+                throw new ApiException(ErrorCode.SHIFT_END_TIME_IN_PAST);
+            }
+
             shiftToUpdate.setShiftType(newShiftType);
             shiftToUpdate.setStartTime(startTime);
             shiftToUpdate.setEndTime(endTime);
@@ -263,6 +286,87 @@ public class ShiftService {
 
         return shiftRepository.findByIdAndDriver_Id(shiftId, currentUser.getId())
                 .orElseThrow(() -> new ApiException(ErrorCode.SHIFT_ACCESS_DENIED));
+    }
+
+    private void createDefaultMemberIfPresent(
+            Shift shift,
+            ShiftDefaultMemberCreateRequest request
+    ) {
+        if(request == null){
+            return;
+        }
+
+        User member = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        if(!Boolean.TRUE.equals(member.getActive())){
+            throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
+        }
+
+        if(shift.getDriver().getId().equals(member.getId())){
+            throw new ApiException(ErrorCode.INVALID_SHIFT_TEAM);
+        }
+
+        if(!Boolean.TRUE.equals(member.getCanWorkAsSanitary())){
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_INVALID_ROLE);
+        }
+
+        if(request.getStartTime() == null){
+            throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
+        }
+
+        if (request.getEndTime() != null
+                && !request.getEndTime().isAfter(request.getStartTime())) {
+            throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
+        }
+
+        if(request.getEndTime() != null
+        && !request.getEndTime().isAfter(LocalDateTime.now())) {
+            throw new ApiException(ErrorCode.SHIFT_END_TIME_IN_PAST);
+        }
+
+        if(request.getStartTime().isBefore(shift.getStartTime())){
+            throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
+        }
+
+        shiftDefaultMemberService.validateNoOverlappingAssignmentOnWorkingDay(
+                member,
+                request.getStartTime(),
+                request.getEndTime(),
+                -1L
+        );
+
+        ShiftDefaultMember defaultMember = new ShiftDefaultMember();
+        defaultMember.setShift(shift);
+        defaultMember.setUser(member);
+        defaultMember.setRole(RouteMemberRole.SANITARY_WORKER);
+        defaultMember.setStartTime(request.getStartTime());
+        defaultMember.setEndTime(request.getEndTime());
+
+        shiftDefaultMemberRepository.save(defaultMember);
+    }
+
+    private void validateShiftTypeAvailability(ShiftType shiftType){
+        if(shiftType == ShiftType.OTHER){
+            return;
+        }
+
+        LocalTime currentTime =  LocalTime.now();
+        LocalTime dayShiftCutoff =LocalTime.of(17,0);
+
+        boolean isStandardShiftWindow = !currentTime.isAfter(dayShiftCutoff);
+
+        if(isStandardShiftWindow
+        && (shiftType == ShiftType.DAY_12H
+        || shiftType == ShiftType.FULL_24H)){
+            return;
+        }
+
+        if(!isStandardShiftWindow && shiftType == ShiftType.NIGHT_12H){
+            return;
+        }
+
+        throw new ApiException(ErrorCode.SHIFT_TYPE_NOT_AVAILABLE_AT_CURRENT_TIME);
     }
 }
 

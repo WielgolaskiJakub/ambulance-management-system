@@ -142,6 +142,17 @@ public enum ErrorCode {
             "error.shift.has_active_routes", HttpStatus.BAD_REQUEST),
     SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED("SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED",
             "error.shift_default_member_already_finished", HttpStatus.BAD_REQUEST),
+    SHIFT_END_TIME_IN_PAST("SHIFT_END_TIME_IN_PAST",
+            "error.shift_end_time_in_past", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_TIME_CONFLICT("SHIFT_DEFAULT_MEMBER_TIME_CONFLICT",
+            "error.shift_default_member_time_conflict", HttpStatus.CONFLICT),
+    SHIFT_TYPE_NOT_AVAILABLE_AT_CURRENT_TIME("SHIFT_TYPE_NOT_AVAILABLE_AT_CURRENT_TIME",
+            "error.shift_type_not_available_at_current_time", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_START_BEFORE_SHIFT("SHIFT_DEFAULT_MEMBER_START_BEFORE_SHIFT",
+            "error.shift_default_member_start_before_shift", HttpStatus.BAD_REQUEST),
+    SHIFT_DEFAULT_MEMBER_NOT_STARTED("SHIFT_DEFAULT_MEMBER_NOT_STARTED",
+            "error.shift_default_member_not_started", HttpStatus.BAD_REQUEST),
+
     ;
 
     private final String code;
