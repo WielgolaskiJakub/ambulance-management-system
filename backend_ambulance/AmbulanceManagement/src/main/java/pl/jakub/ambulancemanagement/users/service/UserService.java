@@ -8,6 +8,7 @@ import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.users.model.User;
+import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 import pl.jakub.ambulancemanagement.users.dto.*;
 
@@ -22,14 +23,24 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<User> getAllUsersVisibleForCurrentUser() {
+        if(currentUserIsAdmin()) {
+            return userRepository.findAll();
+        }
+        return userRepository.findByUserRoleNot(UserRole.ADMIN);
     }
 
     public User getUserById(long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
     }
+
+    public User getUserByIdForManagement(long id){
+        User user = getUserById(id);
+        validateCurrentUserCanView(user);
+        return user;
+    }
+
     public List<User> getRouteMemberCandidates(Long routeId) {
         return userRepository.findRouteMemberCandidates(
                 routeId,
@@ -42,6 +53,8 @@ public class UserService {
         return userRepository.findByActiveTrueAndCanWorkAsSanitaryTrueOrderByLastNameAscFirstNameAsc();
     }
     public User createUser(UserCreateRequest request) {
+
+        validateCurrentUserCanAssignRole(request.getUserRole());
 
         String username = request.getUsername().trim();
 
@@ -111,6 +124,8 @@ public class UserService {
     public User updateUserByPatchAdmin(UserAdminPatchRequest request, long id) {
         User userToUpdate = getUserById(id);
 
+        validateCurrentUserCanManage(userToUpdate);
+
         if (request.getFirstName() != null) {
            String firstName = request.getFirstName().trim();
             if(firstName.isBlank()){
@@ -161,6 +176,7 @@ public class UserService {
         }
 
         if (request.getUserRole() != null) {
+            validateCurrentUserCanAssignRole(request.getUserRole());
             userToUpdate.setUserRole(request.getUserRole());
         }
 
@@ -176,6 +192,7 @@ public class UserService {
 
     public void deleteUserById(long id) {
         User user = getUserById(id);
+        validateCurrentUserCanManage(user);
         user.setActive(false);
         userRepository.save(user);
     }
@@ -200,6 +217,7 @@ public class UserService {
     public void resetTemporaryPasswordByAdmin(AdminResetTemporaryPasswordRequest request, long id) {
         User userToUpdate = getUserById(id);
 
+        validateCurrentUserCanManage(userToUpdate);
         userToUpdate.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
         userToUpdate.setMustChangePassword(true);
 
@@ -220,4 +238,29 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
+    private boolean currentUserIsAdmin(){
+        return currentUserService.getCurrentUser().getUserRole() == UserRole.ADMIN;
+    }
+
+    private boolean isProtectedRole(UserRole role){
+        return role == UserRole.ADMIN || role == UserRole.MANAGER;
+    }
+
+    private void validateCurrentUserCanView(User user){
+        if(!currentUserIsAdmin() && user.getUserRole() == UserRole.ADMIN){
+            throw new ApiException(ErrorCode.USER_MANAGEMENT_ACCESS_DENIED);
+        }
+    }
+
+    private void validateCurrentUserCanManage(User user){
+        if(!currentUserIsAdmin() && isProtectedRole(user.getUserRole())){
+            throw new ApiException(ErrorCode.USER_MANAGEMENT_ACCESS_DENIED);
+        }
+    }
+
+    private void validateCurrentUserCanAssignRole(UserRole requestedRole){
+        if(!currentUserIsAdmin() && isProtectedRole(requestedRole)) {
+            throw new ApiException(ErrorCode.USER_MANAGEMENT_ACCESS_DENIED);
+        }
+    }
 }

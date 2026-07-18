@@ -11,7 +11,7 @@ export type UserResponse ={
     firstName: string;
     lastName: string;
     username: string;
-    email: string;
+    email: string | null;
     userRole: UserRole;
     active: boolean;
     mustChangePassword: boolean;

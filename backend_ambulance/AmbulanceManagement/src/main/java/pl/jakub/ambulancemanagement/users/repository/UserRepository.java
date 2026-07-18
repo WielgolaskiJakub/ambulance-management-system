@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.users.model.User;
+import pl.jakub.ambulancemanagement.users.model.UserRole;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -53,4 +54,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("now") LocalDateTime now,
             @Param("activeStatus") ShiftStatus activeStatus
     );
+
+    List<User> findByUserRoleNot(UserRole useRole);
 }

@@ -11,7 +11,7 @@ import {
     useState,
     type FormEvent
 } from "react";
-
+import { getCurrentUserRole } from "../utils/auth";
 import "./ManagerUsersPage.css"
 
 
@@ -51,6 +51,10 @@ function hasText(value: string): boolean {
 
 
 export function ManagerUsersPage() {
+
+    const currentUserRole = getCurrentUserRole();
+    const isAdmin = currentUserRole === "ADMIN";
+
 
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -277,6 +281,17 @@ export function ManagerUsersPage() {
     }
 
 
+    function canEditUser(user: UserResponse): boolean {
+        if (isAdmin) {
+            return true;
+        }
+
+        return (
+            user.userRole !== "ADMIN" &&
+            user.userRole !== "MANAGER"
+        );
+    }
+
     const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
     const filteredUsers = users.filter((user) => {
@@ -331,7 +346,7 @@ export function ManagerUsersPage() {
                     <div className="employee-form__field">
                         <label htmlFor="employee-first-name">Imię</label>
                         <input
-                            id="empoloyee-first-name"
+                            id="employee-first-name"
                             type="text"
                             value={form.firstName}
                             required
@@ -430,7 +445,13 @@ export function ManagerUsersPage() {
                         >
                             <option value="DRIVER">Kierowca</option>
                             <option value="SANITARY">Sanitariusz</option>
+                            <option value="DOCTOR">Lekarz</option>
+                            {isAdmin && (
                             <option value="MANAGER">Kierownik</option>
+                            )}
+                             {isAdmin && (
+                            <option value="ADMIN">Administrator</option>
+                            )}
                         </select>
                     </div>
 
@@ -483,6 +504,10 @@ export function ManagerUsersPage() {
                         <option value="DRIVER">Kierowcy</option>
                         <option value="SANITARY">Sanitariusze</option>
                         <option value="MANAGER">Kierownicy</option>
+                        <option value="DOCTOR">Lekarze</option>
+                        {isAdmin && (
+                            <option value="ADMIN">Administratorzy</option>
+                        )}
                     </select>
 
                     <select
@@ -532,13 +557,15 @@ export function ManagerUsersPage() {
                                                 Szczegóły
                                             </button>
 
-                                            <button
-                                                className="employees-table__edit-button"
-                                                type="button"
-                                                onClick={() => openEditForm(user)}
-                                            >
-                                                Edytuj
-                                            </button>
+                                            {canEditUser(user) && (
+                                                <button
+                                                    className="employees-table__edit-button"
+                                                    type="button"
+                                                    onClick={() => openEditForm(user)}
+                                                >
+                                                    Edytuj
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -729,7 +756,7 @@ export function ManagerUsersPage() {
                                 />
                             </div>
 
-                            <div className="employee-form_field">
+                            <div className="employee-form__field">
                                 <label htmlFor="edit-role">Rola</label>
                                 <select
                                     id="edit-role"
@@ -752,7 +779,13 @@ export function ManagerUsersPage() {
                                 >
                                     <option value="DRIVER">Kierowca</option>
                                     <option value="SANITARY">Sanitariusz</option>
+                                    <option value="DOCTOR">Lekarz</option>
+                                    {isAdmin && (
                                     <option value="MANAGER">Kierownik</option>
+                                    )}
+                                      {isAdmin && (
+                                    <option value="ADMIN">Administrator</option>
+                                    )}
                                 </select>
                             </div>
 

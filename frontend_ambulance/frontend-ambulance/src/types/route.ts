@@ -1,4 +1,4 @@
-export type RouteStaus = 
+export type RouteStatus = 
   | "CREATED"
   | "IN_PROGRESS"
   | "WAITING"

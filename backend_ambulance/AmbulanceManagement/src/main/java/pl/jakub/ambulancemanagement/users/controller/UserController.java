@@ -22,13 +22,16 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers().stream().map(UserResponse::fromEntity).toList();
+        return userService.getAllUsersVisibleForCurrentUser()
+                .stream()
+                .map(UserResponse::fromEntity)
+                .toList();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public UserResponse getUserById(@PathVariable long id) {
-        User user = userService.getUserById(id);
+        User user = userService.getUserByIdForManagement(id);
         return UserResponse.fromEntity(user);
     }
 

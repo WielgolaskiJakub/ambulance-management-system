@@ -1,4 +1,5 @@
 import type { RouteMemberRole } from "./routeMember";
+import type { RouteStatus } from "./route";
 
 export type ManagerAmbulanceCrewMember = {
   fullName: string,
@@ -46,7 +47,7 @@ export type ManagerAmbulanceDashboardResponse = {
   crewMembers: ManagerAmbulanceCrewMember[];
   currentTransportOrders:ManagerAmbulanceCurrentTransportOrder[];
   routeAcceptedAt: string | null;
-  currentRouteStatus: "WAITING" | "IN_PROGRESS" | "CREATED" |null;
+  currentRouteStatus: RouteStatus|null;
   routeStartedAt: string | null;
   routeStartAddress: string | null;
   routeDestinationAddress: string | null;
