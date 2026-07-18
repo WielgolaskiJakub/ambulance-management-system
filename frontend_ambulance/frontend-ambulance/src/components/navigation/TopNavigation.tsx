@@ -85,6 +85,14 @@ export function TopNavigation() {
           >
             Utwórz zlecenie
           </NavLink>
+
+           <NavLink className="top-navigation__link" to="/manager/users">
+            Pracownicy
+          </NavLink>
+
+           <NavLink className="top-navigation__link" to="/manager/ambulances">
+            Pojazdy
+          </NavLink>
           </>
         )}
       </nav>

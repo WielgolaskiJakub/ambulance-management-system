@@ -152,6 +152,8 @@ public enum ErrorCode {
             "error.shift_default_member_start_before_shift", HttpStatus.BAD_REQUEST),
     SHIFT_DEFAULT_MEMBER_NOT_STARTED("SHIFT_DEFAULT_MEMBER_NOT_STARTED",
             "error.shift_default_member_not_started", HttpStatus.BAD_REQUEST),
+    USER_FIELD_CANNOT_BE_BLANK("USER_FIELD_CANNOT_BE_BLANK",
+            "error.user.field.cannot_be_blank", HttpStatus.BAD_REQUEST),
 
     ;
 

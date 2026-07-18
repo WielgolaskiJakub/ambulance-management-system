@@ -112,15 +112,27 @@ public class UserService {
         User userToUpdate = getUserById(id);
 
         if (request.getFirstName() != null) {
-            userToUpdate.setFirstName(request.getFirstName());
+           String firstName = request.getFirstName().trim();
+            if(firstName.isBlank()){
+                throw new ApiException(ErrorCode.USER_FIELD_CANNOT_BE_BLANK);
+            }
+            userToUpdate.setFirstName(firstName);
         }
 
         if (request.getLastName() != null) {
-            userToUpdate.setLastName(request.getLastName());
+            String lastName = request.getLastName().trim();
+            if(lastName.isBlank()){
+                throw new ApiException(ErrorCode.USER_FIELD_CANNOT_BE_BLANK);
+            }
+            userToUpdate.setLastName(lastName);
         }
 
         if (request.getUsername() != null) {
             String username = request.getUsername().trim();
+
+            if (username.isBlank()) {
+                throw new ApiException(ErrorCode.USER_FIELD_CANNOT_BE_BLANK);
+            }
 
             boolean usernameChanged = !userToUpdate.getUsername().equals(username);
             boolean usernameAlreadyExists = userRepository.existsByUsername(username);

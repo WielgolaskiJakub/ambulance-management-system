@@ -15,6 +15,7 @@ import { ProtectedRoute } from "./routes/ProtectedRoute";
 import { UnauthorizedPage } from "./pages/UnauthorizedPage";
 import { ManagerDashboardPage } from "./pages/ManagerDashboardPage";
 import { ManagerEditTransportOrderPage } from "./pages/ManagerEditTransportOrderPage";
+import { ManagerUsersPage } from "./pages/ManagerUsersPage";
 
 function App() {
   return (
@@ -59,6 +60,7 @@ function App() {
           />
           <Route path="/manager/transport-orders/:orderId/edit" element={<ManagerEditTransportOrderPage />} />
       
+      <Route path="/manager/users" element= {<ManagerUsersPage />} />
         </Route>
       </Route>
 
