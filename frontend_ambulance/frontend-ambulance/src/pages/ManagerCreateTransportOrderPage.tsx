@@ -8,8 +8,15 @@ import {
     transportSourceLabels,
 } from "../utils/transportOrderLabels"
 import "./ManagerCreateTransportOrderPage.css"
+import { useToast } from "../toast/UseToast";
 
 const defaultPickupAddress = import.meta.env.VITE_DEFAULT_PICKUP_ADDRESS ?? "";
+
+type PatientFormState = {
+    patientFirstName: string;
+    patientLastName: string;
+    pickupDetails: string;
+};
 
 type FormState = {
     plannedDate: string;
@@ -21,9 +28,13 @@ type FormState = {
     pickupAddress: string;
     destinationAddress: string;
     description: string;
-    patientFirstName: string;
-    patientLastName: string;
-    pickupDetails: string;
+    patients: PatientFormState[];
+};
+
+const emptyPatient: PatientFormState = {
+    patientFirstName: "",
+    patientLastName: "",
+    pickupDetails: "",
 };
 
 const initialFormState: FormState = {
@@ -36,9 +47,7 @@ const initialFormState: FormState = {
     pickupAddress: defaultPickupAddress,
     destinationAddress: "",
     description: "",
-    patientFirstName: "",
-    patientLastName: "",
-    pickupDetails: "",
+    patients: [{ ...emptyPatient }],
 };
 
 function hasText(value: string): boolean {
@@ -47,10 +56,12 @@ function hasText(value: string): boolean {
 
 export function ManagerCreateTransportOrderPage() {
     const navigate = useNavigate();
+    const {showToast} = useToast();
 
     const [form, setForm] = useState<FormState>(initialFormState);
     const [submitting, setSubmitting] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [orderErrorMessage, setOrderErrorMessage] = useState<string | null>(null);
+    const [patientErrorMessage, setPatientErrorMessage] = useState<string | null>(null);
 
     function updateField(field: keyof FormState, value: string) {
         setForm((currentForm) => ({
@@ -59,36 +70,67 @@ export function ManagerCreateTransportOrderPage() {
         }));
     }
 
+
+    const patients = form.patients
+        .filter((patient) =>
+            hasText(patient.patientFirstName) ||
+            hasText(patient.patientLastName) ||
+            hasText(patient.pickupDetails)
+        )
+        .map((patient) => ({
+            patientFirstName: patient.patientFirstName.trim(),
+            patientLastName: patient.patientLastName.trim(),
+            pickupDetails: hasText(patient.pickupDetails)
+                ? patient.pickupDetails.trim()
+                : null
+        }));
+
+
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         if (!hasText(form.plannedDate)) {
-            setErrorMessage("Podaj datę realizacji zlecenia.");
+            setOrderErrorMessage("Podaj datę realizacji zlecenia.");
             return;
         }
 
         if (!hasText(form.pickupAddress)) {
-            setErrorMessage("Podaj adres odbioru pacjenta.");
+            setOrderErrorMessage("Podaj adres odbioru pacjenta.");
             return;
         }
 
         if (!hasText(form.destinationAddress)) {
-            setErrorMessage("Podaj adres docelowy");
+            setOrderErrorMessage("Podaj adres docelowy");
             return;
         }
 
+        for (let index = 0; index < form.patients.length; index++) {
+            const patient = form.patients[index];
 
-        const hasPatientFirstName = hasText(form.patientFirstName);
-        const hasPatientLastName = hasText(form.patientLastName);
+            const hasFirstName = hasText(patient.patientFirstName);
+            const hasLastName = hasText(patient.patientLastName);
+            const hasPickupDetails = hasText(patient.pickupDetails);
 
-        if (hasPatientFirstName !== hasPatientLastName) {
-            setErrorMessage("Podaj imię i nazwisko pacjenta albo zostaw oba pola puste.");
-            return;
+            const patientRowIsNotEmpty =
+                hasFirstName ||
+                hasLastName ||
+                hasPickupDetails;
+
+            if (!patientRowIsNotEmpty) {
+                continue;
+            }
+
+            if (!hasFirstName || !hasLastName) {
+                setPatientErrorMessage(
+                    `Uzupełnij imię i nazwisko pacjenta nr ${index + 1}.`
+                );
+                return
+            }
         }
 
         try {
             setSubmitting(true);
-            setErrorMessage(null);
+            setOrderErrorMessage(null);
 
             const createdOrder = await createTransportOrderByManager({
                 plannedDate: form.plannedDate,
@@ -104,48 +146,115 @@ export function ManagerCreateTransportOrderPage() {
                 pickupAddress: form.pickupAddress.trim(),
                 destinationAddress: form.destinationAddress.trim(),
                 description: hasText(form.description) ? form.description.trim() : null,
-                patients:
-                    hasPatientFirstName && hasPatientLastName
-                        ? [
-                            {
-                                patientFirstName: form.patientFirstName.trim(),
-                                patientLastName: form.patientLastName.trim(),
-                                pickupDetails: hasText(form.pickupDetails)
-                                    ? form.pickupDetails.trim()
-                                    : null
-                            },
-                        ]
-                        : [],
+                patients,
+
             });
+
+            showToast(
+                createdOrder.orderNumber
+                ? `Utworzono zlecenie ${createdOrder.orderNumber}.`
+                : "Zlecenie zostało utworzone.",
+                "success"
+            )
 
             navigate(`/manager/dashboard?date=${createdOrder.plannedDate}&createdOrderId=${createdOrder.id}`);
         } catch (error) {
             if (axios.isAxiosError(error)) {
 
                 if (error.response?.status === 400) {
-                    setErrorMessage("Nieprawidłowe dane zlecenia.");
+                    setOrderErrorMessage("Nieprawidłowe dane zlecenia.");
                     return;
                 }
 
                 if (error.response?.status === 401) {
-                    setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
+                    setOrderErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
                     return;
                 }
 
                 if (error.response?.status === 403) {
-                    setErrorMessage("Brak uprawnień do utworzenia zlecenia.");
+                    setOrderErrorMessage("Brak uprawnień do utworzenia zlecenia.");
                     return;
                 }
 
-                setErrorMessage("Nie udało się utworzyć zlecenia.");
+                setOrderErrorMessage("Nie udało się utworzyć zlecenia.");
                 return;
             }
 
-            setErrorMessage("Nieznany błąd tworzenia zlecenia.");
+            setOrderErrorMessage("Nieznany błąd tworzenia zlecenia.");
 
         } finally {
             setSubmitting(false);
         }
+    }
+
+    function updatePatientField(
+        patientIndex: number,
+        field: keyof PatientFormState,
+        value: string
+    ) {
+        setPatientErrorMessage(null);
+        
+        setForm((currentForm) => ({
+            ...currentForm,
+            patients: currentForm.patients.map((patient, index) =>
+                index === patientIndex
+                    ? {
+                        ...patient,
+                        [field]: value,
+                    }
+                    : patient
+            ),
+        }));
+    }
+
+    function addPatient() {
+        const lastPatientIndex = form.patients.length - 1;
+        const lastPatient = form.patients[lastPatientIndex];
+
+        const hasFirstName = hasText(lastPatient.patientFirstName);
+        const hasLastName = hasText(lastPatient.patientLastName);
+        const hasPickupDetails = hasText(lastPatient.pickupDetails);
+
+        const patientHasAnyData =
+            hasFirstName ||
+            hasLastName ||
+            hasPickupDetails;
+
+        if (!patientHasAnyData) {
+            setPatientErrorMessage(
+                `Najpierw uzupełnij dane pacjenta nr ${lastPatientIndex + 1}.`
+            );
+            return;
+        }
+
+        if (!hasFirstName || !hasLastName) {
+            setPatientErrorMessage(
+                `Uzupełnij imię i nazwisko pacjenta nr ${lastPatientIndex + 1}.`
+            );
+            return;
+        }
+
+        setPatientErrorMessage(null);
+
+        setForm((currentForm) => ({
+            ...currentForm,
+            patients: [
+                ...currentForm.patients,
+                { ...emptyPatient },
+            ],
+        }));
+    }
+
+    function removePatient(patientIndex: number) {
+        setForm((currentForm) => ({
+            ...currentForm,
+            patients:
+                currentForm.patients.length === 1
+                    ? [{ ...emptyPatient }]
+                    : currentForm.patients.filter(
+                        (_, index) => index !== patientIndex
+                    ),
+        }));
     }
 
     return (
@@ -168,9 +277,9 @@ export function ManagerCreateTransportOrderPage() {
                     </div>
                 </header>
 
-                {errorMessage && (
+                {orderErrorMessage && (
                     <p className="create-transport-order-card__message create-transport-order-card__message--error">
-                        {errorMessage}
+                        {orderErrorMessage}
                     </p>
                 )}
 
@@ -201,7 +310,7 @@ export function ManagerCreateTransportOrderPage() {
                             <input
                                 value={form.orderNumber}
                                 onChange={(event) => updateField("orderNumber", event.target.value)}
-                                placeholder="Opcjonalnie"
+                                placeholder="np.3510/26"
                             />
                         </label>
                     </div>
@@ -299,45 +408,88 @@ export function ManagerCreateTransportOrderPage() {
                     </label>
 
                     <section className="create-transport-order-form__section">
-                        <h2>Dane pacjenta</h2>
+                        <h2>Dane pacjentów</h2>
                         <p>
                             Jeśli transport bez pacjenta - pozostaw puste.
                         </p>
 
-                        <div className="create-transport-order-form__grid">
-                            <label className="create-transport-order-form__field">
-                                <span>Imię</span>
-                                <input
-                                    value={form.patientFirstName}
-                                    onChange={(event) =>
-                                        updateField("patientFirstName", event.target.value)
-                                    }
-                                    placeholder="Imię pacjenta"
-                                />
-                            </label>
+                        {patientErrorMessage && (
+                            <p className="create-transport-order-form__patient-error">
+                                {patientErrorMessage}
+                            </p>
+                        )}
 
-                            <label className="create-transport-order-form__field">
-                                <span>Nazwisko</span>
-                                <input
-                                    value={form.patientLastName}
-                                    onChange={(event) =>
-                                        updateField("patientLastName", event.target.value)
-                                    }
-                                    placeholder="Nazwisko pacjenta"
-                                />
-                            </label>
+                        {form.patients.map((patient, index) => (
+                            <div className="create-transport-order-form__patient"
+                                key={index}
+                            >
+                                <div className="create-transport-order-form__patient-header">
+                                    <h3>Pacjent {index + 1}</h3>
 
-                            <label className="create-transport-order-form__field">
-                                <span>Dodatkowe informacje</span>
-                                <input
-                                    value={form.pickupDetails}
-                                    onChange={(event) => updateField("pickupDetails", event.target.value)}
-                                    placeholder="Opcjonalnie"
-                                />
-                            </label>
-                        </div>
+                                    <button
+                                        className="create-transport-order-form__patient-remove-button"
+                                        type="button"
+                                        onClick={() => removePatient(index)}
+                                    >
+                                        Usuń
+                                    </button>
+                                </div>
+
+                                <div className="create-transport-order-form__grid">
+                                    <label className="create-transport-order-form__field">
+                                        <span>Imię</span>
+
+                                        <input
+                                            value={patient.patientFirstName}
+                                            onChange={(event) =>
+                                                updatePatientField(index,
+                                                    "patientFirstName",
+                                                    event.target.value
+                                                )
+                                            }
+                                            placeholder="Imię pacjenta"
+                                        />
+                                    </label>
+
+                                    <label className="create-transport-order-form__field">
+                                        <span>Nazwisko</span>
+
+                                        <input
+                                            value={patient.patientLastName}
+                                            onChange={(event) =>
+                                                updatePatientField(index,
+                                                    "patientLastName",
+                                                    event.target.value
+                                                )
+                                            }
+                                            placeholder="Nazwisko pacjenta"
+                                        />
+                                    </label>
+
+                                    <label className="create-transport-order-form__field">
+                                        <span>Dodatkowe informacje</span>
+
+                                        <input
+                                            value={patient.pickupDetails}
+                                            onChange={(event) =>
+                                                updatePatientField(index,
+                                                    "pickupDetails",
+                                                    event.target.value
+                                                )
+                                            }
+                                            placeholder="Opcjonalnie"
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+                        ))}
+                        <button
+                            className="create-transport-order-form__add-patient-button"
+                            type="button"
+                            onClick={addPatient}>
+                            + Dodaj kolejnego pacjenta
+                        </button>
                     </section>
-
                     <div className="create-transport-order-form__actions">
                         <button
                             className="create-transport-order-form__submit-button"
