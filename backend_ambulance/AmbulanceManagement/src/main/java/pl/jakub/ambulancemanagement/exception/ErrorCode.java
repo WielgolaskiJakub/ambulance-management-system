@@ -156,6 +156,10 @@ public enum ErrorCode {
             "error.user.field.cannot_be_blank", HttpStatus.BAD_REQUEST),
     USER_MANAGEMENT_ACCESS_DENIED("USER_MANAGEMENT_ACCESS_DENIED",
             "error.user.management_access_denied", HttpStatus.FORBIDDEN),
+    AMBULANCE_ALREADY_ACTIVE("AMBULANCE_ALREADY_ACTIVE",
+            "error.ambulance.already.active", HttpStatus.CONFLICT)
+
+
 
     ;
 

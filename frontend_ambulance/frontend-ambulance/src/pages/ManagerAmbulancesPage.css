@@ -1,0 +1,656 @@
+.ambulances-page {
+  width: min(1800px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 36px 0 64px;
+  color: #f8fafc;
+}
+
+.ambulances-page__header {
+  margin-bottom: 24px;
+}
+
+.ambulances-page__header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.ambulances-page__header p {
+  margin: 8px 0 0;
+  color: #94a3b8;
+}
+
+.ambulances-card {
+  margin-bottom: 24px;
+  padding: 28px 32px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background-color: #1e293b;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 18%);
+}
+
+.ambulances-card h2 {
+  margin: 0 0 20px;
+  font-size: 21px;
+}
+
+/* Formularz */
+
+.ambulance-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 24px;
+  align-items: end;
+}
+
+.ambulance-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ambulance-form__field label {
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ambulance-form input,
+.ambulance-form select,
+.ambulances-toolbar input,
+.ambulances-toolbar select {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  outline: none;
+  background-color: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.ambulance-form input:focus,
+.ambulance-form select:focus,
+.ambulances-toolbar input:focus,
+.ambulances-toolbar select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(96 165 250 / 18%);
+}
+
+#ambulance-registration-plates {
+  text-transform: uppercase;
+}
+
+.ambulance-form__submit {
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 8px;
+  background-color: #2563eb;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ambulance-form__submit:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.ambulance-form__submit:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* BĹÄd formularza */
+
+.ambulance-form__error {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 13px 15px;
+  border: 1px solid #ef4444;
+  border-left: 5px solid #ef4444;
+  border-radius: 9px;
+  background-color: #450a0a;
+  color: #fecaca;
+  font-weight: 700;
+  box-shadow: 0 0 0 3px rgb(239 68 68 / 10%);
+}
+
+.ambulance-form__error::before {
+  content: "â ";
+  flex-shrink: 0;
+  color: #f87171;
+  font-size: 20px;
+}
+
+/* Komunikat sukcesu */
+
+.ambulances-success-message {
+  position: fixed;
+  top: 84px;
+  right: 24px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(420px, calc(100% - 48px));
+  padding: 14px 18px;
+  border: 1px solid #22c55e;
+  border-left: 5px solid #22c55e;
+  border-radius: 10px;
+  background-color: #052e16;
+  color: #bbf7d0;
+  font-weight: 700;
+  box-shadow: 0 16px 40px rgb(0 0 0 / 35%);
+}
+
+.ambulances-success-message::before {
+  content: "â";
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background-color: #22c55e;
+  color: #052e16;
+  font-weight: 900;
+}
+
+/* Wyszukiwarka i filtry */
+
+.ambulances-toolbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 240px;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Tabela */
+
+.ambulances-table-wrapper {
+  overflow-x: auto;
+}
+
+.ambulances-table {
+  width: 100%;
+  min-width: 1320px;
+  border-collapse: collapse;
+}
+
+.ambulances-table th,
+.ambulances-table td {
+  padding: 16px 14px;
+  border-bottom: 1px solid #334155;
+  text-align: left;
+}
+
+.ambulances-table th {
+  color: #94a3b8;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ambulances-table td {
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.ambulances-table th:last-child,
+.ambulances-table td:last-child {
+  width: 420px;
+  min-width: 420px;
+}
+
+.ambulances-table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.ambulances-table tbody tr:hover {
+  background-color: rgb(51 65 85 / 45%);
+}
+
+.ambulances-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ResponsywnoĹÄ */
+
+@media (max-width: 1000px) {
+  .ambulances-page {
+    width: calc(100% - 40px);
+  }
+
+  .ambulance-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .ambulances-page {
+    width: calc(100% - 24px);
+    padding-top: 20px;
+  }
+
+  .ambulances-card {
+    padding: 16px;
+  }
+
+  .ambulance-form,
+  .ambulances-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .ambulances-page__header h1 {
+    font-size: 27px;
+  }
+
+  .ambulances-success-message {
+    right: 12px;
+    left: 12px;
+    max-width: none;
+  }
+}
+/* Akcje tabeli */
+.ambulances-table__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ambulances-table__details-button,
+.ambulances-table__edit-button {
+  padding: 7px 12px;
+  border-radius: 7px;
+  color: #f8fafc;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+}
+
+.ambulances-table__details-button {
+  border: 1px solid #475569;
+  background-color: #334155;
+}
+
+.ambulances-table__details-button:hover {
+  background-color: #475569;
+}
+
+.ambulances-table__edit-button {
+  border: 1px solid #2563eb;
+  background-color: #2563eb;
+}
+
+.ambulances-table__edit-button:hover {
+  border-color: #1d4ed8;
+  background-color: #1d4ed8;
+}
+
+/* TĹo modala */
+
+.ambulance-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background-color: rgb(2 6 23 / 75%);
+  backdrop-filter: blur(3px);
+}
+
+/* Okno szczegĂłĹĂłw */
+
+.ambulance-details {
+  width: min(720px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  background-color: #1e293b;
+  color: #f8fafc;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 55%);
+}
+
+.ambulance-details__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #334155;
+}
+
+.ambulance-details__header h2 {
+  margin: 0;
+  font-size: 23px;
+}
+
+.ambulance-details__header p {
+  margin: 6px 0 0;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ambulance-details__close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background-color: transparent;
+  color: #94a3b8;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ambulance-details__close:hover {
+  background-color: #334155;
+  color: #f8fafc;
+}
+
+/* Dane pojazdu */
+
+.ambulance-details__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.ambulance-details__grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background-color: #0f172a;
+}
+
+.ambulance-details__grid span {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ambulance-details__grid strong {
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+/* Status ewidencyjny */
+
+.ambulance-details__status {
+  width: fit-content;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.ambulance-details__status--active {
+  background-color: rgb(22 101 52 / 45%);
+  color: #86efac !important;
+}
+
+.ambulance-details__status--inactive {
+  background-color: rgb(153 27 27 / 45%);
+  color: #fca5a5 !important;
+}
+
+/* Dolna czÄĹÄ modala */
+
+.ambulance-details__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #334155;
+}
+
+.ambulance-details__first-button {
+  padding: 9px 17px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background-color: #334155;
+  color: #f8fafc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ambulance-details__first-button:hover {
+  background-color: #475569;
+}
+
+/* Mniejsze ekrany */
+
+@media (max-width: 650px) {
+  .ambulance-details__grid {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .ambulance-details__header {
+    padding: 18px 16px;
+  }
+
+  .ambulance-details__actions {
+    padding: 14px 16px;
+  }
+
+  .ambulances-table__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+/* Modal edycji pojazdu */
+
+.ambulance-edit {
+  width: min(820px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid #475569;
+  border-radius: 16px;
+  background-color: #1e293b;
+  color: #f8fafc;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 55%);
+}
+
+.ambulance-edit-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 24px;
+}
+
+.ambulance-edit-form input,
+.ambulance-edit-form select {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 9px 12px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  outline: none;
+  background-color: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.ambulance-edit-form input:focus,
+.ambulance-edit-form select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgb(96 165 250 / 18%);
+}
+
+.ambulance-edit-form input:disabled,
+.ambulance-edit-form select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ambulance-edit__checkboxes {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+}
+
+.ambulance-edit__checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #cbd5e1;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ambulance-edit__checkboxes input {
+  width: 18px;
+  min-height: auto;
+  height: 18px;
+  margin: 0;
+}
+
+.ambulance-edit__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.ambulance-details__secondary-button {
+  min-height: 42px;
+  padding: 9px 17px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background-color: #334155;
+  color: #f8fafc;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ambulance-details__secondary-button:hover {
+  background-color: #475569;
+}
+
+@media (max-width: 650px) {
+  .ambulance-edit-form {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .ambulance-edit__actions {
+    flex-direction: column-reverse;
+  }
+
+  .ambulance-edit__actions button {
+    width: 100%;
+  }
+}
+.ambulances-table__actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ambulance-action-button {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        transform 160ms ease,
+        opacity 160ms ease;
+}
+
+.ambulance-action-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.ambulance-action-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.ambulance-action-button:focus-visible {
+    outline: 3px solid rgba(96, 165, 250, 0.35);
+    outline-offset: 2px;
+}
+
+.ambulance-action-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* SzczegĂłĹy */
+.ambulance-action-button--details {
+    color: #dbeafe;
+    background-color: #1e3a5f;
+    border-color: #315780;
+}
+
+.ambulance-action-button--details:hover:not(:disabled) {
+    background-color: #284c75;
+    border-color: #60a5fa;
+}
+
+/* Oznaczenie jako niesprawna */
+.ambulance-action-button--warning {
+    color: #fef3c7;
+    background-color: #5b3a08;
+    border-color: #92600e;
+}
+
+.ambulance-action-button--warning:hover:not(:disabled) {
+    color: #fff7d6;
+    background-color: #754c0a;
+    border-color: #f59e0b;
+}
+
+/* PrzywrĂłcenie dostÄpnoĹci */
+.ambulance-action-button--success {
+    color: #d1fae5;
+    background-color: #0d4a37;
+    border-color: #187253;
+}
+
+.ambulance-action-button--success:hover:not(:disabled) {
+    background-color: #126047;
+    border-color: #34d399;
+}
+
+/* Wycofanie z ewidencji */
+.ambulance-action-button--danger {
+    color: #fee2e2;
+    background-color: #591c24;
+    border-color: #87313c;
+}
+
+.ambulance-action-button--danger:hover:not(:disabled) {
+    color: #ffffff;
+    background-color: #74242e;
+    border-color: #f87171;
+}

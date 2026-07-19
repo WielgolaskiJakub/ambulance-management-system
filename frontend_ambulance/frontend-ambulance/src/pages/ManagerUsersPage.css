@@ -1,9 +1,10 @@
 .employees-page {
-  width: min(1200px, calc(100% - 40px));
+  width: min(1800px, calc(100% - 64px));
   margin: 0 auto;
-  padding: 32px 0 60px;
+  padding: 36px 0 64px;
   color: #f8fafc;
 }
+
 
 .employees-page__header {
   margin-bottom: 24px;
@@ -21,7 +22,7 @@
 
 .employees-card {
   margin-bottom: 24px;
-  padding: 24px;
+  padding: 28px 32px;
   border: 1px solid #334155;
   border-radius: 14px;
   background-color: #1e293b;
@@ -36,7 +37,7 @@
 .employee-form {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px 24px;
   align-items: end;
 }
 
@@ -56,6 +57,7 @@
 .employee-form select,
 .employees-toolbar input,
 .employees-toolbar select {
+  width: 100%;
   min-height: 42px;
   box-sizing: border-box;
   padding: 9px 12px;
@@ -133,24 +135,23 @@
 
 .employees-table {
   width: 100%;
+  min-width: 1250px;
   border-collapse: collapse;
 }
 
 .employees-table th,
 .employees-table td {
-  padding: 14px 12px;
+  padding: 16px 14px;
   border-bottom: 1px solid #334155;
   text-align: left;
   white-space: nowrap;
 }
 
-.employees-table th {
-  color: #94a3b8;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.employees-table th:last-child,
+.employees-table td:last-child {
+  width: 220px;
+  min-width: 220px;
 }
-
 .employees-table tbody tr:hover {
   background-color: rgb(51 65 85 / 45%);
 }
@@ -169,7 +170,11 @@
   background-color: #475569;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
+  .employees-page {
+    width: calc(100% - 40px);
+  }
+
   .employee-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -181,7 +186,7 @@
 
 @media (max-width: 600px) {
   .employees-page {
-    width: min(100% - 24px, 1200px);
+    width: calc(100% - 24px);
     padding-top: 20px;
   }
 

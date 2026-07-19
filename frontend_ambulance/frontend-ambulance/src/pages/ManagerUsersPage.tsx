@@ -676,7 +676,7 @@ export function ManagerUsersPage() {
                                 onClick={closeEditForm}
                                 aria-label="Zamknij"
                             >
-                                x
+                                ×
                             </button>
                         </div>
 

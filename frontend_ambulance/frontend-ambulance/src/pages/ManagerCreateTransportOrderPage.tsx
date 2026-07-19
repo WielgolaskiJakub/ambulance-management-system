@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { createTransportOrderByManager } from "../api/transportOrdersApi";
 import {
@@ -7,7 +7,7 @@ import {
     transportOrderTypeLabels,
     transportSourceLabels,
 } from "../utils/transportOrderLabels"
-import "./CreateTransportOrderPage.css"
+import "./ManagerCreateTransportOrderPage.css"
 
 const defaultPickupAddress = import.meta.env.VITE_DEFAULT_PICKUP_ADDRESS ?? "";
 
@@ -149,7 +149,7 @@ export function ManagerCreateTransportOrderPage() {
     }
 
     return (
-        <main className="create-transport-order-page">
+        <main className="manager-create-transport-order-page">
             <section className="create-transport-order-card">
                 <header className="create-transport-order-card__header">
                     <button
@@ -176,7 +176,37 @@ export function ManagerCreateTransportOrderPage() {
 
                 <form className="create-transport-order-form" onSubmit={handleSubmit}>
                     <div className="create-transport-order-form__grid">
+                        <label className="create-transport-order-form__field">
+                            <span>Data realizacji</span>
+                            <input
+                                value={form.plannedDate}
+                                type="date"
+                                lang="pl-PL"
+                                onChange={(event) => updateField("plannedDate", event.target.value)}
+                            />
+                        </label>
 
+                        <label className="create-transport-order-form__field">
+                            <span>Godzina realizacji</span>
+                            <input
+                                value={form.plannedDepartureTime}
+                                type="time"
+                                lang="pl-PL"
+                                onChange={(event) => updateField("plannedDepartureTime", event.target.value)}
+                            />
+                        </label>
+
+                        <label className="create-transport-order-form__field">
+                            <span>Numer zlecenia</span>
+                            <input
+                                value={form.orderNumber}
+                                onChange={(event) => updateField("orderNumber", event.target.value)}
+                                placeholder="Opcjonalnie"
+                            />
+                        </label>
+                    </div>
+
+                    <div className="create-transport-order-form__grid">
                         <label className="create-transport-order-form__field">
                             <span>Typ transportu</span>
                             <select
@@ -220,65 +250,43 @@ export function ManagerCreateTransportOrderPage() {
                         </label>
                     </div>
 
-                    <label className="create-transport-order-form__field">
-                        <span>Data realizacji</span>
-                        <input className="create-transport-order-form__input-with-button"
-                            value={form.plannedDate}
-                            type="date"
-                            lang="pl=PL"
-                            onChange={(event) => updateField("plannedDate", event.target.value)}
-                            placeholder="12.07.2026"
-                        />
-               
-                    </label>
+                    <div className="create-transport-order-form__route-grid">
+                        <label className="create-transport-order-form__field">
+                            <span>Skąd</span>
+                            <div className="create-transport-order-form__input-row">
+                                <input
+                                    value={form.pickupAddress}
+                                    onChange={(event) => updateField("pickupAddress", event.target.value)}
+                                    placeholder="np. Szpital Wołomin"
+                                />
+                                <button
+                                    className="create-transport-order-form__clear-button"
+                                    type="button"
+                                    onClick={() => updateField("pickupAddress", "")}
+                                >
+                                    Wyczyść
+                                </button>
+                            </div>
+                        </label>
 
-                    <label className="create-transport-order-form__field">
-                        <span>Godzina realizacji</span>
-                        <input className="create-transport-order-form__input-with-button"
-                            value={form.plannedDepartureTime ?? ""}
-                            type="time"
-                            lang="pl=PL"
-                            onChange={(event) => updateField("plannedDepartureTime", event.target.value)}
-                        
-                        />
-                    </label>
-
-
-                    <label className="create-transport-order-form__field">
-                        <span>Skąd</span>
-                        <input className="create-transport-order-form__input-with-button"
-                            value={form.pickupAddress}
-                            onChange={(event) => updateField("pickupAddress", event.target.value)}
-                            placeholder="np. Szpital Wołomin"
-                        />
-
-                        <button
-                            className="create-transport-order-form__clear-button"
-                            type="button"
-                            onClick={() => updateField("pickupAddress", "")}
-                        >
-                            Wyczyść
-                        </button>
-                    </label>
-
-                    <label className="create-transport-order-form__field">
-                        <span>Dokąd</span>
-                        <input className="create-transport-order-form__input-with-button"
-                            value={form.destinationAddress}
-                            onChange={(event) =>
-                                updateField("destinationAddress", event.target.value)
-                            }
-                            placeholder="np. Szpital Bródnowski / Wołomin Lipińska 12"
-                        />
-
-                        <button
-                            className="create-transport-order-form__clear-button"
-                            type="button"
-                            onClick={() => updateField("destinationAddress", "")}
-                        >
-                            Wyczyść
-                        </button>
-                    </label>
+                        <label className="create-transport-order-form__field">
+                            <span>Dokąd</span>
+                            <div className="create-transport-order-form__input-row">
+                                <input
+                                    value={form.destinationAddress}
+                                    onChange={(event) => updateField("destinationAddress", event.target.value)}
+                                    placeholder="np. Szpital Bródnowski / Wołomin Lipińska 12"
+                                />
+                                <button
+                                    className="create-transport-order-form__clear-button"
+                                    type="button"
+                                    onClick={() => updateField("destinationAddress", "")}
+                                >
+                                    Wyczyść
+                                </button>
+                            </div>
+                        </label>
+                    </div>
 
                     <label className="create-transport-order-form__field">
                         <span>Opis</span>
@@ -318,15 +326,16 @@ export function ManagerCreateTransportOrderPage() {
                                     placeholder="Nazwisko pacjenta"
                                 />
                             </label>
-                        </div>
 
-                        <label className="create-transport-order-form__field">
-                            <span>Dodatkowe informacje</span>
-                            <input
-                                value={form.pickupDetails}
-                                onChange={(event) => updateField("pickupDetails", event.target.value)}
-                            />
-                        </label>
+                            <label className="create-transport-order-form__field">
+                                <span>Dodatkowe informacje</span>
+                                <input
+                                    value={form.pickupDetails}
+                                    onChange={(event) => updateField("pickupDetails", event.target.value)}
+                                    placeholder="Opcjonalnie"
+                                />
+                            </label>
+                        </div>
                     </section>
 
                     <div className="create-transport-order-form__actions">
