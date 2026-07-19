@@ -9,10 +9,11 @@ import axios from "axios";
 import {
     useEffect,
     useState,
-    type FormEvent
+    type SyntheticEvent
 } from "react";
 import { getCurrentUserRole } from "../utils/auth";
 import "./ManagerUsersPage.css"
+import { useToast } from "../toast/UseToast";
 
 
 type AddNewUserFormState = {
@@ -54,7 +55,7 @@ export function ManagerUsersPage() {
 
     const currentUserRole = getCurrentUserRole();
     const isAdmin = currentUserRole === "ADMIN";
-
+    const { showToast } = useToast();
 
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -74,8 +75,6 @@ export function ManagerUsersPage() {
     const [editForm, setEditForm] = useState<EmployeeEditFormState | null>(null);
     const [updating, setUpdating] = useState(false);
     const [editErrorMessage, setEditErrorMessage] = useState<string | null>(null);
-
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     useEffect(() => {
         async function loadUsers() {
@@ -104,21 +103,6 @@ export function ManagerUsersPage() {
     },
         []);
 
-
-    useEffect(() => {
-        if (successMessage === null) {
-            return;
-        }
-
-        const timeoutId = window.setTimeout(() => {
-            setSuccessMessage(null);
-        }, 3500);
-
-        return () => {
-            window.clearTimeout(timeoutId);
-        };
-    }, [successMessage]);
-
     if (loading) {
         return <p>Ładowanie pracowników...</p>;
     }
@@ -127,7 +111,7 @@ export function ManagerUsersPage() {
         return <p>{errorMessage}</p>
     }
 
-    async function handleAddEmployee(event: FormEvent<HTMLFormElement>) {
+    async function handleAddEmployee(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
 
         if (!hasText(form.firstName)) {
@@ -152,7 +136,6 @@ export function ManagerUsersPage() {
         try {
             setAdding(true);
             setFormErrorMessage(null);
-            setSuccessMessage(null);
 
             const createdEmployee = await
                 createUser({
@@ -172,7 +155,10 @@ export function ManagerUsersPage() {
             ]);
 
             setForm(initialFormState);
-            setSuccessMessage("Pracownik został pomyślnie dodany.");
+            showToast(
+                `Pracownik ${createdEmployee.firstName} ${createdEmployee.lastName} został pomyślnie dodany.`,
+                "success"
+            )
 
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -211,7 +197,7 @@ export function ManagerUsersPage() {
     }
 
     async function handleUpdateEmployee(
-        event: FormEvent<HTMLFormElement>
+        event: SyntheticEvent<HTMLFormElement>
     ) {
         event.preventDefault();
 
@@ -236,7 +222,6 @@ export function ManagerUsersPage() {
         try {
             setUpdating(true);
             setEditErrorMessage(null);
-            setSuccessMessage(null);
 
             const updatedUser = await updateUserByPatchAdmin(
                 editedUserId,
@@ -261,14 +246,16 @@ export function ManagerUsersPage() {
                     ? updatedUser
                     : currentUser
             );
-            setSuccessMessage("Dane pracownika zostały zapisane.")
+            showToast(
+                `Dane pracownika ${updatedUser.firstName} ${updatedUser.lastName} zostały zapisane.`,
+            "success")
             closeEditForm();
 
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 setEditErrorMessage(
                     error.response?.data?.message ??
-                    `Nie udalo się zaaktualizować pracownika.
+                    `Nie udalo się zaktualizować pracownika.
                      Kod: ${error.response?.status ?? "brak odpowiedzi"
                     }`
                 );
@@ -325,16 +312,6 @@ export function ManagerUsersPage() {
                     <p>Zarządzaj pracownikami i ich uprawnieniami</p>
                 </div>
             </div>
-
-            {successMessage && (
-                <div
-                    className="employees-success-message"
-                    role="status"
-                    aria-live="polite"
-                >
-                    {successMessage}
-                </div>
-            )}
 
             <section className="employees-card">
                 <h2>Dodaj pracownika</h2>
@@ -667,7 +644,7 @@ export function ManagerUsersPage() {
                         <div className="employee-details__header">
                             <div>
                                 <h2>Edytuj pracownika</h2>
-                                <p>Zmień dane i uprawinienia użytkownika</p>
+                                <p>Zmień dane i uprawnienia użytkownika</p>
                             </div>
 
                             <button
