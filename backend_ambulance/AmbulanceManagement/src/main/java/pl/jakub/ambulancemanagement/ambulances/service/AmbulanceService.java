@@ -55,6 +55,24 @@ public class AmbulanceService {
     public Ambulance updateAmbulance(UpdateAmbulanceRequest request, long id) {
         Ambulance ambulanceToUpdate = getAmbulanceById(id);
 
+        if(request.getCarBrand() !=null){
+            if(request.getCarBrand().isBlank()){
+                throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);
+            }
+            ambulanceToUpdate.setCarBrand(request.getCarBrand().trim());
+        }
+
+        if(request.getModel() !=null){
+            if(request.getModel().isBlank()){
+                throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);
+            }
+            ambulanceToUpdate.setModel(request.getModel().trim());
+        }
+
+        if(request.getTankCapacityLiters() !=null){
+            ambulanceToUpdate.setTankCapacityLiters(request.getTankCapacityLiters());
+        }
+
         if (request.getRegistrationPlates() != null) {
             if (request.getRegistrationPlates().isBlank()) {
                 throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);

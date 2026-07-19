@@ -407,7 +407,7 @@ export function ManagerAmbulancesPage() {
                 current?.id === id
                     ? {
                         ...current,
-                        acitve: false,
+                        active: false,
                         status: "OUT_OF_SERVICE"
                     }
                     : current
