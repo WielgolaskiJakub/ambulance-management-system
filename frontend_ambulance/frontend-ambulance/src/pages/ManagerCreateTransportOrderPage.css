@@ -154,8 +154,11 @@
  * i filtr koloru nie jest niezawodny. Dlatego pokazujemy własne jasne SVG,
  * a natywny wskaźnik pozostaje przezroczysty i nadal obsługuje kliknięcie.
  */
-.manager-create-transport-order-page .create-transport-order-form__field input[type="date"],
-.manager-create-transport-order-page .create-transport-order-form__field input[type="time"] {
+.manager-create-transport-order-page
+.create-transport-order-form__field input[type="date"],
+.manager-create-transport-order-page
+.create-transport-order-form__field input[type="time"] {
+  position: relative;
   color-scheme: dark;
   padding-right: 52px;
   background-repeat: no-repeat;
@@ -171,11 +174,21 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23f8fafc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='9'/%3E%3Cpath d='M12 7v5l3 2'/%3E%3C/svg%3E");
 }
 
-.manager-create-transport-order-page .create-transport-order-form__field input[type="date"]::-webkit-calendar-picker-indicator,
-.manager-create-transport-order-page .create-transport-order-form__field input[type="time"]::-webkit-calendar-picker-indicator {
-  width: 34px;
-  height: 34px;
-  margin: -5px -7px -5px 5px;
+.manager-create-transport-order-page
+.create-transport-order-form__field
+input[type="date"]::-webkit-calendar-picker-indicator,
+.manager-create-transport-order-page
+.create-transport-order-form__field
+input[type="time"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+
+  width: 40px;
+  height: 40px;
+  margin: 0;
+
+  transform: translateY(-50%);
   opacity: 0;
   cursor: pointer;
 }

@@ -243,6 +243,7 @@ export function ManagerCreateTransportOrderPage() {
                 { ...emptyPatient },
             ],
         }));
+        
     }
 
     function removePatient(patientIndex: number) {
