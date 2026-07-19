@@ -15,9 +15,8 @@ import {
     transportOrderTypeLabels,
     transportSourceLabels,
 } from "../utils/transportOrderLabels";
+import { useToast } from "../toast/UseToast";
 import "./ManagerEditTransportOrderPage.css";
-
-
 
 type PatientFormState = {
     id: number | null;
@@ -39,6 +38,13 @@ type FormState = {
     patients: PatientFormState[];
 };
 
+const emptyPatient: PatientFormState = {
+    id: null,
+    patientFirstName: "",
+    patientLastName: "",
+    pickupDetails: "",
+};
+
 function toNullableText(value: string): string | null {
     const trimmedValue = value.trim();
     return trimmedValue.length === 0 ? null : trimmedValue;
@@ -47,6 +53,7 @@ function toNullableText(value: string): string | null {
 function hasText(value: string): boolean {
     return value.trim().length > 0;
 }
+
 function toFormState(order: TransportOrderDetailsResponse): FormState {
     return {
         plannedDate: order.plannedDate ?? "",
@@ -75,24 +82,23 @@ function toRequest(form: FormState): UpdateTransportOrderByManagerRequest {
                 hasText(patient.patientFirstName) ||
                 hasText(patient.patientLastName) ||
                 hasText(patient.pickupDetails)
-        ).map(
-            (patient) => ({
-                id: patient.id,
-                patientFirstName: patient.patientFirstName.trim(),
-                patientLastName: patient.patientLastName.trim(),
-                pickupDetails: toNullableText(patient.pickupDetails),
-            }));
+        )
+        .map((patient) => ({
+            id: patient.id,
+            patientFirstName: patient.patientFirstName.trim(),
+            patientLastName: patient.patientLastName.trim(),
+            pickupDetails: toNullableText(patient.pickupDetails),
+        }));
 
     return {
         plannedDate: toNullableText(form.plannedDate),
-        plannedDepartureTime:
-            toNullableText(form.plannedDepartureTime),
+        plannedDepartureTime: toNullableText(form.plannedDepartureTime),
         orderNumber: toNullableText(form.orderNumber),
         orderType: form.orderType,
         source: form.source,
         priority: form.priority,
-        pickupAddress: form.pickupAddress,
-        destinationAddress: form.destinationAddress,
+        pickupAddress: form.pickupAddress.trim(),
+        destinationAddress: form.destinationAddress.trim(),
         description: toNullableText(form.description),
         patients,
     };
@@ -101,39 +107,43 @@ function toRequest(form: FormState): UpdateTransportOrderByManagerRequest {
 export function ManagerEditTransportOrderPage() {
     const { orderId } = useParams();
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const [form, setForm] = useState<FormState | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [orderErrorMessage, setOrderErrorMessage] = useState<string | null>(null);
+    const [patientErrorMessage, setPatientErrorMessage] = useState<string | null>(null);
 
     const parsedOrderId = Number(orderId);
 
     useEffect(() => {
         async function loadOrder() {
             if (!Number.isInteger(parsedOrderId)) {
-                setErrorMessage("Nieprawidłowe ID zlecenia.");
+                setOrderErrorMessage("Nieprawidłowe ID zlecenia.");
                 setLoading(false);
                 return;
             }
 
             try {
                 setLoading(true);
-                setErrorMessage(null);
+                setOrderErrorMessage(null);
 
                 const order = await getTransportOrderDetails(parsedOrderId);
                 setForm(toFormState(order));
             } catch {
-                setErrorMessage("Nie udało się pobrać zlecenia.");
+                setOrderErrorMessage("Nie udało się pobrać zlecenia.");
             } finally {
                 setLoading(false);
             }
         }
 
-        loadOrder();
+        void loadOrder();
     }, [parsedOrderId]);
 
     function updateField<K extends keyof FormState>(field: K, value: FormState[K]) {
+        setOrderErrorMessage(null);
+
         setForm((previousForm) => {
             if (previousForm === null) {
                 return previousForm;
@@ -151,26 +161,57 @@ export function ManagerEditTransportOrderPage() {
         field: keyof PatientFormState,
         value: string
     ) {
+        setPatientErrorMessage(null);
+
         setForm((previousForm) => {
             if (previousForm === null) {
                 return previousForm;
             }
 
-            const nextPatients = [...previousForm.patients];
-
-            nextPatients[index] = {
-                ...nextPatients[index],
-                [field]: value,
-            };
-
             return {
                 ...previousForm,
-                patients: nextPatients,
+                patients: previousForm.patients.map((patient, patientIndex) =>
+                    patientIndex === index
+                        ? {
+                            ...patient,
+                            [field]: value,
+                        }
+                        : patient
+                ),
             };
         });
     }
 
     function addPatient() {
+        if (form === null) {
+            return;
+        }
+
+        if (form.patients.length > 0) {
+            const lastPatientIndex = form.patients.length - 1;
+            const lastPatient = form.patients[lastPatientIndex];
+            const hasFirstName = hasText(lastPatient.patientFirstName);
+            const hasLastName = hasText(lastPatient.patientLastName);
+            const hasPickupDetails = hasText(lastPatient.pickupDetails);
+            const patientHasAnyData = hasFirstName || hasLastName || hasPickupDetails;
+
+            if (!patientHasAnyData) {
+                setPatientErrorMessage(
+                    `Najpierw uzupełnij dane pacjenta nr ${lastPatientIndex + 1}.`
+                );
+                return;
+            }
+
+            if (!hasFirstName || !hasLastName) {
+                setPatientErrorMessage(
+                    `Uzupełnij imię i nazwisko pacjenta nr ${lastPatientIndex + 1}.`
+                );
+                return;
+            }
+        }
+
+        setPatientErrorMessage(null);
+
         setForm((previousForm) => {
             if (previousForm === null) {
                 return previousForm;
@@ -178,20 +219,14 @@ export function ManagerEditTransportOrderPage() {
 
             return {
                 ...previousForm,
-                patients: [
-                    ...previousForm.patients,
-                    {
-                        id: null,
-                        patientFirstName: "",
-                        patientLastName: "",
-                        pickupDetails: "",
-                    },
-                ],
+                patients: [...previousForm.patients, { ...emptyPatient }],
             };
         });
     }
 
     function removePatient(index: number) {
+        setPatientErrorMessage(null);
+
         setForm((previousForm) => {
             if (previousForm === null) {
                 return previousForm;
@@ -199,7 +234,9 @@ export function ManagerEditTransportOrderPage() {
 
             return {
                 ...previousForm,
-                patients: previousForm.patients.filter((_, patientIndex) => patientIndex !== index),
+                patients: previousForm.patients.filter(
+                    (_, patientIndex) => patientIndex !== index
+                ),
             };
         });
     }
@@ -210,71 +247,112 @@ export function ManagerEditTransportOrderPage() {
         if (form === null || !Number.isInteger(parsedOrderId)) {
             return;
         }
-        const patientsToValidate = form.patients.filter(
-            (patient) =>
-                patient.id !== null ||
-                hasText(patient.patientFirstName) ||
-                hasText(patient.patientLastName) ||
-                hasText(patient.pickupDetails)
-        );
 
-        const invalidPatient = patientsToValidate.find(
-            (patient) =>
-                !hasText(patient.patientFirstName) ||
-                !hasText(patient.patientLastName)
-        );
+        setOrderErrorMessage(null);
+        setPatientErrorMessage(null);
 
-        if (invalidPatient) {
-            setErrorMessage("Jeśli dodajesz pacjenta, podaj imię i nazwisko.");
+        const invalidPatientIndex = form.patients.findIndex((patient) => {
+            const hasFirstName = hasText(patient.patientFirstName);
+            const hasLastName = hasText(patient.patientLastName);
+            const hasPickupDetails = hasText(patient.pickupDetails);
+            const patientHasAnyData =
+                patient.id !== null || hasFirstName || hasLastName || hasPickupDetails;
+
+            return patientHasAnyData && (!hasFirstName || !hasLastName);
+        });
+
+        if (invalidPatientIndex !== -1) {
+            setPatientErrorMessage(
+                `Uzupełnij imię i nazwisko pacjenta nr ${invalidPatientIndex + 1}.`
+            );
             return;
         }
 
         if (!hasText(form.pickupAddress)) {
-            setErrorMessage("Podaj miejsce odbioru.");
+            setOrderErrorMessage("Podaj miejsce odbioru.");
             return;
         }
 
         if (!hasText(form.destinationAddress)) {
-            setErrorMessage("Podaj miejsce docelowe.");
+            setOrderErrorMessage("Podaj miejsce docelowe.");
             return;
         }
+
         try {
             setSaving(true);
-            setErrorMessage(null);
 
             await updateTransportOrderByManager(parsedOrderId, toRequest(form));
 
-            navigate("/manager/dashboard");
+            showToast(
+                form.orderNumber.trim()
+                    ? `Zlecenie ${form.orderNumber.trim()} zostało zaktualizowane.`
+                    : `Zlecenie #${parsedOrderId} zostało zaktualizowane.`,
+                "success"
+            );
+
+            navigate(
+                form.plannedDate
+                    ? `/manager/dashboard?date=${form.plannedDate}`
+                    : "/manager/dashboard"
+            );
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 if (error.response?.status === 400) {
-                    setErrorMessage("Sprawdź dane formularza.");
+                    setOrderErrorMessage("Sprawdź dane formularza.");
                     return;
                 }
 
                 if (error.response?.status === 403) {
-                    setErrorMessage("Brak uprawnień do edycji zlecenia.");
+                    setOrderErrorMessage("Brak uprawnień do edycji zlecenia.");
                     return;
                 }
 
                 if (error.response?.status === 404) {
-                    setErrorMessage("Nie znaleziono zlecenia.");
+                    setOrderErrorMessage("Nie znaleziono zlecenia.");
+                    return;
+                }
+
+                if (error.response?.status === 409) {
+                    setOrderErrorMessage(
+                        "Nie można zapisać zmian. Sprawdź, czy numer zlecenia nie jest już używany."
+                    );
                     return;
                 }
             }
 
-            setErrorMessage("Nie udało się zapisać zmian.");
+            setOrderErrorMessage("Nie udało się zapisać zmian.");
         } finally {
             setSaving(false);
         }
     }
 
     if (loading) {
-        return <p>Ładowanie zlecenia...</p>;
+        return (
+            <main className="manager-edit-order-page">
+                <section className="manager-edit-order-card manager-edit-order-card--state">
+                    <p className="manager-edit-order-card__state-text">Ładowanie zlecenia...</p>
+                </section>
+            </main>
+        );
     }
 
     if (form === null) {
-        return <p>{errorMessage ?? "Nie znaleziono zlecenia."}</p>;
+        return (
+            <main className="manager-edit-order-page">
+                <section className="manager-edit-order-card manager-edit-order-card--state">
+                    <p className="manager-edit-order-card__message manager-edit-order-card__message--error">
+                        {orderErrorMessage ?? "Nie znaleziono zlecenia."}
+                    </p>
+                    <button
+                        className="manager-edit-order-card__back-button"
+                        type="button"
+                        onClick={() => navigate("/manager/dashboard")}
+                    >
+                        Powrót do harmonogramu
+                    </button>
+                </section>
+            </main>
+        );
     }
 
     return (
@@ -292,122 +370,158 @@ export function ManagerEditTransportOrderPage() {
                     <div>
                         <h1 className="manager-edit-order-card__title">Edytuj zlecenie</h1>
                         <p className="manager-edit-order-card__subtitle">
-                            Popraw dane transportu, harmonogram i dane pacjentów.
+                            Popraw dane transportu, termin realizacji i dane pacjentów.
                         </p>
                     </div>
                 </header>
 
-                {errorMessage && (
+                {orderErrorMessage && (
                     <p className="manager-edit-order-card__message manager-edit-order-card__message--error">
-                        {errorMessage}
+                        {orderErrorMessage}
                     </p>
                 )}
 
                 <form className="manager-edit-order-form" onSubmit={handleSubmit}>
-                    <div className="manager-edit-order-form__grid manager-edit-order-form__grid--three">
-                        <label className="manager-edit-order-form__field">
-                            <span>Typ transportu</span>
-                            <select
-                                value={form.orderType}
-                                onChange={(event) => updateField("orderType", event.target.value)}
-                            >
-                                {Object.entries(transportOrderTypeLabels).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
+                    <section className="manager-edit-order-form__panel">
+                        <h2 className="manager-edit-order-form__panel-title">Termin i numer</h2>
+
+                        <div className="manager-edit-order-form__grid manager-edit-order-form__grid--three">
+                            <label className="manager-edit-order-form__field">
+                                <span>Data realizacji</span>
+                                <input
+                                    type="date"
+                                    lang="pl-PL"
+                                    value={form.plannedDate}
+                                    onChange={(event) =>
+                                        updateField("plannedDate", event.target.value)
+                                    }
+                                />
+                            </label>
+
+                            <label className="manager-edit-order-form__field">
+                                <span>Godzina realizacji</span>
+                                <input
+                                    type="time"
+                                    lang="pl-PL"
+                                    value={form.plannedDepartureTime}
+                                    onChange={(event) =>
+                                        updateField("plannedDepartureTime", event.target.value)
+                                    }
+                                />
+                            </label>
+
+                            <label className="manager-edit-order-form__field">
+                                <span>Numer zlecenia</span>
+                                <input
+                                    value={form.orderNumber}
+                                    onChange={(event) =>
+                                        updateField("orderNumber", event.target.value)
+                                    }
+                                    placeholder="np. 1531/26"
+                                />
+                            </label>
+                        </div>
+                    </section>
+
+                    <section className="manager-edit-order-form__panel">
+                        <h2 className="manager-edit-order-form__panel-title">Parametry transportu</h2>
+
+                        <div className="manager-edit-order-form__grid manager-edit-order-form__grid--three">
+                            <label className="manager-edit-order-form__field">
+                                <span>Typ transportu</span>
+                                <select
+                                    value={form.orderType}
+                                    onChange={(event) =>
+                                        updateField("orderType", event.target.value)
+                                    }
+                                >
+                                    {Object.entries(transportOrderTypeLabels).map(
+                                        ([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </label>
+
+                            <label className="manager-edit-order-form__field">
+                                <span>Źródło</span>
+                                <select
+                                    value={form.source}
+                                    onChange={(event) =>
+                                        updateField("source", event.target.value)
+                                    }
+                                >
+                                    {Object.entries(transportSourceLabels).map(
+                                        ([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </label>
+
+                            <label className="manager-edit-order-form__field">
+                                <span>Priorytet</span>
+                                <select
+                                    value={form.priority}
+                                    onChange={(event) =>
+                                        updateField("priority", event.target.value)
+                                    }
+                                >
+                                    {Object.entries(transportOrderPriorityLabels).map(
+                                        ([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section className="manager-edit-order-form__panel">
+                        <h2 className="manager-edit-order-form__panel-title">Trasa i opis</h2>
+
+                        <div className="manager-edit-order-form__grid manager-edit-order-form__grid--two">
+                            <label className="manager-edit-order-form__field">
+                                <span>Skąd</span>
+                                <input
+                                    value={form.pickupAddress}
+                                    onChange={(event) =>
+                                        updateField("pickupAddress", event.target.value)
+                                    }
+                                    placeholder="Miejsce odbioru pacjenta"
+                                />
+                            </label>
+
+                            <label className="manager-edit-order-form__field">
+                                <span>Dokąd</span>
+                                <input
+                                    value={form.destinationAddress}
+                                    onChange={(event) =>
+                                        updateField("destinationAddress", event.target.value)
+                                    }
+                                    placeholder="Miejsce docelowe"
+                                />
+                            </label>
+                        </div>
 
                         <label className="manager-edit-order-form__field">
-                            <span>Źródło</span>
-                            <select
-                                value={form.source}
-                                onChange={(event) => updateField("source", event.target.value)}
-                            >
-                                {Object.entries(transportSourceLabels).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-
-                        <label className="manager-edit-order-form__field">
-                            <span>Priorytet</span>
-                            <select
-                                value={form.priority}
-                                onChange={(event) => updateField("priority", event.target.value)}
-                            >
-                                {Object.entries(transportOrderPriorityLabels).map(([value, label]) => (
-                                    <option key={value} value={value}>
-                                        {label}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    </div>
-
-                    <div className="manager-edit-order-form__grid">
-                        <label className="manager-edit-order-form__field">
-                            <span>Data realizacji</span>
-                            <input
-                                type="date"
-                                value={form.plannedDate}
-                                onChange={(event) => updateField("plannedDate", event.target.value)}
-                            />
-                        </label>
-
-                        <label className="manager-edit-order-form__field">
-                            <span>Godzina realizacji</span>
-                            <input
-                                type="time"
-                                value={form.plannedDepartureTime}
+                            <span>Opis</span>
+                            <textarea
+                                value={form.description}
                                 onChange={(event) =>
-                                    updateField("plannedDepartureTime", event.target.value)
+                                    updateField("description", event.target.value)
                                 }
+                                placeholder="Dodatkowe informacje"
+                                rows={3}
                             />
                         </label>
-
-                        <label className="manager-edit-order-form__field">
-                            <span>Numer zlecenia</span>
-                            <input
-                                value={form.orderNumber}
-                                onChange={(event) => updateField("orderNumber", event.target.value)}
-                                placeholder="np. 123/2026"
-                            />
-                        </label>
-                    </div>
-
-                    <label className="manager-edit-order-form__field">
-                        <span>Skąd</span>
-                        <input
-                            value={form.pickupAddress}
-                            onChange={(event) => updateField("pickupAddress", event.target.value)}
-                            placeholder="Miejsce odbioru pacjenta"
-                        />
-                    </label>
-
-                    <label className="manager-edit-order-form__field">
-                        <span>Dokąd</span>
-                        <input
-                            value={form.destinationAddress}
-                            onChange={(event) =>
-                                updateField("destinationAddress", event.target.value)
-                            }
-                            placeholder="Miejsce docelowe"
-                        />
-                    </label>
-
-                    <label className="manager-edit-order-form__field">
-                        <span>Opis</span>
-                        <textarea
-                            value={form.description}
-                            onChange={(event) => updateField("description", event.target.value)}
-                            placeholder="Dodatkowe informacje"
-                            rows={3}
-                        />
-                    </label>
+                    </section>
 
                     <section className="manager-edit-order-form__section">
                         <div className="manager-edit-order-form__section-header">
@@ -423,74 +537,96 @@ export function ManagerEditTransportOrderPage() {
                                 type="button"
                                 onClick={addPatient}
                             >
-                                Dodaj pacjenta
+                                + Dodaj pacjenta
                             </button>
                         </div>
 
-                        {form.patients.length === 0 ? (
-                            <p className="manager-edit-order-form__empty-state">
-                                Brak pacjentów przypisanych do zlecenia.
+                        {patientErrorMessage && (
+                            <p className="manager-edit-order-form__patient-error">
+                                {patientErrorMessage}
                             </p>
+                        )}
+
+                        {form.patients.length === 0 ? (
+                            <div className="manager-edit-order-form__empty-state">
+                                <strong>Brak pacjentów przypisanych do zlecenia.</strong>
+                                <span>
+                                    Zlecenie może pozostać bez pacjenta albo możesz dodać go przyciskiem powyżej.
+                                </span>
+                            </div>
                         ) : (
                             <div className="manager-edit-order-form__patients-list">
                                 {form.patients.map((patient, index) => (
-                                    <div
-                                        className="manager-edit-order-form__patient-row"
+                                    <article
+                                        className="manager-edit-order-form__patient-card"
                                         key={patient.id ?? `new-${index}`}
                                     >
-                                        <label className="manager-edit-order-form__field">
-                                            <span>Imię</span>
-                                            <input
-                                                value={patient.patientFirstName}
-                                                onChange={(event) =>
-                                                    updatePatientField(
-                                                        index,
-                                                        "patientFirstName",
-                                                        event.target.value
-                                                    )
-                                                }
-                                                placeholder="Imię pacjenta"
-                                            />
-                                        </label>
+                                        <header className="manager-edit-order-form__patient-header">
+                                            <div>
+                                                <h3>Pacjent nr {index + 1}</h3>
+                                                <span>
+                                                    {patient.id === null
+                                                        ? "Nowy pacjent"
+                                                        : "Pacjent zapisany w zleceniu"}
+                                                </span>
+                                            </div>
 
-                                        <label className="manager-edit-order-form__field">
-                                            <span>Nazwisko</span>
-                                            <input
-                                                value={patient.patientLastName}
-                                                onChange={(event) =>
-                                                    updatePatientField(
-                                                        index,
-                                                        "patientLastName",
-                                                        event.target.value
-                                                    )
-                                                }
-                                                placeholder="Nazwisko pacjenta"
-                                            />
-                                        </label>
+                                            <button
+                                                className="manager-edit-order-form__danger-button"
+                                                type="button"
+                                                onClick={() => removePatient(index)}
+                                            >
+                                                Usuń pacjenta
+                                            </button>
+                                        </header>
 
-                                        <label className="manager-edit-order-form__field">
-                                            <span>Szczegóły odbioru</span>
-                                            <input
-                                                value={patient.pickupDetails}
-                                                onChange={(event) =>
-                                                    updatePatientField(
-                                                        index,
-                                                        "pickupDetails",
-                                                        event.target.value
-                                                    )
-                                                }
-                                                placeholder="np. sala, oddział, piętro"
-                                            />
-                                        </label>
+                                        <div className="manager-edit-order-form__grid manager-edit-order-form__grid--patient">
+                                            <label className="manager-edit-order-form__field">
+                                                <span>Imię</span>
+                                                <input
+                                                    value={patient.patientFirstName}
+                                                    onChange={(event) =>
+                                                        updatePatientField(
+                                                            index,
+                                                            "patientFirstName",
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                    placeholder="Imię pacjenta"
+                                                />
+                                            </label>
 
-                                        <button
-                                            className="manager-edit-order-form__danger-button"
-                                            type="button"
-                                            onClick={() => removePatient(index)}
-                                        >
-                                            Usuń
-                                        </button>
-                                    </div>
+                                            <label className="manager-edit-order-form__field">
+                                                <span>Nazwisko</span>
+                                                <input
+                                                    value={patient.patientLastName}
+                                                    onChange={(event) =>
+                                                        updatePatientField(
+                                                            index,
+                                                            "patientLastName",
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                    placeholder="Nazwisko pacjenta"
+                                                />
+                                            </label>
+
+                                            <label className="manager-edit-order-form__field">
+                                                <span>Szczegóły odbioru</span>
+                                                <input
+                                                    value={patient.pickupDetails}
+                                                    onChange={(event) =>
+                                                        updatePatientField(
+                                                            index,
+                                                            "pickupDetails",
+                                                            event.target.value
+                                                        )
+                                                    }
+                                                    placeholder="np. sala, oddział, piętro"
+                                                />
+                                            </label>
+                                        </div>
+                                    </article>
                                 ))}
                             </div>
                         )}
