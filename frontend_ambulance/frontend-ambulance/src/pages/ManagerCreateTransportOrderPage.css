@@ -149,6 +149,31 @@
   font-weight: 650;
 }
 
+.manager-create-transport-order-page .create-transport-order-form__field input[type="date"],
+.manager-create-transport-order-page .create-transport-order-form__field input[type="time"] {
+  color-scheme: dark;
+  padding-right: 12px;
+}
+
+.manager-create-transport-order-page .create-transport-order-form__field input[type="date"]::-webkit-calendar-picker-indicator,
+.manager-create-transport-order-page .create-transport-order-form__field input[type="time"]::-webkit-calendar-picker-indicator {
+  width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  filter: brightness(0) invert(1);
+  opacity: 0.95;
+  cursor: pointer;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.manager-create-transport-order-page .create-transport-order-form__field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.manager-create-transport-order-page .create-transport-order-form__field input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
 .manager-create-transport-order-page .create-transport-order-form__field textarea {
   min-height: 78px;
   line-height: 1.45;
