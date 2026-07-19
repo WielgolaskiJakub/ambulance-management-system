@@ -127,40 +127,6 @@
   font-size: 20px;
 }
 
-/* Komunikat sukcesu */
-
-.ambulances-success-message {
-  position: fixed;
-  top: 84px;
-  right: 24px;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: min(420px, calc(100% - 48px));
-  padding: 14px 18px;
-  border: 1px solid #22c55e;
-  border-left: 5px solid #22c55e;
-  border-radius: 10px;
-  background-color: #052e16;
-  color: #bbf7d0;
-  font-weight: 700;
-  box-shadow: 0 16px 40px rgb(0 0 0 / 35%);
-}
-
-.ambulances-success-message::before {
-  content: "â";
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background-color: #22c55e;
-  color: #052e16;
-  font-weight: 900;
-}
-
 /* Wyszukiwarka i filtry */
 
 .ambulances-toolbar {

@@ -16,7 +16,7 @@ import {
 import type { AmbulanceResponse, AmbulanceStatus } from "../types/ambulance";
 import "./ManagerAmbulancesPage.css";
 import { getCurrentUserRole } from "../utils/auth";
-
+import { useToast } from "../toast/UseToast";
 
 type AddNewAmbulanceFormState = {
     carBrand: string;
@@ -55,10 +55,10 @@ function hasText(value: string): boolean {
 export function ManagerAmbulancesPage() {
 
     const currentUserRole = getCurrentUserRole();
+    const {showToast} = useToast();
 
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [formErrorMessage, setFormErrorMessage] = useState<string | null>(null);
     const [adding, setAdding] = useState(false);
 
@@ -101,20 +101,6 @@ export function ManagerAmbulancesPage() {
         loadAmbulances();
     },
         []);
-
-    useEffect(() => {
-        if (successMessage === null) {
-            return;
-        }
-
-        const timeoutId = window.setTimeout(() => {
-            setSuccessMessage(null);
-        }, 3500);
-
-        return () => {
-            window.clearTimeout(timeoutId);
-        };
-    }, [successMessage]);
 
     if (loading) {
         return <p>Ładowanie pojazdów...</p>
@@ -164,7 +150,6 @@ export function ManagerAmbulancesPage() {
         try {
             setAdding(true);
             setFormErrorMessage(null);
-            setSuccessMessage(null);
 
             const createdVehicle = await createAmbulance({
                 carBrand: form.carBrand.trim(),
@@ -182,7 +167,11 @@ export function ManagerAmbulancesPage() {
             ]);
 
             setForm(initialFormState);
-            setSuccessMessage("Pojazd został pomyślnie dodany.");
+            
+            showToast(
+                `Pojazd ${createdVehicle.carBrand} ${createdVehicle.model} o numerze ${createdVehicle.registrationPlates} został dodany.`,
+                "success"
+            );
 
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -278,7 +267,6 @@ export function ManagerAmbulancesPage() {
         try {
             setUpdating(true);
             setEditErrorMessage(null);
-            setSuccessMessage(null);
 
             const updatedAmbulance = await updateAmbulance(
                 editedAmbulanceId,
@@ -303,8 +291,13 @@ export function ManagerAmbulancesPage() {
                     ? updatedAmbulance
                     : currentAmbulance
             );
-            setSuccessMessage("Dane pojazdu zostały zapisane")
+
+            showToast(
+                `Pojazd ${updatedAmbulance.carBrand} ${updatedAmbulance.model} o numerze ${updatedAmbulance.registrationPlates} został zaaktualizowany.`,
+                "success"
+            );
             closeEditForm();
+
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 setEditErrorMessage(
@@ -325,23 +318,28 @@ export function ManagerAmbulancesPage() {
         try {
             setChangingAmbulanceId(id);
             setErrorMessage(null);
-            setSuccessMessage(null);
 
             const updatedAmbulance =
                 await markAmbulanceOutOfService(id);
 
             replaceAmbulance(updatedAmbulance);
-            setSuccessMessage("Pojazd został oznaczony jako niesprawny.");
+            showToast(
+                "Pojazd został oznaczony jako niesprawny.",
+                "success"
+            )
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setErrorMessage(
+                showToast(
                     error.response?.data?.message ??
-                    "Nie udało się zmienić statusu pojazdu."
+                    "Nie udało się zmienić statusu pojazdu.",
+                    "error"
                 );
                 return;
             }
 
-            setErrorMessage("Wystąpił nieznany błąd.");
+            showToast("Wystąpił nieznany błąd podczas zmiany statusu pojazdu.",
+                "error"
+            );
         } finally {
             setChangingAmbulanceId(null);
         }
@@ -349,25 +347,28 @@ export function ManagerAmbulancesPage() {
 
     async function handleMarkAsAvailable(id: number) {
         try {
-            setChangingAmbulanceId(id);
-            setErrorMessage(null);
-            setSuccessMessage(null);
-
+        setChangingAmbulanceId(id);
+        
             const updatedAmbulance =
                 await markAmbulanceAvailable(id);
 
             replaceAmbulance(updatedAmbulance);
-            setSuccessMessage("Pojazd został oznaczony jako dostępny.");
+            showToast("Pojazd został oznaczony jako dostępny.",
+                "success"
+            );
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setErrorMessage(
+                showToast(
                     error.response?.data?.message ??
-                    "Nie udało się zmienić statusu pojazdu."
+                    "Nie udało się zmienić statusu pojazdu.",
+                    "error"
                 );
                 return;
             }
 
-            setErrorMessage("Wystąpił nieznany błąd.");
+            showToast("Wystąpił nieznany błąd podczas przywracania statusu pojazdu.",
+                "error"
+            );
         } finally {
             setChangingAmbulanceId(null);
         }
@@ -386,8 +387,6 @@ export function ManagerAmbulancesPage() {
 
         try {
             setChangingAmbulanceId(id);
-            setErrorMessage(null);
-            setSuccessMessage(null);
 
             await deactivateAmbulanceById(id);
 
@@ -412,17 +411,22 @@ export function ManagerAmbulancesPage() {
                     }
                     : current
             );
-            setSuccessMessage("Pojazd został wycofany z ewidencji.");
+            showToast("Pojazd został wycofany z ewidencji.",
+                "success"
+            );
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                setErrorMessage(
+                showToast(
                     error.response?.data?.message ??
-                    "Nie udało się wycofać pojazdu z ewidencji."
+                    "Nie udało się wycofać pojazdu z ewidencji.",
+                    "error"
                 );
                 return;
             }
 
-            setErrorMessage("Wystąpił nieznany błąd.");
+            showToast("Wystąpił nieznany błąd podczas wycofania pojazdu z ewidencji.",
+                "error"
+            );
         } finally {
             setChangingAmbulanceId(null);
         }
@@ -441,27 +445,28 @@ export function ManagerAmbulancesPage() {
 
         try {
             setChangingAmbulanceId(id);
-            setErrorMessage(null);
-            setSuccessMessage(null);
-
+            
             const restoredAmbulance = await restoreAmbulanceById(id);
 
             replaceAmbulance(restoredAmbulance);
 
-            setSuccessMessage(
-                "Pojazd został przywrócony do ewidencji jako niesprawny."
+            showToast(
+                "Pojazd został przywrócony do ewidencji jako niesprawny.",
+                "success"
             );
         } catch (error: unknown) {
             if (axios.isAxiosError(error)) {
-                setErrorMessage(
+                showToast(
                     error.response?.data?.message ??
-                    "Nie udało się przywrócić pojazdu do ewidencji."
+                    "Nie udało się przywrócić pojazdu do ewidencji.",
+                    "error"
                 );
                 return;
             }
 
-            setErrorMessage(
-                "Wystąpił nieznany błąd podczas przywracania pojazdu."
+            showToast(
+                "Wystąpił nieznany błąd podczas przywracania pojazdu.",
+                "error"
             );
         } finally {
             setChangingAmbulanceId(null);
@@ -493,16 +498,6 @@ export function ManagerAmbulancesPage() {
                     <p>Zarządzaj pojazdami i ich statusami.</p>
                 </div>
             </div>
-
-            {successMessage && (
-                <div
-                    className="ambulances-success-message"
-                    role="status"
-                    aria-live="polite"
-                >
-                    {successMessage}
-                </div>
-            )}
 
             <section className="ambulances-card">
                 <h2>Dodaj pojazd</h2>
