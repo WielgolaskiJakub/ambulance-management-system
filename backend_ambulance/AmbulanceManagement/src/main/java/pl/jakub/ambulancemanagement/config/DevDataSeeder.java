@@ -94,6 +94,7 @@ public class DevDataSeeder implements CommandLineRunner {
         user.setUserRole(role);
         user.setActive(true);
         user.setMustChangePassword(false);
+        user.setCanWorkAsSanitary(role == UserRole.SANITARY);
         return userRepository.save(user);
     }
 

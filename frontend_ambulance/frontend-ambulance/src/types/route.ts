@@ -4,11 +4,14 @@ export type RouteStatus =
   | "WAITING"
   | "COMPLETED"
 
-
+export type RouteTransportOrderReference = {
+  id: number;
+  orderNumber: number;
+};
 
 export type RouteResponse = {
   id: number;
-  transportOrderIds: number[];
+  transportOrders: RouteTransportOrderReference[];
   shiftId: number;
   startAddress: string;
   actualDestinationAddress: string;

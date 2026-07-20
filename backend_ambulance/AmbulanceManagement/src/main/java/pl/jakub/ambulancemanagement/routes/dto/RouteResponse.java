@@ -9,7 +9,7 @@ import java.util.List;
 
 public record RouteResponse(
         Long id,
-        List<Long> transportOrderIds,
+        List<RouteTransportOrderReferenceResponse> transportOrders,
         Long shiftId,
         String startAddress,
         String actualDestinationAddress,
@@ -24,16 +24,18 @@ public record RouteResponse(
 
 
     public static RouteResponse fromEntity(Route route) {
-        List<Long> transportOrderIds =
+        List<RouteTransportOrderReferenceResponse> transportOrders =
                 route.getRouteOrders() == null
                         ? List.of()
                         : route.getRouteOrders()
                         .stream()
-                        .map(routeOrder -> routeOrder.getTransportOrder().getId())
+                        .map(routeOrder -> RouteTransportOrderReferenceResponse.fromEntity(
+                                routeOrder.getTransportOrder()
+                        ))
                         .toList();
         return new RouteResponse(
                 route.getId(),
-                transportOrderIds,
+                transportOrders,
                 route.getShift().getId(),
                 route.getStartAddress(),
                 route.getActualDestinationAddress(),

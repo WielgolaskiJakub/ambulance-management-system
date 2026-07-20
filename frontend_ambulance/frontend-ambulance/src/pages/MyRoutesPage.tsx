@@ -9,7 +9,10 @@ import {
   resumeRoute,
   type RouteOrderFinishAction,
 } from "../api/routesApi";
-import type { RouteResponse } from "../types/route";
+import type {
+  RouteResponse,
+  RouteTransportOrderReference,
+} from "../types/route";
 import { getRouteStatusLabel } from "../utils/routeLabels";
 import "./MyRoutesPage.css";
 import { Link, useLocation } from "react-router-dom";
@@ -37,7 +40,8 @@ import type { CrewMemberOptionResponse } from "../api/crewMemberApi";
 type FinishRouteModalState = {
   routeId: number;
   finishOdometerLastThree: string;
-  orderActionByTransportOrderId: Record<number, RouteOrderFinishAction>
+  orderActionByTransportOrderId: Record<number, RouteOrderFinishAction>;
+  transportOrders: RouteTransportOrderReference[];
 }
 
 type MyRoutesLocationState = {
@@ -78,12 +82,23 @@ const manualRouteMemberRoles: RouteMemberRole[] = [
   "OTHER",
 ];
 
-function formatTransportOrderIds(ids: number[]): string {
-  if (ids.length === 0) {
+function formatTransportOrders(
+  orders: RouteTransportOrderReference[]): string {
+  if (orders.length === 0) {
     return "Brak zleceń";
   }
 
-  return ids.map((id) => `#${id}`).join(", ");
+  return orders.map((order) => `${order.orderNumber}`).join(", ");
+}
+
+function getTransportOrderDisplayName(
+  orders: RouteTransportOrderReference[],
+  transportOrderId: number
+): string {
+  return  String(
+    orders.find((order) => order.id === transportOrderId)?.orderNumber ??
+    `Zlecenie #${transportOrderId}`
+  );
 }
 
 export function MyRoutesPage() {
@@ -479,14 +494,15 @@ export function MyRoutesPage() {
 
   function openFinishRouteModal(route: RouteResponse) {
     const orderActionByTransportOrderId = Object.fromEntries(
-      route.transportOrderIds.map((transportOrderId) => [
-        transportOrderId,
+      route.transportOrders.map((transportOrder) => [
+        transportOrder.id,
         "COMPLETE" as RouteOrderFinishAction,
       ])
     ) as Record<number, RouteOrderFinishAction>;
 
     setFinishModal({
       routeId: route.id,
+      transportOrders: route.transportOrders,
       finishOdometerLastThree: "",
       orderActionByTransportOrderId,
     });
@@ -633,7 +649,7 @@ export function MyRoutesPage() {
                   <h2 className="my-route-card__title">Trasa #{route.id}</h2>
 
                   <p className="my-route-card__subtitle">
-                    Zlecenia: {formatTransportOrderIds(route.transportOrderIds)}
+                    Zlecenia: {formatTransportOrders(route.transportOrders)}
                   </p>
                 </div>
 
@@ -923,7 +939,7 @@ export function MyRoutesPage() {
 
                     <p className="my-route-history-card__row">
                       <strong>Zlecenia:</strong>{" "}
-                      {formatTransportOrderIds(route.transportOrderIds)}
+                      {formatTransportOrders(route.transportOrders)}
                     </p>
 
                     <p className="my-route-history-card__row">
@@ -995,7 +1011,11 @@ export function MyRoutesPage() {
                     className="my-routes-modal__order-row"
                     key={transportOrderId}
                   >
-                    <span>Zlecenie #{transportOrderId}</span>
+                    <span>
+                      {getTransportOrderDisplayName(finishModal.transportOrders,
+                        Number(transportOrderId)
+                      )}
+                    </span>
 
                     <select
                       value={action}
