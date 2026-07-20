@@ -108,16 +108,6 @@ public class TransportOrderController {
         return TransportOrderResponse.fromEntity(newTransportOrder);
     }
 
-    @PatchMapping("/{id}/assign-order-number")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public TransportOrderResponse assignTransportOrderNumber(
-            @PathVariable long id,
-            @Valid @RequestBody AssignOrderNumberRequest request
-    ) {
-        TransportOrder transportOrder = transportOrderService.assignTransportOrderNumber(request, id);
-        return TransportOrderResponse.fromEntity(transportOrder);
-    }
-
     @PatchMapping("/{id}/manager")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public TransportOrderResponse updateTransportOrderByManager(

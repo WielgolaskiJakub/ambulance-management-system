@@ -42,6 +42,7 @@ public class TransportOrderService {
     private final RouteMemberRepository routeMemberRepository;
     private final CurrentUserService currentUserService;
     private final ShiftRepository shiftRepository;
+    private final TransportOrderNumberService transportOrderNumberService;
 
 
     public List<TransportOrder> getAllTransportOrders() {
@@ -112,7 +113,7 @@ public class TransportOrderService {
 
         User user = currentUserService.getCurrentUser();
 
-        String orderNumber = prepareOptionalOrderNumber(request.getOrderNumber());
+        String orderNumber = transportOrderNumberService.generateOrderNumber();
 
 
         if (!Boolean.TRUE.equals(user.getActive())) {
@@ -132,23 +133,6 @@ public class TransportOrderService {
     }
 
     @Transactional
-    public TransportOrder assignTransportOrderNumber(AssignOrderNumberRequest request, long id) {
-
-        TransportOrder transportOrder = getTransportOrderById(id);
-
-
-        if (transportOrder.getOrderNumber() != null) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_ASSIGNED);
-        }
-
-        String orderNumber = prepareRequiredOrderNumber(request.getOrderNumber());
-
-        transportOrder.setOrderNumber(orderNumber);
-
-        return transportOrderRepository.save(transportOrder);
-    }
-
-    @Transactional
     public TransportOrder createTransportOrderByUser(CreateTransportOrderByUserRequest request) {
 
         User user = currentUserService.getCurrentUser();
@@ -162,6 +146,8 @@ public class TransportOrderService {
         }
 
         TransportOrder transportOrder = buildTransportOrderByUser(request, user);
+
+        transportOrder.setOrderNumber(transportOrderNumberService.generateOrderNumber());
         transportOrder.setPlannedDate(LocalDate.now());
         transportOrder.setPlannedDepartureTime(null);
 
@@ -192,22 +178,6 @@ public class TransportOrderService {
         TransportOrder transportOrderToUpdate = getTransportOrderById(id);
 
         validateTransportOrderCanBeModified(transportOrderToUpdate);
-
-        if (request.getOrderNumber() != null) {
-            if (request.getOrderNumber().isBlank()) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-            }
-
-            String orderNumber = request.getOrderNumber().trim();
-
-            boolean orderNumberChanged = !orderNumber.equals(transportOrderToUpdate.getOrderNumber());
-
-            if (orderNumberChanged && transportOrderRepository.existsByOrderNumber(orderNumber)) {
-                throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-            }
-
-            transportOrderToUpdate.setOrderNumber(orderNumber);
-        }
 
         if (request.getPickupAddress() != null && request.getPickupAddress().isBlank()) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
@@ -370,20 +340,6 @@ public class TransportOrderService {
         return transportOrder;
     }
 
-    private String prepareOptionalOrderNumber(String requestOrderNumber) {
-        if (requestOrderNumber == null || requestOrderNumber.isBlank()) {
-            return null;
-        }
-
-        String orderNumber = requestOrderNumber.trim();
-
-        if (transportOrderRepository.existsByOrderNumber(orderNumber)) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-        }
-
-        return orderNumber;
-    }
-
     private void updateTransportOrderByManagerFields(UpdateTransportOrderByManagerRequest request,
                                                      TransportOrder transportOrderToUpdate) {
         if (request.getOrderType() != null) {
@@ -442,20 +398,6 @@ public class TransportOrderService {
             transportOrderToUpdate.setDestinationAddress(request.getDestinationAddress().trim());
         }
 
-    }
-
-    private String prepareRequiredOrderNumber(String requestOrderNumber) {
-        if (requestOrderNumber == null || requestOrderNumber.isBlank()) {
-            throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-        }
-
-        String orderNumber = requestOrderNumber.trim();
-
-        if (transportOrderRepository.existsByOrderNumber(orderNumber)) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-        }
-
-        return orderNumber;
     }
 
     private void validateTransportOrderCanBeModified(TransportOrder transportOrder) {

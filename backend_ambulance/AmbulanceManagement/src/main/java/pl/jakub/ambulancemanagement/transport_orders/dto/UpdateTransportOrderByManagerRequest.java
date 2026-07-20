@@ -22,8 +22,6 @@ public class UpdateTransportOrderByManagerRequest {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime plannedDepartureTime;
 
-    private String orderNumber;
-
     private TransportOrderType orderType;
 
     private TransportSource source;

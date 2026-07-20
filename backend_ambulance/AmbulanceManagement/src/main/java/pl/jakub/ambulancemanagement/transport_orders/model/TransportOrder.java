@@ -29,7 +29,12 @@ public class TransportOrder {
     @Column(name = "planned_departure_time")
     private LocalTime plannedDepartureTime;
 
-    @Column(name = "order_number", length = 100)
+    @Column(name = "order_number",
+            nullable = false,
+            unique = true,
+            updatable = false,
+            length = 20
+    )
     private String orderNumber;
 
     @Enumerated(EnumType.STRING)

@@ -14,6 +14,7 @@ import pl.jakub.ambulancemanagement.shifts.model.ShiftType;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.transport_orders.model.*;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
+import pl.jakub.ambulancemanagement.transport_orders.service.TransportOrderNumberService;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.repository.UserRepository;
@@ -31,6 +32,7 @@ public class DevDataSeeder implements CommandLineRunner {
     private final ShiftRepository shiftRepository;
     private final TransportOrderRepository transportOrderRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TransportOrderNumberService transportOrderNumberService;
 
     @Override
     public void run(String... args) {
@@ -65,19 +67,19 @@ public class DevDataSeeder implements CommandLineRunner {
         shift.setStatus(ShiftStatus.ACTIVE);
         shiftRepository.save(shift);
 
-        createOrder("001/DEV", TransportOrderType.CONSULTATION, TransportSource.WARD,
+        createOrder( TransportOrderType.CONSULTATION, TransportSource.WARD,
                 "Szpital Wołomin - Oddział wewnętrzny", "Warszawa, Madalińskiego",
                 "Konsultacja pacjenta, transport tam i powrót", manager);
 
-        createOrder("002/DEV", TransportOrderType.HOSPITAL_TRANSFER, TransportSource.WARD,
+        createOrder(TransportOrderType.HOSPITAL_TRANSFER, TransportSource.WARD,
                 "Szpital Wołomin - SOR", "Warszawa, Banacha",
                 "Przekazanie pacjenta do innego szpitala", manager);
 
-        createOrder(null, TransportOrderType.OTHER, TransportSource.NIGHT_MEDICAL_ASSISTANCE,
+        createOrder( TransportOrderType.OTHER, TransportSource.NIGHT_MEDICAL_ASSISTANCE,
                 "NPL Wołomin", "Adres pacjenta z NPL",
                 "Zlecenie utworzone przez kierowcę, numer nada kierownik", driver);
 
-        createOrder(null, TransportOrderType.MEDICAL_DOCUMENTATION, TransportSource.MANAGEMENT,
+        createOrder( TransportOrderType.MEDICAL_DOCUMENTATION, TransportSource.MANAGEMENT,
                 "Szpital Wołomin", "Warszawa, Madalińskiego",
                 "APTEKA / dokumentacja / transport techniczny", manager);
     }
@@ -96,7 +98,6 @@ public class DevDataSeeder implements CommandLineRunner {
     }
 
     private void createOrder(
-            String orderNumber,
             TransportOrderType type,
             TransportSource source,
             String pickupAddress,
@@ -105,7 +106,7 @@ public class DevDataSeeder implements CommandLineRunner {
             User createdBy
     ) {
         TransportOrder order = new TransportOrder();
-        order.setOrderNumber(orderNumber);
+        order.setOrderNumber(transportOrderNumberService.generateOrderNumber());
         order.setOrderType(type);
         order.setSource(source);
         order.setPriority(TransportPriority.MEDIUM);

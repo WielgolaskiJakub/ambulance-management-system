@@ -27,8 +27,6 @@ public class CreateTransportOrderByManagerRequest {
      @JsonFormat(pattern = "HH:mm")
      private LocalTime plannedDepartureTime;
 
-     private String orderNumber;
-
      @NotNull
      private TransportOrderType orderType;
 

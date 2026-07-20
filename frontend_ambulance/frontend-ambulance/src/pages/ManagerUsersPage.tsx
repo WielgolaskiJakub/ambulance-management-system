@@ -362,6 +362,7 @@ export function ManagerUsersPage() {
                             id="employee-email"
                             type="email"
                             value={form.email}
+                            placeholder="Opcjonalnie"
                             onChange={(event) =>
                                 setForm((currentForm) => ({
                                     ...currentForm,
