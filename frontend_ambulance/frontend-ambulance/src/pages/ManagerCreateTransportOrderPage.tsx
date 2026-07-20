@@ -21,7 +21,6 @@ type PatientFormState = {
 type FormState = {
     plannedDate: string;
     plannedDepartureTime: string;
-    orderNumber: string;
     orderType: string;
     source: string;
     priority: string;
@@ -40,7 +39,6 @@ const emptyPatient: PatientFormState = {
 const initialFormState: FormState = {
     plannedDate: "",
     plannedDepartureTime: "",
-    orderNumber: "",
     orderType: "HOSPITAL_TRANSFER",
     source: "HOSPITAL_EMERGENCY_DEPARTMENT",
     priority: "MEDIUM",
@@ -56,7 +54,7 @@ function hasText(value: string): boolean {
 
 export function ManagerCreateTransportOrderPage() {
     const navigate = useNavigate();
-    const {showToast} = useToast();
+    const { showToast } = useToast();
 
     const [form, setForm] = useState<FormState>(initialFormState);
     const [submitting, setSubmitting] = useState(false);
@@ -137,9 +135,6 @@ export function ManagerCreateTransportOrderPage() {
                 plannedDepartureTime: hasText(form.plannedDepartureTime)
                     ? form.plannedDepartureTime
                     : null,
-                orderNumber: hasText(form.orderNumber)
-                    ? form.orderNumber.trim()
-                    : null,
                 orderType: form.orderType,
                 source: form.source,
                 priority: form.priority,
@@ -152,8 +147,8 @@ export function ManagerCreateTransportOrderPage() {
 
             showToast(
                 createdOrder.orderNumber
-                ? `Utworzono zlecenie ${createdOrder.orderNumber}.`
-                : "Zlecenie zostało utworzone.",
+                    ? `Utworzono zlecenie ${createdOrder.orderNumber}.`
+                    : "Zlecenie zostało utworzone.",
                 "success"
             )
 
@@ -193,7 +188,7 @@ export function ManagerCreateTransportOrderPage() {
         value: string
     ) {
         setPatientErrorMessage(null);
-        
+
         setForm((currentForm) => ({
             ...currentForm,
             patients: currentForm.patients.map((patient, index) =>
@@ -243,7 +238,7 @@ export function ManagerCreateTransportOrderPage() {
                 { ...emptyPatient },
             ],
         }));
-        
+
     }
 
     function removePatient(patientIndex: number) {
@@ -306,14 +301,14 @@ export function ManagerCreateTransportOrderPage() {
                             />
                         </label>
 
+
                         <label className="create-transport-order-form__field">
                             <span>Numer zlecenia</span>
-                            <input
-                                value={form.orderNumber}
-                                onChange={(event) => updateField("orderNumber", event.target.value)}
-                                placeholder="np.3510/26"
-                            />
+                            <p className="create-transport-order-form__generated-value">
+                                Zostanie nadany automatycznie po utworzeniu.
+                            </p>
                         </label>
+
                     </div>
 
                     <div className="create-transport-order-form__grid">

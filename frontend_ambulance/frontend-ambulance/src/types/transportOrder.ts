@@ -75,7 +75,6 @@ export type CreateTransportOrderByUserRequest = {
 export type CreateTransportOrderByManagerRequest = {
   plannedDate: string;
   plannedDepartureTime: string | null;
-  orderNumber: string | null;
   orderType: string;
   source: string;
   priority: string;
@@ -148,7 +147,6 @@ export type TransportOrderPatientDataUpdateRequest = {
 export type  UpdateTransportOrderByManagerRequest = {
   plannedDate: string | null;
   plannedDepartureTime: string | null;
-  orderNumber: string | null;
   orderType: string;
   source: string;
   priority: string;

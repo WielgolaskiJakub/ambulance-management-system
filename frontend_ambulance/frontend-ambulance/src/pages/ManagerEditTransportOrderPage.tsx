@@ -28,7 +28,6 @@ type PatientFormState = {
 type FormState = {
     plannedDate: string;
     plannedDepartureTime: string;
-    orderNumber: string;
     orderType: string;
     source: string;
     priority: string;
@@ -58,7 +57,6 @@ function toFormState(order: TransportOrderDetailsResponse): FormState {
     return {
         plannedDate: order.plannedDate ?? "",
         plannedDepartureTime: order.plannedDepartureTime?.slice(0, 5) ?? "",
-        orderNumber: order.orderNumber ?? "",
         orderType: order.orderType,
         source: order.source,
         priority: order.priority,
@@ -93,7 +91,6 @@ function toRequest(form: FormState): UpdateTransportOrderByManagerRequest {
     return {
         plannedDate: toNullableText(form.plannedDate),
         plannedDepartureTime: toNullableText(form.plannedDepartureTime),
-        orderNumber: toNullableText(form.orderNumber),
         orderType: form.orderType,
         source: form.source,
         priority: form.priority,
@@ -114,6 +111,7 @@ export function ManagerEditTransportOrderPage() {
     const [saving, setSaving] = useState(false);
     const [orderErrorMessage, setOrderErrorMessage] = useState<string | null>(null);
     const [patientErrorMessage, setPatientErrorMessage] = useState<string | null>(null);
+    const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
     const parsedOrderId = Number(orderId);
 
@@ -131,6 +129,7 @@ export function ManagerEditTransportOrderPage() {
 
                 const order = await getTransportOrderDetails(parsedOrderId);
                 setForm(toFormState(order));
+                setOrderNumber(order.orderNumber);
             } catch {
                 setOrderErrorMessage("Nie udało się pobrać zlecenia.");
             } finally {
@@ -281,12 +280,13 @@ export function ManagerEditTransportOrderPage() {
         try {
             setSaving(true);
 
-            await updateTransportOrderByManager(parsedOrderId, toRequest(form));
+            const updatedOrder = await updateTransportOrderByManager(
+                parsedOrderId,
+                toRequest(form)
+            );
 
             showToast(
-                form.orderNumber.trim()
-                    ? `Zlecenie ${form.orderNumber.trim()} zostało zaktualizowane.`
-                    : `Zlecenie #${parsedOrderId} zostało zaktualizowane.`,
+                `Zlecenie ${updatedOrder.orderNumber} zostało zaktualizowane.`,
                 "success"
             );
 
@@ -411,14 +411,10 @@ export function ManagerEditTransportOrderPage() {
                             </label>
 
                             <label className="manager-edit-order-form__field">
-                                <span>Numer zlecenia</span>
-                                <input
-                                    value={form.orderNumber}
-                                    onChange={(event) =>
-                                        updateField("orderNumber", event.target.value)
-                                    }
-                                    placeholder="np. 1531/26"
-                                />
+                                <div className="manager-edit-order-form__field manager-edit-order-form__number">
+                                    <span>Numer zlecenia</span>
+                                    <strong>{orderNumber ?? "—"}</strong>
+                                </div>
                             </label>
                         </div>
                     </section>
