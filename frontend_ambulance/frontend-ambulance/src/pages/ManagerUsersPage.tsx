@@ -65,7 +65,7 @@ export function ManagerUsersPage() {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<UserRole | "ALL">("ALL");
-    const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+    const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ACTIVE");
 
     const [form, setForm] = useState<AddNewUserFormState>(initialFormState);
     const [adding, setAdding] = useState(false);
@@ -229,7 +229,7 @@ export function ManagerUsersPage() {
                     firstName: editForm.firstName.trim(),
                     lastName: editForm.lastName.trim(),
                     username: editForm.username.trim(),
-                    email: editForm.email.trim(),
+                    email: editForm.email.trim() || null,
                     userRole: editForm.userRole,
                     active: editForm.active,
                     canWorkAsSanitary: editForm.canWorkAsSanitary,
@@ -248,7 +248,7 @@ export function ManagerUsersPage() {
             );
             showToast(
                 `Dane pracownika ${updatedUser.firstName} ${updatedUser.lastName} zostały zapisane.`,
-            "success")
+                "success")
             closeEditForm();
 
         } catch (error) {
@@ -355,8 +355,8 @@ export function ManagerUsersPage() {
                     <div className="employee-form__field">
                         <label htmlFor="employee-username">Login</label>
                         <input
-                            id="employee-username"
-                            name="newEmployeeUsername"
+                            id="employee-login"
+                            name="newEmployeeLogin"
                             type="text"
                             autoComplete="off"
                             required
@@ -386,13 +386,13 @@ export function ManagerUsersPage() {
                     </div>
 
                     <div className="employee-form__field">
-                        <label htmlFor="employee-temporary-password">Hasło tymczasowe</label>
+                        <label htmlFor="employee-temporary-password">Tymczasowy kod dostępu</label>
                         <input
-                            id="employee-temporary-password"
-                            name="newEmployeeTemporaryPassword"
+                            id="employee-temporary-access-code"
+                            name="temporaryAccessCode"
                             type="password"
                             required
-                            autoComplete="new-password"
+                            autoComplete="one-time-code"
                             value={form.temporaryPassword}
                             onChange={(event) =>
                                 setForm((currentForm) => ({
@@ -424,10 +424,10 @@ export function ManagerUsersPage() {
                             <option value="SANITARY">Sanitariusz</option>
                             <option value="DOCTOR">Lekarz</option>
                             {isAdmin && (
-                            <option value="MANAGER">Kierownik</option>
+                                <option value="MANAGER">Kierownik</option>
                             )}
-                             {isAdmin && (
-                            <option value="ADMIN">Administrator</option>
+                            {isAdmin && (
+                                <option value="ADMIN">Administrator</option>
                             )}
                         </select>
                     </div>
@@ -660,6 +660,7 @@ export function ManagerUsersPage() {
                         <form
                             className="employee-edit__form"
                             onSubmit={handleUpdateEmployee}
+                            autoComplete="off"
                         >
                             <div className="employee-form__field">
                                 <label htmlFor="edit-first-name">Imię</label>
@@ -701,7 +702,9 @@ export function ManagerUsersPage() {
                                 <label htmlFor="edit-username">Login</label>
                                 <input
                                     id="edit-username"
+                                    name="editEmployeeLogin"
                                     type="text"
+                                    autoComplete="off"
                                     value={editForm.username}
                                     onChange={(event) =>
                                         setEditForm((currentForm) =>
@@ -758,10 +761,10 @@ export function ManagerUsersPage() {
                                     <option value="SANITARY">Sanitariusz</option>
                                     <option value="DOCTOR">Lekarz</option>
                                     {isAdmin && (
-                                    <option value="MANAGER">Kierownik</option>
+                                        <option value="MANAGER">Kierownik</option>
                                     )}
-                                      {isAdmin && (
-                                    <option value="ADMIN">Administrator</option>
+                                    {isAdmin && (
+                                        <option value="ADMIN">Administrator</option>
                                     )}
                                 </select>
                             </div>
