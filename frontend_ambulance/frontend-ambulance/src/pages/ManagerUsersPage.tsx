@@ -19,7 +19,6 @@ import { useToast } from "../toast/UseToast";
 type AddNewUserFormState = {
     firstName: string;
     lastName: string;
-    username: string;
     email: string;
     temporaryPassword: string;
     userRole: UserRole;
@@ -39,7 +38,6 @@ type EmployeeEditFormState = {
 const initialFormState: AddNewUserFormState = {
     firstName: "",
     lastName: "",
-    username: "",
     email: "",
     temporaryPassword: "",
     userRole: "DRIVER",
@@ -124,11 +122,6 @@ export function ManagerUsersPage() {
             return
         }
 
-        if (!hasText(form.username)) {
-            setFormErrorMessage("Podaj login pracownika.");
-            return;
-        }
-
         if (!hasText(form.temporaryPassword)) {
             setFormErrorMessage("Podaj tymczasowe hasło pracownika.");
             return;
@@ -141,7 +134,6 @@ export function ManagerUsersPage() {
                 createUser({
                     firstName: form.firstName.trim(),
                     lastName: form.lastName.trim(),
-                    username: form.username.trim(),
                     email: form.email.trim() || null,
                     temporaryPassword: form.temporaryPassword.trim(),
                     userRole: form.userRole,
@@ -347,24 +339,6 @@ export function ManagerUsersPage() {
                                 setForm((currentForm) => ({
                                     ...currentForm,
                                     lastName: event.target.value,
-                                }))
-                            }
-                        />
-                    </div>
-
-                    <div className="employee-form__field">
-                        <label htmlFor="employee-username">Login</label>
-                        <input
-                            id="employee-login"
-                            name="newEmployeeLogin"
-                            type="text"
-                            autoComplete="off"
-                            required
-                            value={form.username}
-                            onChange={(event) =>
-                                setForm((currentForm) => ({
-                                    ...currentForm,
-                                    username: event.target.value,
                                 }))
                             }
                         />

@@ -7,7 +7,6 @@ import type {
 export type CreateUserRequest = {
     firstName: string;
     lastName: string;
-    username: string;
     email: string | null;
     temporaryPassword: string;
     userRole: UserRole;
