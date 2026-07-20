@@ -56,11 +56,7 @@ public class UserService {
 
         validateCurrentUserCanAssignRole(request.getUserRole());
 
-        String username = request.getUsername().trim();
-
-        if (userRepository.existsByUsername(username)) {
-            throw new ApiException(ErrorCode.USERNAME_ALREADY_EXISTS);
-        }
+        String username = generateUsername(request.getFirstName(), request.getLastName());
 
         String email = null;
 
@@ -263,4 +259,26 @@ public class UserService {
             throw new ApiException(ErrorCode.USER_MANAGEMENT_ACCESS_DENIED);
         }
     }
+
+    private String generateUsername(String firstName,  String lastName) {
+
+        firstName = firstName.toLowerCase().trim();
+        lastName = lastName.toLowerCase().trim();
+
+        for(int lettersFromFirstName = 1; lettersFromFirstName <= firstName.length(); lettersFromFirstName++){
+            String candidate = firstName.substring(0, lettersFromFirstName) + lastName;
+
+            if(!userRepository.existsByUsername(candidate)){
+                return candidate;
+            }
+        }
+        String baseUsername = firstName+lastName;
+        int suffix = 2;
+
+        while(userRepository.existsByUsername(baseUsername + suffix)){
+            suffix++;
+        }
+        return baseUsername + suffix;
+    }
+
 }

@@ -15,9 +15,6 @@ public class UserCreateRequest {
     @NotBlank
     private String lastName;
 
-    @NotBlank
-    private String username;
-
     @Email
     private String email;
 
