@@ -18,14 +18,6 @@ public class UserCreateRequest {
     @Email
     private String email;
 
-    @NotBlank
-    @Size(min = 8, message = "Hasło musi mieć minimum 8 znaków")
-    @Pattern(
-            regexp = "^(?=.*[A-Z])(?=.*\\d).+$",
-            message = "Hasło musi zawierać wielką literę i cyfrę"
-    )
-    private String temporaryPassword;
-
     @NotNull
     private UserRole userRole;
 

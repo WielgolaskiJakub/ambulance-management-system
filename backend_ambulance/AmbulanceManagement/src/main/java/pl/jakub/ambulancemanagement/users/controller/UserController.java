@@ -47,9 +47,8 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(@Valid @RequestBody UserCreateRequest request) {
-        User createdUser = userService.createUser(request);
-        return UserResponse.fromEntity(createdUser);
+    public UserCreateResponse createUser(@Valid @RequestBody UserCreateRequest request) {
+        return userService.createUser(request);
     }
 
     @PutMapping("/{id}")

@@ -12,6 +12,7 @@ import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 import pl.jakub.ambulancemanagement.users.dto.*;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,6 +23,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
+
+    private static final String UPPERCASE_LETTERS ="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String LOWERCASE_LETTERS ="abcdefghijklmnopqrstuvwxyz";
+    private static final String DIGITS ="0123456789";
+
+    private static final String PASSWORD_CHARACTERS = UPPERCASE_LETTERS + LOWERCASE_LETTERS + DIGITS;
+
+    private static final int TEMPORARY_PASSWORD_LENGTH = 12;
+
+    private final SecureRandom secureRandom = new SecureRandom();
 
     public List<User> getAllUsersVisibleForCurrentUser() {
         if(currentUserIsAdmin()) {
@@ -52,11 +63,13 @@ public class UserService {
     public List<User> getAvailableSanitaryMembers(){
         return userRepository.findByActiveTrueAndCanWorkAsSanitaryTrueOrderByLastNameAscFirstNameAsc();
     }
-    public User createUser(UserCreateRequest request) {
+    public UserCreateResponse createUser(UserCreateRequest request) {
 
         validateCurrentUserCanAssignRole(request.getUserRole());
 
         String username = generateUsername(request.getFirstName(), request.getLastName());
+
+        String temporaryPassword = generateTemporaryPassword();
 
         String email = null;
 
@@ -73,12 +86,18 @@ public class UserService {
         user.setLastName(request.getLastName());
         user.setUsername(username);
         user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
+        user.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         user.setUserRole(request.getUserRole());
         user.setActive(true);
         user.setMustChangePassword(true);
         user.setCanWorkAsSanitary(Boolean.TRUE.equals(request.getCanWorkAsSanitary()));
-        return userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
+
+        return new UserCreateResponse(
+                UserResponse.fromEntity(savedUser),
+                temporaryPassword
+        );
     }
 
     public User updateUserByPutAdmin(UserAdminUpdateRequest request, long id) {
@@ -281,4 +300,33 @@ public class UserService {
         return baseUsername + suffix;
     }
 
+    private String generateTemporaryPassword(){
+        char[] password = new char[TEMPORARY_PASSWORD_LENGTH];
+
+        password[0] = getRandomCharacter(UPPERCASE_LETTERS);
+        password[1] = getRandomCharacter(LOWERCASE_LETTERS);
+        password[2] = getRandomCharacter(DIGITS);
+
+        for(int index = 3; index < password.length; index++){
+            password[index] = getRandomCharacter(PASSWORD_CHARACTERS);
+        }
+        shufflePasswordCharacters(password);
+
+        return new String(password);
+    }
+
+    private char getRandomCharacter(String characters) {
+        int randomIndex = secureRandom.nextInt(characters.length());
+        return characters.charAt(randomIndex);
+    }
+
+    private void shufflePasswordCharacters(char[] password){
+        for(int index = password.length -1; index > 0; index--){
+            int randomIndex = secureRandom.nextInt(index + 1);
+
+            char temporaryCharacter = password[index];
+            password[index] = password[randomIndex];
+            password[randomIndex] = temporaryCharacter;
+        }
+    }
 }
