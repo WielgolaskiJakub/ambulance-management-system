@@ -464,3 +464,31 @@
   color: #052e16;
   font-weight: 900;
 }
+.created-user-credentials {
+  width: min(680px, calc(100vw - 40px));
+}
+
+.created-user-credentials__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.created-user-credentials__password {
+  grid-column: 1 / -1;
+}
+
+.created-user-credentials__password strong {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .created-user-credentials__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .created-user-credentials__password {
+    grid-column: auto;
+  }
+} 

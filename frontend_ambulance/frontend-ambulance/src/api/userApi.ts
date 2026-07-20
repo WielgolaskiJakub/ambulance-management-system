@@ -2,13 +2,13 @@ import { axiosClient } from "./axiosClient";
 import type {
     UserResponse,
     UserRole,
+    UserCreateResponse,
 } from "../types/user";
 
 export type CreateUserRequest = {
     firstName: string;
     lastName: string;
     email: string | null;
-    temporaryPassword: string;
     userRole: UserRole;
     canWorkAsSanitary: boolean;
 }
@@ -25,8 +25,8 @@ export type UserAdminPatchRequest = {
 
 export async function createUser(
     request: CreateUserRequest
-): Promise<UserResponse> {
-    const response = await axiosClient.post<UserResponse>(
+): Promise<UserCreateResponse> {
+    const response = await axiosClient.post<UserCreateResponse>(
         "/api/v1/users",
         request
     );

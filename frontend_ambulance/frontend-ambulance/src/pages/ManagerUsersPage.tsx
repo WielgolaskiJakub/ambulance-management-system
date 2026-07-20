@@ -1,4 +1,4 @@
-import type { UserResponse, UserRole } from "../types/user";
+import type { UserResponse, UserRole, UserCreateResponse } from "../types/user";
 import {
     createUser,
     getAllUsers,
@@ -20,7 +20,6 @@ type AddNewUserFormState = {
     firstName: string;
     lastName: string;
     email: string;
-    temporaryPassword: string;
     userRole: UserRole;
     canWorkAsSanitary: boolean;
 };
@@ -39,7 +38,6 @@ const initialFormState: AddNewUserFormState = {
     firstName: "",
     lastName: "",
     email: "",
-    temporaryPassword: "",
     userRole: "DRIVER",
     canWorkAsSanitary: false
 };
@@ -60,6 +58,7 @@ export function ManagerUsersPage() {
 
     const [users, setUsers] = useState<UserResponse[]>([]);
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
+    const [createdUserCredentials, setCreatedUserCredentials] = useState<UserCreateResponse | null>(null);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<UserRole | "ALL">("ALL");
@@ -121,11 +120,6 @@ export function ManagerUsersPage() {
             setFormErrorMessage("Podaj nazwisko pracownika.");
             return
         }
-
-        if (!hasText(form.temporaryPassword)) {
-            setFormErrorMessage("Podaj tymczasowe hasło pracownika.");
-            return;
-        }
         try {
             setAdding(true);
             setFormErrorMessage(null);
@@ -135,20 +129,20 @@ export function ManagerUsersPage() {
                     firstName: form.firstName.trim(),
                     lastName: form.lastName.trim(),
                     email: form.email.trim() || null,
-                    temporaryPassword: form.temporaryPassword.trim(),
                     userRole: form.userRole,
                     canWorkAsSanitary: form.canWorkAsSanitary
                 });
 
+            setCreatedUserCredentials(createdEmployee);
             setUsers((currentUsers) => [
                 ...currentUsers,
-                createdEmployee,
+                createdEmployee.user,
 
             ]);
 
             setForm(initialFormState);
             showToast(
-                `Pracownik ${createdEmployee.firstName} ${createdEmployee.lastName} został pomyślnie dodany.`,
+                `Pracownik ${createdEmployee.user.firstName} ${createdEmployee.user.lastName} został pomyślnie dodany.`,
                 "success"
             )
 
@@ -295,6 +289,24 @@ export function ManagerUsersPage() {
 
     });
 
+    async function copyCreatedUserCredentials() {
+        if (createdUserCredentials === null) {
+            return;
+        }
+
+        const credentials = [
+            `Login: ${createdUserCredentials.user.username}`,
+            `Hasło tymczasowe: ${createdUserCredentials.temporaryPassword}`
+        ].join("\n");
+
+        try {
+            await navigator.clipboard.writeText(credentials);
+
+            showToast("Dane logowania zostały skopiowane.", "success");
+        } catch {
+            showToast("Nie udało się skopiować danych logowania.", "error")
+        }
+    }
 
     return (
         <main className="employees-page">
@@ -354,24 +366,6 @@ export function ManagerUsersPage() {
                                 setForm((currentForm) => ({
                                     ...currentForm,
                                     email: event.target.value,
-                                }))
-                            }
-                        />
-                    </div>
-
-                    <div className="employee-form__field">
-                        <label htmlFor="employee-temporary-password">Tymczasowy kod dostępu</label>
-                        <input
-                            id="employee-temporary-access-code"
-                            name="temporaryAccessCode"
-                            type="password"
-                            required
-                            autoComplete="one-time-code"
-                            value={form.temporaryPassword}
-                            onChange={(event) =>
-                                setForm((currentForm) => ({
-                                    ...currentForm,
-                                    temporaryPassword: event.target.value,
                                 }))
                             }
                         />
@@ -526,6 +520,76 @@ export function ManagerUsersPage() {
                 )}
             </section>
 
+            {createdUserCredentials && (
+                <div className="employee-details-overlay">
+                    <section
+                        className="employee-details created-user-credentials"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="created-user-credentials-title"
+                    >
+                        <div className="employee-details__header">
+                            <div>
+                                <h2 id="created-user-credentials-title">
+                                    Konto pracownika utworzone
+                                </h2>
+
+                                <p>
+                                    Przekaż te dane pracownikowi. Hasło wyświetla się tylko teraz.
+                                </p>
+                            </div>
+
+                            <button
+                                className="employee-details__close"
+                                type="button"
+                                onClick={() => setCreatedUserCredentials(null)}
+                                aria-label="Zamknij"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="employee-details__grid created-user-credentials__grid">
+                            <div>
+                                <span>Pracownik</span>
+                                <strong>
+                                    {createdUserCredentials.user.firstName}{" "}
+                                    {createdUserCredentials.user.lastName}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Login</span>
+                                <strong>{createdUserCredentials.user.username}</strong>
+                            </div>
+
+                            <div className="created-user-credentials__password">
+                                <span>Hasło tymczasowe</span>
+                                <strong>{createdUserCredentials.temporaryPassword}</strong>
+                            </div>
+                        </div>
+
+                        <div className="employee-details__actions">
+
+                            <button
+                                className="employee-details__secondary-button"
+                                type="button"
+                                onClick={copyCreatedUserCredentials}>
+                                Kopiuj dane logowania
+                            </button>
+
+                            <button
+                                className="employee-details__secondary-button"
+                                type="button"
+                                onClick={() => setCreatedUserCredentials(null)}
+                            >
+                                Zamknij
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
+
             {selectedUser && (
                 <div className="employee-details-overlay">
                     <section
@@ -610,202 +674,205 @@ export function ManagerUsersPage() {
                         </div>
                     </section>
                 </div>
-            )}
+            )
+            }
 
-            {editForm && editedUserId !== null && (
-                <div className="employee-details-overlay">
-                    <section className="employee-edit">
-                        <div className="employee-details__header">
-                            <div>
-                                <h2>Edytuj pracownika</h2>
-                                <p>Zmień dane i uprawnienia użytkownika</p>
-                            </div>
+            {
+                editForm && editedUserId !== null && (
+                    <div className="employee-details-overlay">
+                        <section className="employee-edit">
+                            <div className="employee-details__header">
+                                <div>
+                                    <h2>Edytuj pracownika</h2>
+                                    <p>Zmień dane i uprawnienia użytkownika</p>
+                                </div>
 
-                            <button
-                                className="employee-details__close"
-                                type="button"
-                                onClick={closeEditForm}
-                                aria-label="Zamknij"
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <form
-                            className="employee-edit__form"
-                            onSubmit={handleUpdateEmployee}
-                            autoComplete="off"
-                        >
-                            <div className="employee-form__field">
-                                <label htmlFor="edit-first-name">Imię</label>
-                                <input
-                                    id="edit-first-name"
-                                    type="text"
-                                    value={editForm.firstName}
-                                    onChange={(event) =>
-                                        setEditForm((currentForm) =>
-                                            currentForm
-                                                ? {
-                                                    ...currentForm,
-                                                    firstName: event.target.value,
-                                                } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <div className="employee-form__field">
-                                <label htmlFor="edit-last-name">Nazwisko</label>
-                                <input
-                                    id="edit-last-name"
-                                    type="text"
-                                    value={editForm.lastName}
-                                    onChange={(event) =>
-                                        setEditForm((currentForm) =>
-                                            currentForm
-                                                ? {
-                                                    ...currentForm,
-                                                    lastName: event.target.value,
-                                                } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <div className="employee-form__field">
-                                <label htmlFor="edit-username">Login</label>
-                                <input
-                                    id="edit-username"
-                                    name="editEmployeeLogin"
-                                    type="text"
-                                    autoComplete="off"
-                                    value={editForm.username}
-                                    onChange={(event) =>
-                                        setEditForm((currentForm) =>
-                                            currentForm
-                                                ? {
-                                                    ...currentForm,
-                                                    username: event.target.value,
-                                                } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <div className="employee-form__field">
-                                <label htmlFor="edit-email">Email</label>
-                                <input
-                                    id="edit-email"
-                                    type="email"
-                                    value={editForm.email}
-                                    onChange={(event) =>
-                                        setEditForm((currentForm) =>
-                                            currentForm
-                                                ? {
-                                                    ...currentForm,
-                                                    email: event.target.value,
-                                                } : null
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <div className="employee-form__field">
-                                <label htmlFor="edit-role">Rola</label>
-                                <select
-                                    id="edit-role"
-                                    value={editForm.userRole}
-                                    onChange={(event) =>
-                                        setEditForm((currentForm) =>
-                                            currentForm
-                                                ? {
-                                                    ...currentForm,
-                                                    userRole:
-                                                        event.target.value as UserRole,
-
-                                                    canWorkAsSanitary:
-                                                        event.target.value === "DRIVER"
-                                                            ? currentForm.canWorkAsSanitary
-                                                            : false,
-                                                } : null
-                                        )
-                                    }
+                                <button
+                                    className="employee-details__close"
+                                    type="button"
+                                    onClick={closeEditForm}
+                                    aria-label="Zamknij"
                                 >
-                                    <option value="DRIVER">Kierowca</option>
-                                    <option value="SANITARY">Sanitariusz</option>
-                                    <option value="DOCTOR">Lekarz</option>
-                                    {isAdmin && (
-                                        <option value="MANAGER">Kierownik</option>
-                                    )}
-                                    {isAdmin && (
-                                        <option value="ADMIN">Administrator</option>
-                                    )}
-                                </select>
+                                    ×
+                                </button>
                             </div>
 
-                            <div className="employee-edit__checkboxes">
-                                <label>
+                            <form
+                                className="employee-edit__form"
+                                onSubmit={handleUpdateEmployee}
+                                autoComplete="off"
+                            >
+                                <div className="employee-form__field">
+                                    <label htmlFor="edit-first-name">Imię</label>
                                     <input
-                                        type="checkbox"
-                                        checked={editForm.active}
+                                        id="edit-first-name"
+                                        type="text"
+                                        value={editForm.firstName}
                                         onChange={(event) =>
                                             setEditForm((currentForm) =>
                                                 currentForm
                                                     ? {
                                                         ...currentForm,
-                                                        active: event.target.checked,
+                                                        firstName: event.target.value,
                                                     } : null
                                             )
                                         }
                                     />
-                                    Konto aktywne
-                                </label>
-                                {editForm.userRole === "DRIVER" && (
+                                </div>
+
+                                <div className="employee-form__field">
+                                    <label htmlFor="edit-last-name">Nazwisko</label>
+                                    <input
+                                        id="edit-last-name"
+                                        type="text"
+                                        value={editForm.lastName}
+                                        onChange={(event) =>
+                                            setEditForm((currentForm) =>
+                                                currentForm
+                                                    ? {
+                                                        ...currentForm,
+                                                        lastName: event.target.value,
+                                                    } : null
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="employee-form__field">
+                                    <label htmlFor="edit-username">Login</label>
+                                    <input
+                                        id="edit-username"
+                                        name="editEmployeeLogin"
+                                        type="text"
+                                        autoComplete="off"
+                                        value={editForm.username}
+                                        onChange={(event) =>
+                                            setEditForm((currentForm) =>
+                                                currentForm
+                                                    ? {
+                                                        ...currentForm,
+                                                        username: event.target.value,
+                                                    } : null
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="employee-form__field">
+                                    <label htmlFor="edit-email">Email</label>
+                                    <input
+                                        id="edit-email"
+                                        type="email"
+                                        value={editForm.email}
+                                        onChange={(event) =>
+                                            setEditForm((currentForm) =>
+                                                currentForm
+                                                    ? {
+                                                        ...currentForm,
+                                                        email: event.target.value,
+                                                    } : null
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="employee-form__field">
+                                    <label htmlFor="edit-role">Rola</label>
+                                    <select
+                                        id="edit-role"
+                                        value={editForm.userRole}
+                                        onChange={(event) =>
+                                            setEditForm((currentForm) =>
+                                                currentForm
+                                                    ? {
+                                                        ...currentForm,
+                                                        userRole:
+                                                            event.target.value as UserRole,
+
+                                                        canWorkAsSanitary:
+                                                            event.target.value === "DRIVER"
+                                                                ? currentForm.canWorkAsSanitary
+                                                                : false,
+                                                    } : null
+                                            )
+                                        }
+                                    >
+                                        <option value="DRIVER">Kierowca</option>
+                                        <option value="SANITARY">Sanitariusz</option>
+                                        <option value="DOCTOR">Lekarz</option>
+                                        {isAdmin && (
+                                            <option value="MANAGER">Kierownik</option>
+                                        )}
+                                        {isAdmin && (
+                                            <option value="ADMIN">Administrator</option>
+                                        )}
+                                    </select>
+                                </div>
+
+                                <div className="employee-edit__checkboxes">
                                     <label>
                                         <input
                                             type="checkbox"
-                                            checked={editForm.canWorkAsSanitary}
+                                            checked={editForm.active}
                                             onChange={(event) =>
                                                 setEditForm((currentForm) =>
                                                     currentForm
                                                         ? {
                                                             ...currentForm,
-                                                            canWorkAsSanitary: event.target.checked,
+                                                            active: event.target.checked,
                                                         } : null
                                                 )
                                             }
                                         />
-                                        Może pracować jako sanitariusz
+                                        Konto aktywne
                                     </label>
+                                    {editForm.userRole === "DRIVER" && (
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.canWorkAsSanitary}
+                                                onChange={(event) =>
+                                                    setEditForm((currentForm) =>
+                                                        currentForm
+                                                            ? {
+                                                                ...currentForm,
+                                                                canWorkAsSanitary: event.target.checked,
+                                                            } : null
+                                                    )
+                                                }
+                                            />
+                                            Może pracować jako sanitariusz
+                                        </label>
+                                    )}
+                                </div>
+
+                                {editErrorMessage && (
+                                    <p className="employee-form__error">
+                                        {editErrorMessage}
+                                    </p>
                                 )}
-                            </div>
 
-                            {editErrorMessage && (
-                                <p className="employee-form__error">
-                                    {editErrorMessage}
-                                </p>
-                            )}
+                                <div className="employee-edit__actions">
+                                    <button
+                                        type="button"
+                                        className="employee-details__secondary-button"
+                                        onClick={closeEditForm}>
+                                        Anuluj
+                                    </button>
 
-                            <div className="employee-edit__actions">
-                                <button
-                                    type="button"
-                                    className="employee-details__secondary-button"
-                                    onClick={closeEditForm}>
-                                    Anuluj
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    className="employee-form__submit"
-                                    disabled={updating}
-                                >
-                                    {updating ? "Zapisywanie..." : "Zapisz zmiany"}
-                                </button>
-                            </div>
-                        </form>
-                    </section>
-                </div>
-            )}
-        </main>
+                                    <button
+                                        type="submit"
+                                        className="employee-form__submit"
+                                        disabled={updating}
+                                    >
+                                        {updating ? "Zapisywanie..." : "Zapisz zmiany"}
+                                    </button>
+                                </div>
+                            </form>
+                        </section>
+                    </div>
+                )
+            }
+        </main >
     );
 }

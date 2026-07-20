@@ -17,3 +17,8 @@ export type UserResponse ={
     mustChangePassword: boolean;
     canWorkAsSanitary: boolean;
 }
+
+export type UserCreateResponse = {
+    user: UserResponse;
+    temporaryPassword: string;
+}
