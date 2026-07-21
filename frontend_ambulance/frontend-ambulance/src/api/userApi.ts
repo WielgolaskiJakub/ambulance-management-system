@@ -3,6 +3,7 @@ import type {
     UserResponse,
     UserRole,
     UserCreateResponse,
+    UserTemporaryPasswordResetResponse,
 } from "../types/user";
 
 export type CreateUserRequest = {
@@ -64,4 +65,13 @@ export async function deleteUserById(
     id:number
 ):Promise<void>{
     await axiosClient.delete<void>(`/api/v1/users/${id}`);
+}
+
+export async function resetTemporaryPasswordByAdmin(
+    id:number
+):Promise<UserTemporaryPasswordResetResponse>{
+    const response = await axiosClient.patch<UserTemporaryPasswordResetResponse>(
+        `/api/v1/users/${id}/temporary-password/reset`
+    );
+    return response.data;
 }

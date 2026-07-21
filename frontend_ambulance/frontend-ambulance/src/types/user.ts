@@ -22,3 +22,8 @@ export type UserCreateResponse = {
     user: UserResponse;
     temporaryPassword: string;
 }
+
+export type UserTemporaryPasswordResetResponse = {
+    username: string;
+    temporaryPassword: string;
+}

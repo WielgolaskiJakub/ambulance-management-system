@@ -1,8 +1,14 @@
-import type { UserResponse, UserRole, UserCreateResponse } from "../types/user";
+import type {
+    UserResponse,
+    UserRole,
+    UserCreateResponse,
+    UserTemporaryPasswordResetResponse,
+} from "../types/user";
 import {
     createUser,
     getAllUsers,
-    updateUserByPatchAdmin
+    updateUserByPatchAdmin,
+    resetTemporaryPasswordByAdmin,
 } from "../api/userApi";
 
 import axios from "axios";
@@ -59,6 +65,8 @@ export function ManagerUsersPage() {
     const [users, setUsers] = useState<UserResponse[]>([]);
     const [selectedUser, setSelectedUser] = useState<UserResponse | null>(null);
     const [createdUserCredentials, setCreatedUserCredentials] = useState<UserCreateResponse | null>(null);
+    const [resetUserCredentials, setResetUserCredentials] = useState<UserTemporaryPasswordResetResponse | null>(null);
+    const [resettingPassword, setResettingPassword] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [roleFilter, setRoleFilter] = useState<UserRole | "ALL">("ALL");
@@ -253,6 +261,45 @@ export function ManagerUsersPage() {
         }
     }
 
+    async function handleResetTemporaryPassword() {
+        if (editedUserId === null || editForm === null) {
+            return;
+        }
+        const confirmed = window.confirm(
+            `Zresetować hasło użytkownika ${editForm.firstName} ${editForm.lastName}?`
+        );
+
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            setResettingPassword(true);
+
+            const resetCredentials = await resetTemporaryPasswordByAdmin(editedUserId);
+
+            closeEditForm();
+            setResetUserCredentials(resetCredentials);
+        
+            showToast("Wygenerowano nowe hasło tymczasowe.",
+                "success"
+            );
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                showToast(error.response?.data?.message ??
+                    `Nie udało się zresetować hasła. Kod: ${error.response?.status ?? "brak odpowiedzi"
+                    }`,
+                    "error"
+                );
+                return;
+            }
+            showToast("Wystąpił nieznany błąd podczas resetowania hasła",
+                "error"
+            );
+        } finally {
+            setResettingPassword(false);
+        }
+    }
 
     function canEditUser(user: UserResponse): boolean {
         if (isAdmin) {
@@ -305,6 +352,24 @@ export function ManagerUsersPage() {
             showToast("Dane logowania zostały skopiowane.", "success");
         } catch {
             showToast("Nie udało się skopiować danych logowania.", "error")
+        }
+    }
+
+    async function copyResetUserCredentials() {
+        if (resetUserCredentials === null) {
+            return;
+        }
+
+        const credentials = [
+            `Login: ${resetUserCredentials.username}`,
+            `Hasło tymczasowe: ${resetUserCredentials.temporaryPassword}`
+        ].join("\n");
+
+        try {
+            await navigator.clipboard.writeText(credentials);
+            showToast("Dane logowania zostały skopiowane.", "success");
+        } catch {
+            showToast("Nie udało się skopiować danych logowania", "error")
         }
     }
 
@@ -591,6 +656,68 @@ export function ManagerUsersPage() {
                 </div>
             )}
 
+            {resetUserCredentials && (
+                <div className="employee-details-overlay">
+                    <section
+                        className="employee-details created-user-credentials"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="reset-user-credentials-title"
+                    >
+                        <div className="employee-details__header">
+                            <div>
+                                <h2 id="reset-user-credentials-title">
+                                    Hasło zostało zresetowane
+                                </h2>
+
+                                <p>
+                                    Przekaż te dane pracownikowi. Hasło wyświetla się tylko teraz.
+                                </p>
+                            </div>
+
+                            <button
+                                className="employee-details__close"
+                                type="button"
+                                onClick={() => setResetUserCredentials(null)}
+                                aria-label="Zamknij"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="employee-details__grid created-user-credentials__grid">
+                            <div>
+                                <span>Login</span>
+                                <strong>{resetUserCredentials.username}</strong>
+                            </div>
+
+                            <div className="created-user-credentials__password">
+                                <span>Nowe hasło tymczasowe</span>
+                                <strong>{resetUserCredentials.temporaryPassword}</strong>
+                            </div>
+                        </div>
+
+                        <div className="employee-details__actions">
+                            <button
+                                className="employee-details__secondary-button"
+                                type="button"
+                                onClick={copyResetUserCredentials}
+                            >
+                                Kopiuj dane logowania
+                            </button>
+
+                            <button
+                                className="employee-details__secondary-button"
+                                type="button"
+                                onClick={() => setResetUserCredentials(null)}
+                            >
+                                Zamknij
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            )}
+
             {selectedUser && (
                 <div className="employee-details-overlay">
                     <section
@@ -664,7 +791,9 @@ export function ManagerUsersPage() {
                             </div>
                         </div>
 
+
                         <div className="employee-details__actions">
+
                             <button
                                 className="employee-details__secondary-button"
                                 type="button"
@@ -853,7 +982,18 @@ export function ManagerUsersPage() {
                                     </p>
                                 )}
 
+
                                 <div className="employee-edit__actions">
+
+                                    <button
+                                        className="employee-details__reset-password-button"
+                                        type="button"
+                                        onClick={handleResetTemporaryPassword}
+                                        disabled={resettingPassword}
+                                    >
+                                        {resettingPassword ? "Resetowanie..." : "Resetuj hasło"}
+                                    </button>
+
                                     <button
                                         type="button"
                                         className="employee-details__secondary-button"
@@ -868,6 +1008,7 @@ export function ManagerUsersPage() {
                                     >
                                         {updating ? "Zapisywanie..." : "Zapisz zmiany"}
                                     </button>
+
                                 </div>
                             </form>
                         </section>

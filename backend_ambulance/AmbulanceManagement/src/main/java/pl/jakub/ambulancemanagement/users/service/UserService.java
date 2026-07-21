@@ -229,15 +229,23 @@ public class UserService {
         userRepository.save(currentUser);
     }
 
-    public void resetTemporaryPasswordByAdmin(AdminResetTemporaryPasswordRequest request, long id) {
+   public UserTemporaryPasswordResetResponse resetTemporaryPasswordByAdmin(long id){
         User userToUpdate = getUserById(id);
 
         validateCurrentUserCanManage(userToUpdate);
-        userToUpdate.setPasswordHash(passwordEncoder.encode(request.getTemporaryPassword()));
+
+        String temporaryPassword = generateTemporaryPassword();
+
+        userToUpdate.setPasswordHash(passwordEncoder.encode(temporaryPassword));
         userToUpdate.setMustChangePassword(true);
 
         userRepository.save(userToUpdate);
-    }
+
+        return new UserTemporaryPasswordResetResponse(
+                userToUpdate.getUsername(),
+                temporaryPassword
+        );
+   }
 
     public void changePasswordByUser(UserChangePasswordRequest request) {
         User currentUser = currentUserService.getCurrentUser();

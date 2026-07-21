@@ -492,3 +492,22 @@
     grid-column: auto;
   }
 } 
+.employee-details__reset-password-button {
+    border: 1px solid #f59e0b;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background-color: #f59e0b;
+    color: #1f2937;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.employee-details__reset-password-button:hover:not(:disabled) {
+    background-color: #d97706;
+    border-color: #d97706;
+}
+
+.employee-details__reset-password-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+}

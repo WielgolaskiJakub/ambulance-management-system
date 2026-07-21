@@ -90,11 +90,12 @@ public class UserController {
 
     @PatchMapping("/{id}/temporary-password/reset")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void resetTemporaryPasswordByAdmin(@PathVariable long id,
-                                              @Valid @RequestBody AdminResetTemporaryPasswordRequest request) {
-        userService.resetTemporaryPasswordByAdmin(request, id);
+    public UserTemporaryPasswordResetResponse resetTemporaryPasswordByAdmin(
+            @PathVariable long id
+    ){
+        return userService.resetTemporaryPasswordByAdmin(id);
     }
+
 
     @PatchMapping("/me/password")
     @PreAuthorize("isAuthenticated()")
