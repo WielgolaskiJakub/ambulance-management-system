@@ -8,10 +8,19 @@ import type { CrewMemberOptionResponse } from "./crewMemberApi";
 
 export type SystemRouteMemberSource = "SUPPORT_SHIFT_TEAM";
 
-export type ExternalRouteMemberSource = Exclude<
-    RouteMemberSource,
-    "SHIFT_TEAM" | "SUPPORT_SHIFT_TEAM"
+export type AnonymousMedicalRouteMemberSource = "NPL" | "POZ";
+
+export type NamedExternalRouteMemberSource = Exclude<RouteMemberSource,
+| "SHIFT_TEAM"
+| "SUPPORT_SHIFT_TEAM"
+| "NPL"
+| "POZ"
 >;
+
+export type ExternalRouteMemberSource = 
+| NamedExternalRouteMemberSource
+| AnonymousMedicalRouteMemberSource;
+
 
 export type RouteMemberCreateRequest =
     | {
@@ -25,6 +34,12 @@ export type RouteMemberCreateRequest =
           memberName: string;
           memberRole: RouteMemberRole;
           memberSource: ExternalRouteMemberSource;
+      }
+      | {
+         userId?: never;
+         memberName?: never;
+         memberRole: "DOCTOR" | "NURSE";
+         memberSource: AnonymousMedicalRouteMemberSource;
       };
 
 export async function addRouteMemberToRoute(

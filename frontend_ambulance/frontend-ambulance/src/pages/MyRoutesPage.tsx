@@ -69,8 +69,6 @@ const initialAddRouteMemberForm: AddRouteMemberFormState = {
 const externalRouteMemberSources: ExternalRouteMemberSource[] = [
   "SOR_STAFF",
   "HOSPITAL_STAFF",
-  "NPL_DOCTOR",
-  "NPL_NURSE",
   "OTHER",
 ];
 
@@ -81,6 +79,47 @@ const manualRouteMemberRoles: RouteMemberRole[] = [
   "DOCTOR",
   "OTHER",
 ];
+
+function getAutomaticMedicalMemberSource(
+  route: RouteResponse
+): "NPL" | "POZ" | null {
+  const orderSources = route.transportOrders.map((order) => order.source);
+
+  if (orderSources.includes("NIGHT_MEDICAL_ASSISTANCE")) {
+    return "NPL";
+  }
+
+  if (orderSources.includes("PRIMARY_HEALTH_CARE")) {
+    return "POZ";
+  }
+  return null;
+}
+
+function isAnonymousMedicalSource(
+  source: ExternalRouteMemberSource
+): source is "NPL" | "POZ" {
+  return source === "NPL" || source === "POZ";
+}
+
+function getAvailableExternalRouteMemberSources(
+  route: RouteResponse
+): ExternalRouteMemberSource[] {
+  const orderSources = new Set(
+    route.transportOrders.map((order) => order.source)
+  );
+
+  return externalRouteMemberSources.filter((source) => {
+    if (source === "NPL") {
+      return orderSources.has("NIGHT_MEDICAL_ASSISTANCE");
+    }
+
+    if (source === "POZ") {
+      return orderSources.has("PRIMARY_HEALTH_CARE");
+    }
+
+    return true;
+  });
+}
 
 function formatTransportOrders(
   orders: RouteTransportOrderReference[]): string {
@@ -95,7 +134,7 @@ function getTransportOrderDisplayName(
   orders: RouteTransportOrderReference[],
   transportOrderId: number
 ): string {
-  return  String(
+  return String(
     orders.find((order) => order.id === transportOrderId)?.orderNumber ??
     `Zlecenie #${transportOrderId}`
   );
@@ -381,6 +420,19 @@ export function MyRoutesPage() {
         userId,
         memberRole: "SANITARY_WORKER",
         memberSource: "SUPPORT_SHIFT_TEAM",
+      };
+    } else if (isAnonymousMedicalSource(form.memberSource)) {
+      if (
+        form.memberRole !== "DOCTOR" &&
+        form.memberRole !== "NURSE"
+      ) {
+        setErrorMessage("Wybierz lekarza albo pielęgniarkę");
+        return;
+      }
+
+      request = {
+        memberRole: form.memberRole,
+        memberSource: form.memberSource,
       };
     } else {
       const memberName = form.memberName.trim();
@@ -758,14 +810,17 @@ export function MyRoutesPage() {
                             : "my-route-card__mode-button"
                         }
                         type="button"
-                        onClick={() =>
+                        onClick={() => {
+                          const automaticSource = getAutomaticMedicalMemberSource(route);
+
                           updateAddMemberForm(route.id, {
                             mode: "EXTERNAL",
                             userId: "",
-                            memberRole: "PARAMEDIC",
-                            memberSource: "SOR_STAFF",
+                            memberName: "",
+                            memberRole: automaticSource ? "DOCTOR" : "PARAMEDIC",
+                            memberSource: automaticSource ?? "SOR_STAFF",
                           })
-                        }
+                        }}
                       >
                         Szpital
                       </button>
@@ -777,9 +832,7 @@ export function MyRoutesPage() {
                           className="my-route-card__add-member-input"
                           value={getAddMemberForm(route.id).userId}
                           onChange={(event) =>
-                            updateAddMemberForm(route.id, {
-                              userId: event.target.value,
-                            })
+                            updateAddMemberForm(route.id, { userId: event.target.value })
                           }
                         >
                           <option value="">Wybierz użytkownika</option>
@@ -789,7 +842,9 @@ export function MyRoutesPage() {
                             </option>
                           ))}
                         </select>
-                      ) : (
+                      ) : !isAnonymousMedicalSource(
+                        getAddMemberForm(route.id).memberSource
+                      ) ? (
                         <input
                           className="my-route-card__add-member-input"
                           placeholder="Imię i nazwisko, np. Andrzej Kowalski"
@@ -800,7 +855,7 @@ export function MyRoutesPage() {
                             })
                           }
                         />
-                      )}
+                      ) : null}
 
                       {getAddMemberForm(route.id).mode === "EXTERNAL" && (
                         <select
@@ -812,7 +867,10 @@ export function MyRoutesPage() {
                             })
                           }
                         >
-                          {manualRouteMemberRoles.map((role) => (
+                          {(isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource)
+                            ? (["DOCTOR", "NURSE"] as const)
+                            : manualRouteMemberRoles
+                          ).map((role) => (
                             <option key={role} value={role}>
                               {routeMemberRoleLabels[role]}
                             </option>
@@ -820,23 +878,33 @@ export function MyRoutesPage() {
                         </select>
                       )}
 
-                      {getAddMemberForm(route.id).mode === "EXTERNAL" && (
-                        <select
-                          className="my-route-card__add-member-input"
-                          value={getAddMemberForm(route.id).memberSource}
-                          onChange={(event) =>
-                            updateAddMemberForm(route.id, {
-                              memberSource: event.target.value as ExternalRouteMemberSource,
-                            })
-                          }
-                        >
-                          {externalRouteMemberSources.map((source) => (
-                            <option key={source} value={source}>
-                              {routeMemberSourceLabels[source]}
-                            </option>
-                          ))}
-                        </select>
-                      )}
+                      {getAddMemberForm(route.id).mode === "EXTERNAL" &&
+                        isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource) && (
+                          <span className="my-route-card__automatic-member-source">
+                            {routeMemberSourceLabels[getAddMemberForm(route.id).memberSource]}
+                          </span>
+                        )}
+
+                      {getAddMemberForm(route.id).mode === "EXTERNAL" &&
+                        !isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource) && (
+                          <select
+                            className="my-route-card__add-member-input"
+                            value={getAddMemberForm(route.id).memberSource}
+                            onChange={(event) =>
+                              updateAddMemberForm(route.id, {
+                                memberSource: event.target.value as ExternalRouteMemberSource,
+                                memberName: "",
+                                memberRole: "PARAMEDIC",
+                              })
+                            }
+                          >
+                            {getAvailableExternalRouteMemberSources(route).map((source) => (
+                              <option key={source} value={source}>
+                                {routeMemberSourceLabels[source]}
+                              </option>
+                            ))}
+                          </select>
+                        )}
 
                       <button
                         className="my-route-card__secondary-button"
@@ -844,9 +912,7 @@ export function MyRoutesPage() {
                         disabled={addingMemberRouteId === route.id}
                         onClick={() => handleAddRouteMember(route.id)}
                       >
-                        {addingMemberRouteId === route.id
-                          ? "Dodawanie..."
-                          : "Dodaj członka"}
+                        {addingMemberRouteId === route.id ? "Dodawanie..." : "Dodaj członka"}
                       </button>
                     </div>
                   </div>

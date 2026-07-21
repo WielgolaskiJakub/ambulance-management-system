@@ -18,8 +18,8 @@ Record<RouteMemberSource,string> = {
     SHIFT_TEAM: "Załoga zmiany",
     SUPPORT_SHIFT_TEAM: "Wsparcie z innej załogi",
     SOR_STAFF: "SOR",
-    NPL_DOCTOR: "Lekarz NPL",
-    NPL_NURSE: "Pielęgniarka NPL",
+    NPL: "NPL",
+    POZ: "POZ",
     HOSPITAL_STAFF: "Oddział",
     OTHER: "Inny"
 }

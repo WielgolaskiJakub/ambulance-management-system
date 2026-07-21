@@ -27,7 +27,15 @@ public record RouteMemberResponse(
         if (user != null) {
             userId = user.getId();
             fullName = user.getFirstName() + " " + user.getLastName();
-        } else {
+        } else if(routeMember.getSource() == RouteMemberSource.NPL) {
+            fullName = routeMember.getRole() == RouteMemberRole.DOCTOR
+                    ? "Lekarz NPL"
+                    : "Pielęgniarka NPL";
+        } else if(routeMember.getSource() == RouteMemberSource.POZ) {
+            fullName = routeMember.getRole() == RouteMemberRole.DOCTOR
+                    ? "Lekarz POZ"
+                    : "Pielęgniarka POZ";
+        }else {
             fullName = routeMember.getMemberName();
         }
 

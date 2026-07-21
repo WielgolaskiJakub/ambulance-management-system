@@ -11,8 +11,8 @@ export type RouteMemberSource =
   | "SUPPORT_SHIFT_TEAM"
   | "HOSPITAL_STAFF"
   | "SOR_STAFF"
-  | "NPL_DOCTOR"
-  | "NPL_NURSE"
+  | "NPL"
+  | "POZ"
   | "OTHER";
 
 export type RouteMemberResponse = {
