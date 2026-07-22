@@ -22,7 +22,15 @@ export function LoginPage() {
 
     try {
       const response = await login({ username, password });
+      
       localStorage.setItem("token", response.token);
+
+      localStorage.setItem("mustChangePassword", String(response.mustChangePassword));
+
+      if(response.mustChangePassword){
+        navigate("/change-temporary-password", { replace: true});
+        return;
+      }
       
       const decodedToken = jwtDecode<JwtPayload>(response.token);
 

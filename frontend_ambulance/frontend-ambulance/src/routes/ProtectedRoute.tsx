@@ -56,6 +56,12 @@ export function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  const mustChangePassword = localStorage.getItem("mustChangePassword") === "true";
+
+  if(mustChangePassword){
+    return <Navigate to="/change-temporary-password" replace />
+  }
+
   if (allowedRoles && !allowedRoles.includes(decodedToken.role)) {
     return <Navigate to="/unauthorized" replace />;
   }

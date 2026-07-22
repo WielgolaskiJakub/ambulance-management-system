@@ -12,17 +12,22 @@ export type CreateUserRequest = {
     email: string | null;
     userRole: UserRole;
     canWorkAsSanitary: boolean;
-}
+};
 
 export type UserAdminPatchRequest = {
     firstName: string | null;
     lastName: string | null;
     username: string | null;
-    email: string| null;
+    email: string | null;
     userRole: UserRole | null;
     active: boolean | null;
     canWorkAsSanitary: boolean | null;
-}
+};
+
+export type ChangeTemporaryPasswordRequest = {
+    temporaryPassword: string;
+    newPassword: string;
+};
 
 export async function createUser(
     request: CreateUserRequest
@@ -34,7 +39,7 @@ export async function createUser(
     return response.data;
 }
 
-export async function getAllUsers():Promise<UserResponse[]>{
+export async function getAllUsers(): Promise<UserResponse[]> {
     const response = await axiosClient.get<UserResponse[]>(
         "/api/v1/users"
     );
@@ -43,7 +48,7 @@ export async function getAllUsers():Promise<UserResponse[]>{
 
 export async function getUserById(
     id: number
-):Promise<UserResponse>{
+): Promise<UserResponse> {
     const response = await axiosClient.get<UserResponse>(
         `/api/v1/users/${id}`
     );
@@ -53,7 +58,7 @@ export async function getUserById(
 export async function updateUserByPatchAdmin(
     id: number,
     request: UserAdminPatchRequest
-):Promise<UserResponse>{
+): Promise<UserResponse> {
     const response = await axiosClient.patch<UserResponse>(
         `/api/v1/users/${id}`,
         request
@@ -62,16 +67,25 @@ export async function updateUserByPatchAdmin(
 }
 
 export async function deleteUserById(
-    id:number
-):Promise<void>{
+    id: number
+): Promise<void> {
     await axiosClient.delete<void>(`/api/v1/users/${id}`);
 }
 
 export async function resetTemporaryPasswordByAdmin(
-    id:number
-):Promise<UserTemporaryPasswordResetResponse>{
+    id: number
+): Promise<UserTemporaryPasswordResetResponse> {
     const response = await axiosClient.patch<UserTemporaryPasswordResetResponse>(
         `/api/v1/users/${id}/temporary-password/reset`
     );
     return response.data;
+}
+
+export async function changeTemporaryPassword(
+    request: ChangeTemporaryPasswordRequest
+): Promise<void> {
+    await axiosClient.patch(
+        "/api/v1/users/me/temporary-password",
+        request
+    );
 }

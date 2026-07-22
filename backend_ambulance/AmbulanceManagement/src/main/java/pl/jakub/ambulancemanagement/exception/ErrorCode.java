@@ -15,7 +15,7 @@ public enum ErrorCode {
     PASSWORD_CHANGE_NOT_REQUIRED("PASSWORD_CHANGE_NOT_REQUIRED",
             "error.password.change.not_required", HttpStatus.BAD_REQUEST),
     PASSWORD_CHANGE_REQUIRED("PASSWORD_CHANGE_REQUIRED",
-            "error.password.change_required", HttpStatus.BAD_REQUEST),
+            "error.password.change_required", HttpStatus.FORBIDDEN),
     AMBULANCE_NOT_FOUND("AMBULANCE_NOT_FOUND",
             "error.ambulance.not_found", HttpStatus.NOT_FOUND),
     AMBULANCE_ALREADY_EXIST("AMBULANCE_ALREADY_EXIST",
