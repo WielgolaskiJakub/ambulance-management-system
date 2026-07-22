@@ -29,6 +29,11 @@ export type ChangeTemporaryPasswordRequest = {
     newPassword: string;
 };
 
+export type UserChangePasswordRequest = {
+    oldPassword: string;
+    newPassword: string;
+};
+
 export async function createUser(
     request: CreateUserRequest
 ): Promise<UserCreateResponse> {
@@ -86,6 +91,15 @@ export async function changeTemporaryPassword(
 ): Promise<void> {
     await axiosClient.patch(
         "/api/v1/users/me/temporary-password",
+        request
+    );
+}
+
+export async function changePasswordByUser(
+    request: UserChangePasswordRequest
+):Promise<void>{
+    await axiosClient.patch(
+        "/api/v1/users/me/password",
         request
     );
 }

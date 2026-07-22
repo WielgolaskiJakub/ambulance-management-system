@@ -1,40 +1,26 @@
 import { useState, type SyntheticEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
-import {
-    changeTemporaryPassword
-} from "../api/userApi"
-import "./ChangeTemporaryPasswordPage.css"
 import { Eye, EyeOff } from "lucide-react";
+import {
+    changePasswordByUser
+} from "../api/userApi"
+import { useToast } from "../toast/UseToast";
 
-type JwtPayload = {
-    role: "ADMIN" | "MANAGER" | "DRIVER" | "SANITARY";
-};
 
-export function ChangeTemporaryPasswordPage() {
 
-    const [temporaryPassword, setTemporaryPassword] = useState("");
+export function ChangePasswordPage() {
+
+    const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmedNewPassword, setConfirmedNewPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
-    const [showTemporaryPassword, setShowTemporaryPassword] = useState(false);
+    const [showOldPassword, setShowOldPassword] = useState(false);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmedPassword, setShowConfirmedPassword] = useState(false);
 
-    const navigate = useNavigate();
-    const token = localStorage.getItem("token");
-    const mustChangePassword = localStorage.getItem("mustChangePassword") === "true";
+    const { showToast } = useToast();
 
-    if (!token) {
-        return <Navigate to="/login" replace />
-    }
-
-    if (!mustChangePassword) {
-        return <Navigate to="/" replace />
-    }
-    const decodedToken = jwtDecode<JwtPayload>(token);
 
     async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -44,29 +30,24 @@ export function ChangeTemporaryPasswordPage() {
             setErrorMessage("Nowe hasła muszą być takie same.");
             return;
         }
+        if (oldPassword === newPassword) {
+            setErrorMessage("Nowe hasło musi różnić się od obecnego.");
+            return;
+        }
 
         setSubmitting(true);
 
-
         try {
-            await changeTemporaryPassword({
-                temporaryPassword,
+            await changePasswordByUser({
+                oldPassword,
                 newPassword
             });
-            localStorage.removeItem("mustChangePassword");
-
-            if (
-                decodedToken.role === "ADMIN" ||
-                decodedToken.role === "MANAGER"
-            ) {
-                navigate("/manager/dashboard", { replace: true });
-                return
-            }
-            navigate("/dashboard", { replace: true });
+            showToast("Sukces! Hasło poprawnie zmienione.", "success");
+            setOldPassword("");
+            setNewPassword("");
+            setConfirmedNewPassword("");
         } catch {
-            setErrorMessage(
-                "Nie udało się ustawic nowego hasła. Sprawdź hasło tymczasowe."
-            );
+            showToast("Nie udało się ustawić nowego hasła", "error");
         } finally {
             setSubmitting(false);
         }
@@ -76,9 +57,9 @@ export function ChangeTemporaryPasswordPage() {
         <main className="change-password-page">
             <section className="change-password-card">
                 <header className="change-password-card__header">
-                    <h1>Ustaw własne hasło</h1>
+                    <h1>Ustaw nowe hasło</h1>
                     <p>
-                        To konto ma hasło tymczasowe. Ustaw nowe własne hasło.
+                        W tym miejscu możesz zmienić hasło.
                     </p>
                 </header>
 
@@ -88,18 +69,18 @@ export function ChangeTemporaryPasswordPage() {
                 >
 
                     <div className="change-password-form__field">
-                        <label htmlFor="temporary-password">
-                            Hasło tymczasowe
+                        <label htmlFor="old-password">
+                            Obecne hasło
                         </label>
 
                         <div className="change-password-form__password-input">
                             <input
-                                id="temporary-password"
-                                type={showTemporaryPassword ? "text" : "password"}
+                                id="old-password"
+                                type={showOldPassword ? "text" : "password"}
                                 autoComplete="current-password"
-                                value={temporaryPassword}
+                                value={oldPassword}
                                 onChange={(event) =>
-                                    setTemporaryPassword(event.target.value)
+                                    setOldPassword(event.target.value)
                                 }
                                 required
                             />
@@ -107,13 +88,13 @@ export function ChangeTemporaryPasswordPage() {
                             <button
                                 type="button"
                                 className="change-password-form__toggle-password"
-                                onClick={() => setShowTemporaryPassword((current) => !current)}
+                                onClick={() => setShowOldPassword((current) => !current)}
                                 aria-label={
-                                    showTemporaryPassword ? "Ukryj hasło" : "Pokaż hasło"
+                                    showOldPassword ? "Ukryj hasło" : "Pokaż hasło"
                                 }
-                                title={showTemporaryPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                                title={showOldPassword ? "Ukryj hasło" : "Pokaż hasło"}
                             >
-                                {showTemporaryPassword ? (
+                                {showOldPassword ? (
                                     <EyeOff size={20} aria-hidden="true" />
                                 ) : (
                                     <Eye size={20} aria-hidden="true" />

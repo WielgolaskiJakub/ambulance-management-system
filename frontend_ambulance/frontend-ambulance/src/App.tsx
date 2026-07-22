@@ -18,6 +18,7 @@ import { ManagerEditTransportOrderPage } from "./pages/ManagerEditTransportOrder
 import { ManagerUsersPage } from "./pages/ManagerUsersPage";
 import { ManagerAmbulancesPage } from "./pages/ManagerAmbulancesPage"
 import { ChangeTemporaryPasswordPage } from "./pages/ChangeTemporaryPasswordPage";
+import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
             path="/transport-orders/:orderId/details"
             element={<TransportOrderDetailsPage />}
           />
+          <Route path="/change-password" element={<ChangePasswordPage/>} />
         </Route>
       </Route>
 

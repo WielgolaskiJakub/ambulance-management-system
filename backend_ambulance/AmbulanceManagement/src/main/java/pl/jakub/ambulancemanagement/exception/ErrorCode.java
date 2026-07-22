@@ -157,7 +157,9 @@ public enum ErrorCode {
     USER_MANAGEMENT_ACCESS_DENIED("USER_MANAGEMENT_ACCESS_DENIED",
             "error.user.management_access_denied", HttpStatus.FORBIDDEN),
     AMBULANCE_ALREADY_ACTIVE("AMBULANCE_ALREADY_ACTIVE",
-            "error.ambulance.already.active", HttpStatus.CONFLICT)
+            "error.ambulance.already.active", HttpStatus.CONFLICT),
+    NEW_PASSWORD_SAME_AS_CURRENT("NEW_PASSWORD_SAME_AS_CURRENT",
+            "error.new_password_same_as_current", HttpStatus.CONFLICT),
 
 
 

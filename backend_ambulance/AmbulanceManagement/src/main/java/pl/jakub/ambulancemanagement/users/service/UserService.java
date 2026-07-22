@@ -257,6 +257,9 @@ public class UserService {
         if (!passwordEncoder.matches(request.getOldPassword(), currentUser.getPasswordHash())) {
             throw new ApiException(ErrorCode.INVALID_OLD_PASSWORD);
         }
+        if(passwordEncoder.matches(request.getNewPassword(), currentUser.getPasswordHash())){
+            throw new ApiException(ErrorCode.NEW_PASSWORD_SAME_AS_CURRENT);
+        }
         currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(currentUser);
     }
