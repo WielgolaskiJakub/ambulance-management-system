@@ -36,6 +36,15 @@ public class RouteOrder {
     @JoinColumn(name = "transport_order_id", nullable = false)
     private TransportOrder transportOrder;
 
+    @Column(name = "position", nullable = false)
+    private Integer position;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RouteOrderStatus status;
+
+    @Column(name = "resolved_at")
+    private LocalDateTime resolvedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false,updatable = false)

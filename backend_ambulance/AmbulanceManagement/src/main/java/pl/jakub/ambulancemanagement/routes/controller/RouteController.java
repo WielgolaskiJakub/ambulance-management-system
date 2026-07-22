@@ -20,13 +20,13 @@ public class RouteController {
 
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
-    public List<RouteResponse> getMyRoutes(){
+    public List<RouteResponse> getMyRoutes() {
         return routeService.getMyRoutes();
     }
 
     @GetMapping("/me/{id}")
     @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
-    public RouteResponse getMyRouteById(@PathVariable Long id){
+    public RouteResponse getMyRouteById(@PathVariable Long id) {
         return routeService.getMyRouteById(id);
     }
 
@@ -53,14 +53,25 @@ public class RouteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('DRIVER','SANITARY')")
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRoute(@Valid @RequestBody RouteCreateRequest request) {
         return RouteResponse.fromEntity(routeService.createRoute(request));
     }
 
+    @PostMapping("/{routeId}/transport-orders/{transportOrderId}")
+    @PreAuthorize("hasAnyRole('DRIVER','SANITARY')")
+    public RouteResponse addTransportOrderToRoute(
+            @PathVariable Long routeId,
+            @PathVariable Long transportOrderId) {
+        return RouteResponse.fromEntity(
+                routeService.addTransportOrderToRoute(
+                        routeId,
+                        transportOrderId));
+    }
+
     @PostMapping("/from-order/{transportOrderId}")
-    @PreAuthorize("hasAnyRole('DRIVER')")
+    @PreAuthorize("hasAnyRole('DRIVER','SANITARY')")
     @ResponseStatus(HttpStatus.CREATED)
     public RouteResponse createRouteFromOrder(
             @PathVariable Long transportOrderId,
@@ -77,6 +88,16 @@ public class RouteController {
         return RouteResponse.fromEntity(routeService.startRoute(id));
     }
 
+    @PatchMapping("/{id}/transport-orders/reorder")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public RouteResponse reorderTransportOrders(
+            @PathVariable Long id,
+            @Valid @RequestBody RouteTransportOrdersReorderRequest request) {
+        return RouteResponse.fromEntity(
+                routeService.reorderTransportOrders(id, request)
+        );
+    }
+
     @PatchMapping("/{id}/waiting")
     @PreAuthorize("hasAnyRole('DRIVER','SANITARY')")
     public RouteResponse markRouteAsWaiting(@PathVariable Long id) {
@@ -87,6 +108,22 @@ public class RouteController {
     @PreAuthorize("hasAnyRole('DRIVER','SANITARY')")
     public RouteResponse resumeRoute(@PathVariable Long id) {
         return RouteResponse.fromEntity(routeService.resumeRoute(id));
+    }
+
+    @PatchMapping("/{routeId}/transport-orders/{transportOrderId}/resolve")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public RouteResponse resolveTransportOrder(
+            @PathVariable Long routeId,
+            @PathVariable Long transportOrderId,
+            @Valid @RequestBody RouteOrderResolveRequest request
+    ) {
+        return RouteResponse.fromEntity(
+                routeService.resolveTransportOrder(
+                        routeId,
+                        transportOrderId,
+                        request
+                )
+        );
     }
 
     @PatchMapping("/{id}/finish")

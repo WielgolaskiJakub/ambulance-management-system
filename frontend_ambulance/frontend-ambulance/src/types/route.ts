@@ -8,6 +8,9 @@ export type RouteTransportOrderReference = {
   id: number;
   orderNumber: number;
   source: string;
+  status: string;
+  pickupAddress: string | null;
+  destinationAddress: string | null;
 };
 
 export type RouteResponse = {

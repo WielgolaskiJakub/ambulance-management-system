@@ -1,0 +1,5 @@
+ALTER TABLE route_orders
+ADD COLUMN status VARCHAR(30) NOT NULL DEFAULT 'PENDING';
+
+ALTER TABLE route_orders
+ADD COLUMN resolved_at TIMESTAMP;

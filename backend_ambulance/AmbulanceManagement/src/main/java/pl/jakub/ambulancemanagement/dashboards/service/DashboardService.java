@@ -76,7 +76,7 @@ public class DashboardService {
                             currentTransportOrders = currentRoute == null
                             ? List.of()
                             : routeOrderRepository
-                            .findByRoute_Id(currentRoute.getId())
+                            .findByRoute_IdOrderByPositionAsc(currentRoute.getId())
                             .stream()
                             .map(
                                     ManagerAmbulanceDashboardResponse.CurrentTransportOrder
