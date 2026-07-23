@@ -647,6 +647,7 @@
 .my-route-card__resolve-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
   margin-top: 16px;
 }
@@ -774,13 +775,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  border: 1px solid #475569;
-  border-radius: 8px;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  border: 1px solid #60a5fa;
+  border-radius: 12px;
   background: #1e293b;
-  color: #cbd5e1;
+  color: #bfdbfe;
   cursor: grab;
 }
 
@@ -791,6 +792,11 @@
 .my-route-card__drag-handle:disabled {
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.my-route-card__order-actions {
+  align-self: stretch;
+  align-items: center;
 }
 
 /* Driver workspace refresh */
@@ -1014,7 +1020,7 @@
 }
 
 .my-route-card__drag-handle {
-  border-color: #475569;
+  border-color: #60a5fa;
 }
 
 .my-route-card__add-order {

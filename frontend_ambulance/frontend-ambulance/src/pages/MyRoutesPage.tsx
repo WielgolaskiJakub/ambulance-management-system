@@ -242,20 +242,18 @@ function SortableRouteOrder({
         .filter(Boolean)
         .join(" ")}
     >
-      <button
-        type="button"
-        className="my-route-card__drag-handle"
-        disabled={!canReorder || isReordering}
-        aria-label={
-          canReorder
-            ? `Przeciągnij zlecenie ${order.orderNumber}`
-            : `Zlecenie ${order.orderNumber} ma zablokowaną pozycję`
-        }
-        {...attributes}
-        {...listeners}
-      >
-        {canReorder ? <GripVertical size={20} /> : <LockKeyhole size={17} />}
-      </button>
+      <div className="my-route-card__order-actions">
+        {canCancel && (
+          <button
+            type="button"
+            className="my-route-card__order-cancel-button"
+            disabled={isCancelling}
+            onClick={onCancel}
+          >
+            {isCancelling ? "Anulowanie..." : "Anuluj"}
+          </button>
+        )}
+      </div>
 
       <div className="my-route-card__order-details">
         <div className="my-route-card__order-heading">
@@ -275,18 +273,20 @@ function SortableRouteOrder({
         </span>
       </div>
 
-      <div className="my-route-card__order-actions">
-        {canCancel && (
-          <button
-            type="button"
-            className="my-route-card__order-cancel-button"
-            disabled={isCancelling}
-            onClick={onCancel}
-          >
-            {isCancelling ? "Anulowanie..." : "Anuluj"}
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        className="my-route-card__drag-handle"
+        disabled={!canReorder || isReordering}
+        aria-label={
+          canReorder
+            ? `Przeciągnij zlecenie ${order.orderNumber}`
+            : `Zlecenie ${order.orderNumber} ma zablokowaną pozycję`
+        }
+        {...attributes}
+        {...listeners}
+      >
+        {canReorder ? <GripVertical size={24} /> : <LockKeyhole size={20} />}
+      </button>
     </div>
   );
 }
