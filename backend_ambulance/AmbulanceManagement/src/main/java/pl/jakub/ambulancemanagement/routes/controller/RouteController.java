@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import pl.jakub.ambulancemanagement.routes.dto.*;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
+import pl.jakub.ambulancemanagement.transport_orders.dto.CancelTransportOrderRequest;
 
 import java.util.List;
 
@@ -119,6 +120,22 @@ public class RouteController {
     ) {
         return RouteResponse.fromEntity(
                 routeService.resolveTransportOrder(
+                        routeId,
+                        transportOrderId,
+                        request
+                )
+        );
+    }
+
+    @PatchMapping("/{routeId}/transport-orders/{transportOrderId}/cancel")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public RouteResponse cancelTransportOrderInRoute(
+            @PathVariable Long routeId,
+            @PathVariable Long transportOrderId,
+            @Valid @RequestBody CancelTransportOrderRequest request
+    ) {
+        return RouteResponse.fromEntity(
+                routeService.cancelTransportOrderInRoute(
                         routeId,
                         transportOrderId,
                         request

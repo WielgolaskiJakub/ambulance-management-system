@@ -6,7 +6,7 @@ export type RouteStatus =
 
 export type RouteTransportOrderReference = {
   id: number;
-  orderNumber: number;
+  orderNumber: string;
   source: string;
   status: string;
   pickupAddress: string | null;

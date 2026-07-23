@@ -9,6 +9,7 @@ import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
     List<RouteOrder> findByRoute_IdOrderByPositionAsc(Long routeId);
@@ -37,5 +38,10 @@ public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
     List<RouteOrder> findByRoute_IdAndStatusOrderByPositionAsc(
             Long routeId,
             RouteOrderStatus status
+    );
+
+    Optional<RouteOrder> findByRoute_IdAndTransportOrder_Id(
+            Long routeId,
+            Long transportOrderId
     );
 }

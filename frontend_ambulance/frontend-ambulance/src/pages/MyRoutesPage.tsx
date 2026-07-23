@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { formatDateTime } from "../utils/dateTimeFormat";
 import {
+  resolveTransportOrder,
   addTransportOrderToRoute,
   reorderTransportOrders,
   finishRoute,
@@ -190,6 +191,7 @@ export function MyRoutesPage() {
   const [selectedTransportOrderIdByRouteId, setSelectedTransportOrderIdByRouteId] = useState<Record<number, string>>({});
   const [addingTransportOrderRouteId, setAddingTransportOrderRouteId] = useState<number | null>(null);
   const [reorderingRouteId, setReorderingRouteId] = useState<number | null>(null);
+  const [resolvingTransportOrderId, setResolvingTransportOrderId] = useState<number | null>(null);
 
   function toggleAddMemberForm(routeId: number) {
     setExpandedAddMemberRouteId((previousRouteId) =>
@@ -658,6 +660,56 @@ export function MyRoutesPage() {
     }
   }
 
+  async function handleResolveTransportOrder(
+    routeId: number,
+    transportOrder: RouteTransportOrderReference,
+    action: RouteOrderFinishAction
+  ) {
+    const confirmationMessage =
+      action === "COMPLETE"
+        ? `Potwierdzasz odwiezienie pacjenta ze zlecenia ${transportOrder.orderNumber}?`
+        : `Potwierdzasz, że pacjent ze zlecenia ${transportOrder.orderNumber} został odwieziony i oczekuje na odbiór?`;
+
+    if (!window.confirm(confirmationMessage)) {
+      return;
+    }
+
+    try {
+      setResolvingTransportOrderId(transportOrder.id)
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      const updatedRoute = await resolveTransportOrder(
+        routeId,
+        transportOrder.id,
+        action
+      );
+
+      setRoutes((currentRoutes) =>
+        currentRoutes.map((route) =>
+          route.id === routeId ? updatedRoute : route
+        )
+      );
+
+      setSuccessMessage(
+        action === "COMPLETE"
+          ? `Zlecenie ${transportOrder.orderNumber} zostało zakończone.`
+          : `Pacjent ze zlecenia ${transportOrder.orderNumber} oczekuje na odbiór.`
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setErrorMessage(
+          `Nie udało się rozliczyć zlecenia: ${error.response?.status ?? "brak odpowiedzi"
+          }`
+        );
+        return;
+      }
+      setErrorMessage("Nieznany błąd rozliczania zlecenia.");
+    } finally {
+      setResolvingTransportOrderId(null);
+    }
+  }
+
   function openFinishRouteModal(route: RouteResponse) {
     const orderActionByTransportOrderId = Object.fromEntries(
       route.transportOrders.map((transportOrder) => [
@@ -809,15 +861,15 @@ export function MyRoutesPage() {
       ) : (
         <section className="my-routes-list">
           {activeRoutes.map((route) => {
-           
-           const completedTransportOrders = route.transportOrders.filter(
-            (order) => order.status === "COMPLETED"
-           );
 
-           const currentStartAddress =
-           completedTransportOrders.at(-1)?.destinationAddress ?? route.startAddress;
-           
-           const nextTransportOrder = route.transportOrders.find(
+            const completedTransportOrders = route.transportOrders.filter(
+              (order) => order.status === "COMPLETED"
+            );
+
+            const currentStartAddress =
+              completedTransportOrders.at(-1)?.destinationAddress ?? route.startAddress;
+
+            const nextTransportOrder = route.transportOrders.find(
               (order) => order.status === "IN_PROGRESS"
             );
 
@@ -918,6 +970,40 @@ export function MyRoutesPage() {
                       ? `${currentStartAddress} → ${nextTransportOrder.destinationAddress}`
                       : "Brak zleceń"}
                   </p>
+
+                  {route.status === "IN_PROGRESS" && nextTransportOrder && (
+                    <div className="my-route-card__resolve-actions">
+                      <button
+                        type="button"
+                        className="my-route-card__complete-order-button"
+                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
+                        onClick={() => handleResolveTransportOrder(
+                          route.id,
+                          nextTransportOrder,
+                          "COMPLETE"
+                        )
+                        }
+                      >
+                        {resolvingTransportOrderId === nextTransportOrder.id
+                          ? "Zapisywanie..."
+                          : "Pacjent dowieziony"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="my-route-card__return-order-button"
+                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
+                        onClick={() => handleResolveTransportOrder(
+                          route.id,
+                          nextTransportOrder,
+                          "WAITING_FOR_PICKUP"
+                        )
+                        }
+                      >
+                        Pacjent oczekuje na odbiór
+                      </button>
+                    </div>
+                  )}
 
                   {route.notes && (
                     <p className="my-route-card__row">

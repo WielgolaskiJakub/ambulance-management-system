@@ -164,6 +164,10 @@ public enum ErrorCode {
             "error.route_transport_order_cannot_be_reordered", HttpStatus.BAD_REQUEST),
     ROUTE_CANNOT_ACCEPT_TRANSPORT_ORDERS("ROUTE_CANNOT_ACCEPT_TRANSPORT_ORDERS",
             "error.route_cannot_be_accepted", HttpStatus.BAD_REQUEST),
+    ROUTE_TRANSPORT_ORDER_CANNOT_BE_CANCELLED("ROUTE_TRANSPORT_ORDER_CANNOT_BE_CANCELLED",
+            "error.route_transport_order_cannot_be_cancelled", HttpStatus.BAD_REQUEST),
+    TRANSPORT_ORDER_CANNOT_BE_CANCELLED("TRANSPORT_ORDER_CANNOT_BE_CANCELLED",
+            "error.transport_order_cannot_be_cancelled", HttpStatus.BAD_REQUEST),
 
 
 

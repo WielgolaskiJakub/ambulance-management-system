@@ -19,7 +19,6 @@ public class RouteFinishRequest {
     private String notes;
 
     @NotNull
-    @NotEmpty
     private List<RouteFinishOrderItemRequest> orders;
 
 }

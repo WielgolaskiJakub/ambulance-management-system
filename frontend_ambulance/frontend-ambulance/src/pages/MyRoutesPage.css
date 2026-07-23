@@ -659,3 +659,47 @@
   color: #d1d5db;
   font-size: 14px;
 }
+.my-route-card__resolve-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.my-route-card__complete-order-button,
+.my-route-card__return-order-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-route-card__complete-order-button {
+  border: none;
+  background: #22c55e;
+  color: #052e16;
+}
+
+.my-route-card__return-order-button {
+  border: 1px solid #f59e0b;
+  background: #451a03;
+  color: #fef3c7;
+}
+
+.my-route-card__complete-order-button:disabled,
+.my-route-card__return-order-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .my-route-card__resolve-actions {
+    flex-direction: column;
+  }
+
+  .my-route-card__complete-order-button,
+  .my-route-card__return-order-button {
+    width: 100%;
+  }
+}

@@ -100,3 +100,15 @@ export async function addTransportOrderToRoute(
 
   return response.data;
 }
+
+export async function resolveTransportOrder(
+  routeId: number,
+  transportOrderId: number,
+  action: RouteOrderFinishAction
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}/resolve`,
+    { action }
+  );
+  return response.data
+}

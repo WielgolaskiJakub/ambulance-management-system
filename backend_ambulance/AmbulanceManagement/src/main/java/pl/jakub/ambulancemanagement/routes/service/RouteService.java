@@ -28,6 +28,7 @@ import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
+import pl.jakub.ambulancemanagement.transport_orders.dto.CancelTransportOrderRequest;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRepository;
@@ -328,7 +329,11 @@ public class RouteService {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_STARTED);
         }
 
-        List<RouteOrder> routeOrders = routeOrderRepository.findByRoute_IdOrderByPositionAsc(route.getId());
+        List<RouteOrder> routeOrders =
+                routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(
+                        route.getId(),
+                        RouteOrderStatus.PENDING
+                );
 
         if (routeOrders.isEmpty()) {
             throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
@@ -420,11 +425,64 @@ public class RouteService {
 
             case WAITING_FOR_PICKUP -> {
                 transportOrder.setStatus(TransportStatus.WAITING_FOR_PICKUP);
-                nextRouteOrder.setStatus(RouteOrderStatus.RETURNED_TO_QUEUE);
+                nextRouteOrder.setStatus(RouteOrderStatus.COMPLETED);
             }
         }
 
         nextRouteOrder.setResolvedAt(now);
+
+        return routeRepository.save(route);
+    }
+
+    @Transactional
+    public Route cancelTransportOrderInRoute(
+            Long routeId,
+            Long transportOrderId,
+            CancelTransportOrderRequest request
+    ) {
+        Route route = getRouteForCurrentUser(routeId);
+
+        if(route.getStatus() != RouteStatus.IN_PROGRESS
+        && route.getStatus() != RouteStatus.CREATED) {
+            throw new ApiException(ErrorCode.ROUTE_TRANSPORT_ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        RouteOrder routeOrder = routeOrderRepository.findByRoute_IdAndTransportOrder_Id(
+                routeId,
+                transportOrderId)
+                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE));
+
+        if(routeOrder.getStatus() != RouteOrderStatus.PENDING){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        TransportOrder transportOrder = routeOrder.getTransportOrder();
+
+        if(transportOrder.getStatus() == TransportStatus.CANCELLED){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
+        }
+        if(transportOrder.getStatus() == TransportStatus.COMPLETED){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_COMPLETED);
+        }
+
+        User cancelledBy = currentUserService.getCurrentUser();
+
+        if(!Boolean.TRUE.equals(cancelledBy.getActive())){
+            throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        transportOrder.setStatus(TransportStatus.CANCELLED);
+        transportOrder.setCancelledAt(now);
+        transportOrder.setCancelledBy(cancelledBy);
+        transportOrder.setCancelReason(request.getCancelReason());
+        transportOrder.setCancelDescription(
+                normalizeNullableText(request.getCancelDescription())
+        );
+
+        routeOrder.setStatus(RouteOrderStatus.CANCELLED);
+        routeOrder.setResolvedAt(now);
 
         return routeRepository.save(route);
     }
@@ -442,9 +500,6 @@ public class RouteService {
                         RouteOrderStatus.PENDING
                 );
 
-        if (routeOrders.isEmpty()) {
-            throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
-        }
 
         Map<Long, RouteOrderFinishAction> actionsByOrderId = new HashMap<>();
 
@@ -509,7 +564,7 @@ public class RouteService {
 
                 case WAITING_FOR_PICKUP -> {
                     transportOrder.setStatus(TransportStatus.WAITING_FOR_PICKUP);
-                    routeOrder.setStatus(RouteOrderStatus.RETURNED_TO_QUEUE);
+                    routeOrder.setStatus(RouteOrderStatus.COMPLETED);
                     routeOrder.setResolvedAt(now);
                 }
 
