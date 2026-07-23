@@ -1,5 +1,7 @@
 package pl.jakub.ambulancemanagement.routes.dto;
 
+import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
+import pl.jakub.ambulancemanagement.route_orders.model.RouteOrderStatus;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
 import pl.jakub.ambulancemanagement.transport_orders.model.*;
 
@@ -11,15 +13,18 @@ public record RouteTransportOrderSummaryResponse(
         TransportOrderType type,
         TransportSource source,
         TransportPriority priority,
-        TransportStatus status,
+        TransportStatus transportOrderStatus,
+        RouteOrderStatus routeOrderStatus,
         String pickupAddress,
         String destinationAddress,
         String description,
         List<TransportOrderPatientDataResponse> patients
 ) {
     public static RouteTransportOrderSummaryResponse fromEntity(
-            TransportOrder order,
+            RouteOrder routeOrder,
             List<TransportOrderPatientDataResponse> patients) {
+
+        TransportOrder order = routeOrder.getTransportOrder();
         return new RouteTransportOrderSummaryResponse(
                 order.getId(),
                 order.getOrderNumber(),
@@ -27,6 +32,7 @@ public record RouteTransportOrderSummaryResponse(
                 order.getSource(),
                 order.getPriority(),
                 order.getStatus(),
+                routeOrder.getStatus(),
                 order.getPickupAddress(),
                 order.getDestinationAddress(),
                 order.getDescription(),

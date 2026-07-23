@@ -480,33 +480,6 @@
   font-weight: 700;
 }
 
-.my-routes-modal__orders {
-  display: grid;
-  gap: 12px;
-}
-
-.my-routes-modal__orders h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.my-routes-modal__order-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 10px 12px;
-  border: 1px solid #334155;
-  border-radius: 10px;
-  background: #0f172a;
-}
-
-.my-routes-modal__order-row select {
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-weight: 700;
-}
-
 .my-routes-modal__actions {
   display: flex;
   justify-content: flex-end;
@@ -663,14 +636,14 @@
 
 .my-route-card__complete-order-button {
   border: none;
-  background: #22c55e;
+  background: #22c55e;  
   color: #052e16;
 }
 
 .my-route-card__return-order-button {
-  border: 1px solid #f59e0b;
-  background: #451a03;
-  color: #fef3c7;
+  border: 1px solid #490bf5;
+  background: #0628c2;
+  color: #fffcfc;
 }
 
 .my-route-card__complete-order-button:disabled,
@@ -775,7 +748,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
+  width: 72px;
   min-width: 52px;
   height: 52px;
   border: 1px solid #60a5fa;
@@ -1096,4 +1069,23 @@
   .my-route-card__actions > button {
     width: 100%;
   }
+}
+
+.my-route-card__paper-order-reminder {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #451a03;
+  color: #fef3c7;
+  line-height: 1.45;
+}
+
+.my-route-card__paper-order-reminder svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #fbbf24;
 }

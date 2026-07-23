@@ -16,6 +16,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  AlertTriangle,
   GripVertical,
   LockKeyhole,
   MapPin,
@@ -78,8 +79,6 @@ import { getTransportCancelOptions } from "../utils/transportOrderLabels";
 type FinishRouteModalState = {
   routeId: number;
   finishOdometerLastThree: string;
-  orderActionByTransportOrderId: Record<number, RouteOrderFinishAction>;
-  transportOrders: RouteTransportOrderReference[];
 }
 
 type CancelRouteOrderModalState = {
@@ -173,24 +172,22 @@ function formatTransportOrders(
   return orders.map((order) => `${order.orderNumber}`).join(", ");
 }
 
-function getTransportOrderDisplayName(
-  orders: RouteTransportOrderReference[],
-  transportOrderId: number
+
+function getRouteOrderStatusLabel(
+  routeOrderStatus: RouteTransportOrderReference["routeOrderStatus"],
+  transportOrderStatus: string
 ): string {
-  return String(
-    orders.find((order) => order.id === transportOrderId)?.orderNumber ??
-    `Zlecenie #${transportOrderId}`
-  );
-}
+  if (routeOrderStatus === "PENDING") {
+    return "Do realizacji";
+  }
 
-function getRouteOrderStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    IN_PROGRESS: "Do realizacji",
-    COMPLETED: "Zrealizowane",
-    CANCELLED: "Anulowane",
-  };
+  if (routeOrderStatus === "CANCELLED") {
+    return "Anulowane";
+  }
 
-  return labels[status] ?? status;
+  return transportOrderStatus === "WAITING_FOR_PICKUP"
+    ? "Oczekuje na odbiór"
+    : "Zrealizowane";
 }
 
 type SortableRouteOrderProps = {
@@ -260,9 +257,9 @@ function SortableRouteOrder({
           <span className="my-route-card__order-position">{index + 1}</span>
           <span className="my-route-card__order-number">{order.orderNumber}</span>
           <span
-            className={`my-route-card__order-status my-route-card__order-status--${order.status.toLowerCase()}`}
+            className={`my-route-card__order-status my-route-card__order-status--${order.routeOrderStatus.toLowerCase()}`}
           >
-            {getRouteOrderStatusLabel(order.status)}
+            {getRouteOrderStatusLabel(order.routeOrderStatus, order.transportOrderStatus)}
           </span>
         </div>
 
@@ -785,8 +782,8 @@ export function MyRoutesPage() {
     );
 
     if (
-      activeOrder?.status !== "IN_PROGRESS" ||
-      targetOrder?.status !== "IN_PROGRESS"
+      activeOrder?.routeOrderStatus !== "PENDING" ||
+      targetOrder?.routeOrderStatus !== "PENDING"
     ) {
       return;
     }
@@ -954,40 +951,24 @@ export function MyRoutesPage() {
   }
 
   function openFinishRouteModal(route: RouteResponse) {
-    const orderActionByTransportOrderId = Object.fromEntries(
-      route.transportOrders.filter((transportOrder) => transportOrder.status === "IN_PROGRESS")
-        .map((transportOrder) => [
-          transportOrder.id,
-          "COMPLETE" as RouteOrderFinishAction,
-        ])
-    ) as Record<number, RouteOrderFinishAction>;
+    const pendingOrders = route.transportOrders.filter(
+      (order) => order.routeOrderStatus === "PENDING"
+    );
+
+    if (pendingOrders.length > 0) {
+      setSuccessMessage(null);
+      setErrorMessage(
+        `Nie można zakończyć trasy. Rozlicz zlecenia ${formatTransportOrders(pendingOrders)}.`
+      );
+      return;
+    }
+
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     setFinishModal({
       routeId: route.id,
-      transportOrders: route.transportOrders.filter(
-        (transportOrder) => transportOrder.status === "IN_PROGRESS"
-      ),
       finishOdometerLastThree: "",
-      orderActionByTransportOrderId,
-    });
-  }
-
-  function updateFinishOrderAction(
-    transportOrderId: number,
-    action: RouteOrderFinishAction
-  ) {
-    setFinishModal((previous) => {
-      if (!previous) {
-        return previous;
-      }
-
-      return {
-        ...previous,
-        orderActionByTransportOrderId: {
-          ...previous.orderActionByTransportOrderId,
-          [transportOrderId]: action,
-        },
-      };
     });
   }
 
@@ -1011,12 +992,6 @@ export function MyRoutesPage() {
       const updatedRoute = await finishRoute(finishModal.routeId, {
         finishOdometerLastThree,
         notes: null,
-        orders: Object.entries(finishModal.orderActionByTransportOrderId).map(
-          ([transportOrderId, action]) => ({
-            transportOrderId: Number(transportOrderId),
-            action,
-          })
-        ),
       });
 
       setRoutes((currentRoutes) =>
@@ -1059,6 +1034,8 @@ export function MyRoutesPage() {
   const completedRoutes = routes.filter(
     (route) => route.status === "COMPLETED"
   );
+
+
   return (
     <main className="my-routes-page">
       <header className="my-routes-page__header">
@@ -1109,14 +1086,14 @@ export function MyRoutesPage() {
           {activeRoutes.map((route) => {
 
             const completedTransportOrders = route.transportOrders.filter(
-              (order) => order.status === "COMPLETED"
+              (order) => order.routeOrderStatus === "COMPLETED"
             );
 
             const currentStartAddress =
               completedTransportOrders.at(-1)?.destinationAddress ?? route.startAddress;
 
             const nextTransportOrder = route.transportOrders.find(
-              (order) => order.status === "IN_PROGRESS"
+              (order) => order.routeOrderStatus === "PENDING"
             );
 
             return (
@@ -1145,9 +1122,34 @@ export function MyRoutesPage() {
                         : "Brak zleceń do realizacji"}
                     </strong>
                   </section>
-
+                 
+                  {route.status === "IN_PROGRESS" && nextTransportOrder && (
+                    <div className="my-route-card__paper-order-reminder" role="note">
+                      <AlertTriangle size={20} aria-hidden="true" />
+                      <span>
+                        <strong>Przypomnienie:</strong> Po odebraniu dokumentacji wpisz numer{" "}
+                        <strong>{nextTransportOrder.orderNumber}</strong> na papierowym zleceniu.
+                      </span>
+                    </div>
+                 
+                 )}
                   {route.status === "IN_PROGRESS" && nextTransportOrder && (
                     <div className="my-route-card__resolve-actions">
+
+                      <button
+                        type="button"
+                        className="my-route-card__return-order-button"
+                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
+                        onClick={() => handleResolveTransportOrder(
+                          route.id,
+                          nextTransportOrder,
+                          "WAITING_FOR_PICKUP"
+                        )
+                        }
+                      >
+                        Pacjent pozostawiony na konsultacji
+                      </button>
+
                       <button
                         type="button"
                         className="my-route-card__complete-order-button"
@@ -1161,22 +1163,9 @@ export function MyRoutesPage() {
                       >
                         {resolvingTransportOrderId === nextTransportOrder.id
                           ? "Zapisywanie..."
-                          : "Pacjent dowieziony"}
+                          : "Pacjent przekazany"}
                       </button>
 
-                      <button
-                        type="button"
-                        className="my-route-card__return-order-button"
-                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
-                        onClick={() => handleResolveTransportOrder(
-                          route.id,
-                          nextTransportOrder,
-                          "WAITING_FOR_PICKUP"
-                        )
-                        }
-                      >
-                        Pacjent oczekuje na odbiór
-                      </button>
                     </div>
                   )}
 
@@ -1199,8 +1188,8 @@ export function MyRoutesPage() {
                     <SortableContext items={route.transportOrders.map((order) => order.id)} strategy={verticalListSortingStrategy}>
                       <div className="my-route-card__orders-list">
                         {route.transportOrders.map((order, index) => {
-                          const canReorder = order.status === "IN_PROGRESS" && reorderingRouteId !== route.id;
-                          const canCancel = (route.status === "CREATED" || route.status === "IN_PROGRESS") && order.status === "IN_PROGRESS";
+                          const canReorder = order.transportOrderStatus === "PENDING" && reorderingRouteId !== route.id;
+                          const canCancel = (route.status === "CREATED" || route.status === "IN_PROGRESS") && order.routeOrderStatus === "PENDING";
 
                           return (
                             <SortableRouteOrder
@@ -1244,39 +1233,39 @@ export function MyRoutesPage() {
                     </div>
                   </div>
                   <div className="my-route-card__crew-list">
-                  {(routeMembersByRouteId[route.id] ?? []).map((member) => {
-                  const canDelete = !(
-                    member.role === "DRIVER" && member.source === "SHIFT_TEAM"
-                  );
+                    {(routeMembersByRouteId[route.id] ?? []).map((member) => {
+                      const canDelete = !(
+                        member.role === "DRIVER" && member.source === "SHIFT_TEAM"
+                      );
 
-                  return (
-                    <div className="my-route-card__crew-item" key={member.id}>
-                      <strong className="my-route-card__crew-role">
-                        {routeMemberRoleLabels[member.role]}
-                      </strong>
+                      return (
+                        <div className="my-route-card__crew-item" key={member.id}>
+                          <strong className="my-route-card__crew-role">
+                            {routeMemberRoleLabels[member.role]}
+                          </strong>
 
-                      <span className="my-route-card__crew-name">
-                        {member.fullName}
-                      </span>
+                          <span className="my-route-card__crew-name">
+                            {member.fullName}
+                          </span>
 
-                      <div className="my-route-card__crew-actions">
-                        <small className="my-route-card__crew-source">
-                          {routeMemberSourceLabels[member.source]}
-                        </small>
+                          <div className="my-route-card__crew-actions">
+                            <small className="my-route-card__crew-source">
+                              {routeMemberSourceLabels[member.source]}
+                            </small>
 
-                        {canDelete && (
-                          <button
-                            type="button"
-                            className="my-route-card__crew-delete-button"
-                            onClick={() => handleDeleteRouteMember(route.id, member.id)}
-                          >
-                            Usuń
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                className="my-route-card__crew-delete-button"
+                                onClick={() => handleDeleteRouteMember(route.id, member.id)}
+                              >
+                                Usuń
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
 
@@ -1577,40 +1566,6 @@ export function MyRoutesPage() {
                 }
               />
             </label>
-
-            <div className="my-routes-modal__orders">
-              <h3>Status zleceń po zakończeniu trasy</h3>
-
-              {Object.entries(finishModal.orderActionByTransportOrderId).map(
-                ([transportOrderId, action]) => (
-                  <label
-                    className="my-routes-modal__order-row"
-                    key={transportOrderId}
-                  >
-                    <span>
-                      {getTransportOrderDisplayName(finishModal.transportOrders,
-                        Number(transportOrderId)
-                      )}
-                    </span>
-
-                    <select
-                      value={action}
-                      onChange={(event) =>
-                        updateFinishOrderAction(
-                          Number(transportOrderId),
-                          event.target.value as RouteOrderFinishAction
-                        )
-                      }
-                    >
-                      <option value="COMPLETE">Zlecenie zakończone</option>
-                      <option value="WAITING_FOR_PICKUP">
-                        Oczekuje na odbiór
-                      </option>
-                    </select>
-                  </label>
-                )
-              )}
-            </div>
 
             <div className="my-routes-modal__actions">
               <button

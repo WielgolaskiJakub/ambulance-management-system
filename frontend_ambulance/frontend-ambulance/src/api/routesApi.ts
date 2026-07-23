@@ -9,15 +9,9 @@ export type CreateRouteFromOrderRequest = {
 
 export type RouteOrderFinishAction = "WAITING_FOR_PICKUP" | "COMPLETE";
 
-export type RouteFinishOrderItemRequest = {
-  transportOrderId: number;
-  action: RouteOrderFinishAction;
-};
-
 export type RouteFinishRequest = {
   finishOdometerLastThree: number;
   notes: string | null;
-  orders: RouteFinishOrderItemRequest[];
 };
 
 export type RouteTransportOrdersReorderRequest = {

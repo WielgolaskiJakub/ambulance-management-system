@@ -248,7 +248,7 @@ public class RouteService {
         if (hasDuplicates || requestDoesNotMatchRouteOrders) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
         }
-        
+
         for(int index = 0; index < routeOrders.size(); index++) {
             RouteOrder routeOrder = routeOrders.get(index);
 
@@ -511,83 +511,9 @@ public class RouteService {
                         RouteOrderStatus.PENDING
                 );
 
-
-        Map<Long, RouteOrderFinishAction> actionsByOrderId = new HashMap<>();
-
-        for (RouteFinishOrderItemRequest orderItem : request.getOrders()) {
-            Long transportOrderId = orderItem.getTransportOrderId();
-
-            if (actionsByOrderId.containsKey(transportOrderId)) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-            }
-
-            actionsByOrderId.put(transportOrderId, orderItem.getAction());
+        if (!routeOrders.isEmpty()) {
+            throw new ApiException(ErrorCode.ROUTE_HAS_PENDING_TRANSPORT_ORDERS);
         }
-
-        Set<Long> allRouteTransportOrderIds = routeOrders
-                .stream()
-                .map(routeOrder ->
-                        routeOrder.getTransportOrder().getId()).
-                collect(Collectors.toSet());
-
-        Set<Long> ordersRequiringActionIds = routeOrders
-                .stream()
-                .map(RouteOrder::getTransportOrder)
-                .filter(transportOrder ->
-                        transportOrder.getStatus() != TransportStatus.CANCELLED)
-                .map(TransportOrder::getId).collect(Collectors.toSet());
-
-        for (Long requestedTransportOrderId : actionsByOrderId.keySet()) {
-            if (!allRouteTransportOrderIds.contains(requestedTransportOrderId)) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE);
-            }
-        }
-        for (RouteOrder routeOrder : routeOrders) {
-            TransportOrder transportOrder = routeOrder.getTransportOrder();
-
-            if (transportOrder.getStatus() == TransportStatus.CANCELLED
-                    && actionsByOrderId.containsKey(transportOrder.getId())) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
-            }
-        }
-
-        for (Long routeTransportOrderId : ordersRequiringActionIds) {
-            if (!actionsByOrderId.containsKey(routeTransportOrderId)) {
-                throw new ApiException(ErrorCode.ROUTE_FINISH_ACTION_MISSING);
-            }
-        }
-        LocalDateTime now = LocalDateTime.now();
-
-        for (RouteOrder routeOrder : routeOrders) {
-            TransportOrder transportOrder = routeOrder.getTransportOrder();
-
-            if (transportOrder.getStatus() == TransportStatus.CANCELLED) {
-                continue;
-            }
-
-            if (transportOrder.getStatus() == TransportStatus.COMPLETED) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_COMPLETED);
-            }
-
-            RouteOrderFinishAction action = actionsByOrderId.get(transportOrder.getId());
-
-            switch (action) {
-
-                case WAITING_FOR_PICKUP -> {
-                    transportOrder.setStatus(TransportStatus.WAITING_FOR_PICKUP);
-                    routeOrder.setStatus(RouteOrderStatus.COMPLETED);
-                    routeOrder.setResolvedAt(now);
-                }
-
-                case COMPLETE -> {
-                    transportOrder.setStatus(TransportStatus.COMPLETED);
-                    transportOrder.setCompletedAt(now);
-                    routeOrder.setStatus(RouteOrderStatus.COMPLETED);
-                    routeOrder.setResolvedAt(now);
-                }
-            }
-        }
-
 
         Integer startOdometerKm = route.getStartOdometerKm();
         if (startOdometerKm == null) {
@@ -604,6 +530,8 @@ public class RouteService {
         if (distanceKM < 0) {
             throw new ApiException(ErrorCode.INVALID_FINISH_ODOMETER);
         }
+        LocalDateTime now = LocalDateTime.now();
+
         route.setFinishOdometerKm(finishOdometerKm);
         route.setDistanceKm(distanceKM);
         route.setFinishedAt(now);
@@ -652,7 +580,7 @@ public class RouteService {
                                             .map(TransportOrderPatientDataResponse::fromEntity)
                                             .toList();
 
-                            return RouteTransportOrderSummaryResponse.fromEntity(transportOrder, patients);
+                            return RouteTransportOrderSummaryResponse.fromEntity(routeOrder, patients);
                         })
                         .toList();
 

@@ -168,6 +168,8 @@ public enum ErrorCode {
             "error.route_transport_order_cannot_be_cancelled", HttpStatus.BAD_REQUEST),
     TRANSPORT_ORDER_CANNOT_BE_CANCELLED("TRANSPORT_ORDER_CANNOT_BE_CANCELLED",
             "error.transport_order_cannot_be_cancelled", HttpStatus.BAD_REQUEST),
+    ROUTE_HAS_PENDING_TRANSPORT_ORDERS("ROUTE_HAS_PENDING_TRANSPORT_ORDERS",
+            "error.route_has_pending_transport_orders", HttpStatus.BAD_REQUEST),
 
 
 

@@ -8,7 +8,8 @@ export type RouteTransportOrderReference = {
   id: number;
   orderNumber: string;
   source: string;
-  status: string;
+  transportOrderStatus: string;
+  routeOrderStatus: "PENDING" | "COMPLETED" | "CANCELLED";
   pickupAddress: string | null;
   destinationAddress: string | null;
 };

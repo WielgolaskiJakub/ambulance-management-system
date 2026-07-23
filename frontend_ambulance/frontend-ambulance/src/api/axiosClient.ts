@@ -6,7 +6,9 @@ export const axiosClient = axios.create({
 
 axiosClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
+  const isLoginRequest = config.url === "/api/v1/auth/login";
+
+  if (token && !isLoginRequest) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

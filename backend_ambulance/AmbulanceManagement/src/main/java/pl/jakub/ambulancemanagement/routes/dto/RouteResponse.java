@@ -29,9 +29,7 @@ public record RouteResponse(
                         ? List.of()
                         : route.getRouteOrders()
                         .stream()
-                        .map(routeOrder -> RouteTransportOrderReferenceResponse.fromEntity(
-                                routeOrder.getTransportOrder()
-                        ))
+                        .map(RouteTransportOrderReferenceResponse::fromEntity)
                         .toList();
         return new RouteResponse(
                 route.getId(),

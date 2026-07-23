@@ -147,10 +147,11 @@ export function ManagerCreateTransportOrderPage() {
 
             showToast(
                 createdOrder.orderNumber
-                    ? `Utworzono zlecenie ${createdOrder.orderNumber}.`
+                    ? `Utworzono zlecenie ${createdOrder.orderNumber}. Numer należy wpisać na papierowym zleceniu.`
                     : "Zlecenie zostało utworzone.",
-                "success"
-            )
+                "success",
+                10000
+            );
 
             navigate(`/manager/dashboard?date=${createdOrder.plannedDate}&createdOrderId=${createdOrder.id}`);
         } catch (error) {

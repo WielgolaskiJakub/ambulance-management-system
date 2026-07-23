@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
 import "./LoginPage.css";
 import { jwtDecode } from "jwt-decode";
-
+import axios from "axios";
 type JwtPayload = {
   sub: string;
   userId: number;
@@ -22,32 +22,43 @@ export function LoginPage() {
 
     try {
       const response = await login({ username, password });
-      
+
       localStorage.setItem("token", response.token);
 
       localStorage.setItem("mustChangePassword", String(response.mustChangePassword));
 
-      if(response.mustChangePassword){
-        navigate("/change-temporary-password", { replace: true});
+      if (response.mustChangePassword) {
+        navigate("/change-temporary-password", { replace: true });
         return;
       }
-      
+
       const decodedToken = jwtDecode<JwtPayload>(response.token);
 
-      if(decodedToken.role === "ADMIN" || decodedToken.role === "MANAGER") {
+      if (decodedToken.role === "ADMIN" || decodedToken.role === "MANAGER") {
         navigate("/manager/dashboard");
         return;
       }
-      if(decodedToken.role === "DRIVER" || decodedToken.role === "SANITARY") {
+      if (decodedToken.role === "DRIVER" || decodedToken.role === "SANITARY") {
         navigate("/dashboard");
         return;
       }
 
       navigate("/unauthorized");
-      
-    } catch {
-    
-      alert("Nie udało się zalogować");
+
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        alert(
+          `Błąd logowania: ${error.message}\n` +
+          `Status: ${error.response?.status ?? "brak"}\n` +
+          `Odpowiedź: ${JSON.stringify(error.response?.data ?? "brak")}`
+        );
+        return;
+      }
+
+      alert(
+        `Błąd po odpowiedzi z API: ${error instanceof Error ? error.message : "nieznany"
+        }`
+      );
     }
   }
 
