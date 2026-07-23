@@ -1,4 +1,21 @@
 import { useEffect, useState } from "react";
+
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, LockKeyhole } from "lucide-react";
 import axios from "axios";
 import { formatDateTime } from "../utils/dateTimeFormat";
 import {
@@ -160,6 +177,97 @@ function getTransportOrderDisplayName(
   );
 }
 
+type SortableRouteOrderProps = {
+  order: RouteTransportOrderReference;
+  index: number;
+  canReorder: boolean;
+  isReordering: boolean;
+  canCancel: boolean;
+  isCancelling: boolean;
+  onCancel: () => void;
+};
+
+function SortableRouteOrder({
+  order,
+  index,
+  canReorder,
+  isReordering,
+  canCancel,
+  isCancelling,
+  onCancel,
+}: SortableRouteOrderProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: order.id,
+    disabled: !canReorder || isReordering,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={[
+        "my-route-card__order-item",
+        canReorder
+          ? "my-route-card__order-item--draggable"
+          : "my-route-card__order-item--locked",
+        isDragging ? "my-route-card__order-item--dragging" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <button
+        type="button"
+        className="my-route-card__drag-handle"
+        disabled={!canReorder || isReordering}
+        aria-label={
+          canReorder
+            ? `Przeciągnij zlecenie ${order.orderNumber}`
+            : `Zlecenie ${order.orderNumber} ma zablokowaną pozycję`
+        }
+        {...attributes}
+        {...listeners}
+      >
+        {canReorder ? <GripVertical size={20} /> : <LockKeyhole size={17} />}
+      </button>
+
+      <div className="my-route-card__order-details">
+        <span className="my-route-card__order-number">
+          {index + 1}. {order.orderNumber}
+        </span>
+
+        <span className="my-route-card__order-route">
+          {order.pickupAddress ?? "Brak miejsca odbioru"} →{" "}
+          {order.destinationAddress ?? "Brak celu"}
+        </span>
+      </div>
+
+      <div className="my-route-card__order-actions">
+        {canCancel && (
+          <button
+            type="button"
+            className="my-route-card__order-cancel-button"
+            disabled={isCancelling}
+            onClick={onCancel}
+          >
+            {isCancelling ? "Anulowanie..." : "Anuluj"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function MyRoutesPage() {
   const location = useLocation();
 
@@ -205,6 +313,17 @@ export function MyRoutesPage() {
   const [cancelReason, setCancelReason] = useState("CANCELLED_BY_WARD");
   const [cancelDescription, setCancelDescription] = useState("");
   const [cancellingTransportOrderId, setCancellingTransportOrderId] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   function toggleAddMemberForm(routeId: number) {
     setExpandedAddMemberRouteId((previousRouteId) =>
@@ -623,29 +742,47 @@ export function MyRoutesPage() {
     }
   }
 
-  async function handleMoveTransportOrder(
+  async function handleTransportOrderDragEnd(
     route: RouteResponse,
-    currentIndex: number,
-    direction: "UP" | "DOWN"
+    event: DragEndEvent
   ) {
-    const targetIndex = direction === "UP" ? currentIndex - 1 : currentIndex + 1;
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeOrder = route.transportOrders.find(
+      (order) => order.id === active.id
+    );
+
+
+    const targetOrder = route.transportOrders.find(
+      (order) => order.id === over.id
+    );
 
     if (
-      targetIndex < 0 ||
-      targetIndex >= route.transportOrders.length
+      activeOrder?.status !== "IN_PROGRESS" ||
+      targetOrder?.status !== "IN_PROGRESS"
     ) {
       return;
     }
 
-    const reorderedOrders = [...route.transportOrders];
+    const activeIndex = route.transportOrders.findIndex(
+      (order) => order.id === active.id
+    );
 
-    [reorderedOrders[currentIndex], reorderedOrders[targetIndex]] = [
-      reorderedOrders[targetIndex],
-      reorderedOrders[currentIndex],
-    ];
+    const targetIndex = route.transportOrders.findIndex(
+      (order) => order.id === over.id
+    );
+
+    const reorderedOrders = [...route.transportOrders];
+    const [movedOrder] = reorderedOrders.splice(activeIndex, 1);
+
+    reorderedOrders.splice(targetIndex, 0, movedOrder)
 
     try {
-      setReorderingRouteId(route.id)
+      setReorderingRouteId(route.id);
       setErrorMessage(null);
       setSuccessMessage(null);
 
@@ -659,20 +796,19 @@ export function MyRoutesPage() {
         )
       );
 
-      setSuccessMessage("Kolejność zleceń została zmieniona.");
+      setSuccessMessage("Kolejność zleceń została zmieniona.")
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        setErrorMessage(`Nie udało się zmienić kolejności: ${error.response?.status ?? "brak odpowiedzi"
-          }`
+        setErrorMessage(
+          `Nie udało się zmienić kolejności: ${error.response?.status ?? "brak odpowiedzi"}`
         );
-        return;
+        return
       }
       setErrorMessage("Nieznany błąd zmiany kolejności.");
     } finally {
       setReorderingRouteId(null);
     }
   }
-
   async function handleResolveTransportOrder(
     routeId: number,
     transportOrder: RouteTransportOrderReference,
@@ -971,57 +1107,40 @@ export function MyRoutesPage() {
                         Kolejność zleceń
                       </h3>
 
-                      <div className="my-route-card__orders-list">
-                        {route.transportOrders.map((order, index) => (
-                          <div className="my-route-card__order-item" key={order.id}>
+                      <DndContext
+                        sensors={sensors}
+                        onDragEnd={(event) => handleTransportOrderDragEnd(route, event)}
+                      >
+                        <SortableContext
+                          items={route.transportOrders.map((order) => order.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="my-route-card__orders-list">
+                            {route.transportOrders.map((order, index) => {
+                              const canReorder =
+                                order.status === "IN_PROGRESS" &&
+                                reorderingRouteId !== route.id;
 
-                            <div className="my-route-card__order-details">
-                              <span className="my-route-card__order-number">
-                                {index + 1}. {order.orderNumber}
-                              </span>
+                              const canCancel =
+                                (route.status === "CREATED" || route.status === "IN_PROGRESS") &&
+                                order.status === "IN_PROGRESS";
 
-                              <span className="my-route-card__order-route">
-                                {order.pickupAddress ?? "Brak miejsca odbioru"} →{" "}
-                                {order.destinationAddress ?? "Brak celu"}
-                              </span>
-                            </div>
-
-                            <div className="my-route-card__order-actions">
-                              <button
-                                type="button"
-                                className="my-route-card__order-move-button"
-                                disabled={index === 0 || reorderingRouteId === route.id}
-                                onClick={() => handleMoveTransportOrder(route, index, "UP")}
-                                aria-label={`Przesuń ${order.orderNumber} wyżej`}
-                              >
-                                ↑
-                              </button>
-
-                              <button
-                                type="button"
-                                className="my-route-card__order-move-button"
-                                disabled={index === route.transportOrders.length - 1 || reorderingRouteId === route.id}
-                                onClick={() => handleMoveTransportOrder(route, index, "DOWN")}
-                                aria-label={`Przesuń ${order.orderNumber} niżej`}
-                              >
-                                ↓
-                              </button>
-
-                              {(route.status === "CREATED" || route.status === "IN_PROGRESS")
-                                && order.status === "IN_PROGRESS" && (
-                                  <button
-                                    type="button"
-                                    className="my-route-card__order-cancel-button"
-                                    disabled={cancellingTransportOrderId === order.id}
-                                    onClick={() => openCancelRouteOrderModal(route.id, order)}
-                                  >
-                                    {cancellingTransportOrderId === order.id ? "Anulowanie..." : "Anuluj"}
-                                  </button>
-                                )}
-                            </div>
+                              return (
+                                <SortableRouteOrder
+                                  key={order.id}
+                                  order={order}
+                                  index={index}
+                                  canReorder={canReorder}
+                                  isReordering={reorderingRouteId === route.id}
+                                  canCancel={canCancel}
+                                  isCancelling={cancellingTransportOrderId === order.id}
+                                  onCancel={() => openCancelRouteOrderModal(route.id, order)}
+                                />
+                              );
+                            })}
                           </div>
-                        ))}
-                      </div>
+                        </SortableContext>
+                      </DndContext>
 
                       <div className="my-route-card__add-order">
                         <select
