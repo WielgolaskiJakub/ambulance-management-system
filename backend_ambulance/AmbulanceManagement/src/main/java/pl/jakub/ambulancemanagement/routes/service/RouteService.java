@@ -94,7 +94,8 @@ public class RouteService {
         }
 
         validateCurrentUserCanUseShift(shift);
-
+        validateShiftHasNoActiveRoutes(shift);
+        
         Route route = new Route();
         route.setShift(shift);
         route.setStartAddress(request.getStartAddress());
@@ -160,6 +161,8 @@ public class RouteService {
         }
 
         validateCurrentUserCanUseShift(shift);
+        validateShiftHasNoActiveRoutes(shift);
+
 
         TransportOrder transportOrder = transportOrderRepository.findById(transportOrderId)
                 .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_FOUND));
@@ -757,4 +760,20 @@ public class RouteService {
 
         routeMemberRepository.save(routeMember);
     }
+
+    private void validateShiftHasNoActiveRoutes(Shift shift) {
+        boolean hasActiveRoutes = routeRepository.existsByShift_IdAndStatusIn(
+                shift.getId(),
+                List.of(
+                        RouteStatus.CREATED,
+                        RouteStatus.IN_PROGRESS,
+                        RouteStatus.WAITING
+                )
+        );
+
+        if (hasActiveRoutes) {
+            throw new ApiException(ErrorCode.SHIFT_HAS_ACTIVE_ROUTES);
+        }
+    }
+
 }
