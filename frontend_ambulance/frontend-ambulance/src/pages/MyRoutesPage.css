@@ -703,3 +703,53 @@
     width: 100%;
   }
 }
+.my-route-card__order-cancel-button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: #450a0a;
+  color: #fecaca;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-route-card__order-cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.my-routes-modal__description {
+  margin: -8px 0 20px;
+  color: #d1d5db;
+}
+
+.my-routes-modal__field select,
+.my-routes-modal__field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.my-routes-modal__field textarea {
+  resize: vertical;
+}
+
+.my-routes-modal__danger-button {
+  border: 1px solid #ef4444;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-routes-modal__danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

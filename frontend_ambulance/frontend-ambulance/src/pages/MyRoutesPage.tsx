@@ -11,6 +11,7 @@ import {
   markRouteAsWaiting,
   resumeRoute,
   type RouteOrderFinishAction,
+  cancelTransportOrderInRoute,
 } from "../api/routesApi";
 
 import type {
@@ -49,12 +50,19 @@ import {
 
 import type { TransportOrderResponse } from "../types/transportOrder";
 
+import { getTransportCancelOptions } from "../utils/transportOrderLabels";
+
 type FinishRouteModalState = {
   routeId: number;
   finishOdometerLastThree: string;
   orderActionByTransportOrderId: Record<number, RouteOrderFinishAction>;
   transportOrders: RouteTransportOrderReference[];
 }
+
+type CancelRouteOrderModalState = {
+  routeId: number,
+  transportOrder: RouteTransportOrderReference;
+};
 
 type MyRoutesLocationState = {
   warningMessage?: string
@@ -192,6 +200,11 @@ export function MyRoutesPage() {
   const [addingTransportOrderRouteId, setAddingTransportOrderRouteId] = useState<number | null>(null);
   const [reorderingRouteId, setReorderingRouteId] = useState<number | null>(null);
   const [resolvingTransportOrderId, setResolvingTransportOrderId] = useState<number | null>(null);
+
+  const [cancelRouteOrderModal, setCancelRouteOrderModal] = useState<CancelRouteOrderModalState | null>(null);
+  const [cancelReason, setCancelReason] = useState("CANCELLED_BY_WARD");
+  const [cancelDescription, setCancelDescription] = useState("");
+  const [cancellingTransportOrderId, setCancellingTransportOrderId] = useState<number | null>(null);
 
   function toggleAddMemberForm(routeId: number) {
     setExpandedAddMemberRouteId((previousRouteId) =>
@@ -710,17 +723,91 @@ export function MyRoutesPage() {
     }
   }
 
+  function openCancelRouteOrderModal(
+    routeId: number,
+    transportOrder: RouteTransportOrderReference
+  ) {
+    setCancelRouteOrderModal({ routeId, transportOrder });
+    setCancelReason("CANCELLED_BY_WARD");
+    setCancelDescription("");
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  }
+
+  function closeCancelRouteOrderModal() {
+    if (cancellingTransportOrderId !== null) {
+      return;
+    }
+
+    setCancelRouteOrderModal(null);
+    setCancelReason("CANCELLED_BY_WARD");
+    setCancelDescription("");
+  }
+
+  async function handleCancelTransportOrderInRoute() {
+    if (!cancelRouteOrderModal) {
+      return;
+    }
+
+    const { routeId, transportOrder } = cancelRouteOrderModal;
+
+    try {
+      setCancellingTransportOrderId(transportOrder.id);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      const updatedRoute = await cancelTransportOrderInRoute(
+        routeId,
+        transportOrder.id,
+        {
+          cancelReason,
+          cancelDescription:
+            cancelDescription.trim().length > 0
+              ? cancelDescription.trim()
+              : null,
+        }
+      );
+
+      setRoutes((currentRoutes) =>
+        currentRoutes.map((route) =>
+          route.id === routeId ? updatedRoute : route
+        )
+      );
+
+      setCancelRouteOrderModal(null);
+      setCancelReason("CANCELLED_BY_WARD");
+      setCancelDescription("");
+
+      setSuccessMessage(
+        `Zlecenie ${transportOrder.orderNumber} zostało anulowane.`
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        setErrorMessage(
+          `Nie udało się anulować zlecenia: ${error.response?.status ?? "brak odpowiedzi"}`
+        );
+        return
+      }
+      setErrorMessage("Nieznany błąd anulowania zlecenia.");
+    } finally {
+      setCancellingTransportOrderId(null);
+    }
+  }
+
   function openFinishRouteModal(route: RouteResponse) {
     const orderActionByTransportOrderId = Object.fromEntries(
-      route.transportOrders.map((transportOrder) => [
-        transportOrder.id,
-        "COMPLETE" as RouteOrderFinishAction,
-      ])
+      route.transportOrders.filter((transportOrder) => transportOrder.status === "IN_PROGRESS")
+        .map((transportOrder) => [
+          transportOrder.id,
+          "COMPLETE" as RouteOrderFinishAction,
+        ])
     ) as Record<number, RouteOrderFinishAction>;
 
     setFinishModal({
       routeId: route.id,
-      transportOrders: route.transportOrders,
+      transportOrders: route.transportOrders.filter(
+        (transportOrder) => transportOrder.status === "IN_PROGRESS"
+      ),
       finishOdometerLastThree: "",
       orderActionByTransportOrderId,
     });
@@ -919,6 +1006,18 @@ export function MyRoutesPage() {
                               >
                                 ↓
                               </button>
+
+                              {(route.status === "CREATED" || route.status === "IN_PROGRESS")
+                                && order.status === "IN_PROGRESS" && (
+                                  <button
+                                    type="button"
+                                    className="my-route-card__order-cancel-button"
+                                    disabled={cancellingTransportOrderId === order.id}
+                                    onClick={() => openCancelRouteOrderModal(route.id, order)}
+                                  >
+                                    {cancellingTransportOrderId === order.id ? "Anulowanie..." : "Anuluj"}
+                                  </button>
+                                )}
                             </div>
                           </div>
                         ))}
@@ -1396,6 +1495,74 @@ export function MyRoutesPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {cancelRouteOrderModal && (
+        <div className="my-routes-modal-backdrop">
+          <section
+            className="my-routes-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-route-order-title"
+          >
+            <h2 id="cancel-route-order-title">Anuluj zlecenie</h2>
+
+            <p className="my-routes-modal__description">
+              Zlecenie {cancelRouteOrderModal.transportOrder.orderNumber}:{" "}
+              {cancelRouteOrderModal.transportOrder.pickupAddress ?? "Brak miejsca odbioru"} {" "}
+              →{" "}
+              {cancelRouteOrderModal.transportOrder.destinationAddress ?? "Brak celu"}
+            </p>
+
+            <label className="my-route-modal__field">
+              <span>Powód anulowania </span>
+              <select
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+                disabled={cancellingTransportOrderId !== null}
+              >
+                {getTransportCancelOptions().map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="my-routes-modal__field">
+              <span>Dodatkowy opis</span>
+              <textarea
+                value={cancelDescription}
+                onChange={(event) => setCancelDescription(event.target.value)}
+                placeholder="Opcjonalne szczegóły anulowania"
+                rows={3}
+                disabled={cancellingTransportOrderId !== null}
+              />
+            </label>
+
+            <div className="my-routes-modal__actins">
+              <button
+                type="button"
+                className="my-routes-modal__cancel-button"
+                onClick={closeCancelRouteOrderModal}
+                disabled={cancellingTransportOrderId !== null}
+              >
+                Wróc
+              </button>
+
+              <button
+                type="button"
+                className="my-routes-modal__danger-button"
+                onClick={handleCancelTransportOrderInRoute}
+                disabled={cancellingTransportOrderId !== null}
+              >
+                {cancellingTransportOrderId !== null
+                  ? "Anulowanie..."
+                  : "Potwierdź anulowanie"}
+              </button>
+            </div>
+          </section>
         </div>
       )}
     </main>

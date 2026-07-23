@@ -248,6 +248,17 @@ public class RouteService {
         if (hasDuplicates || requestDoesNotMatchRouteOrders) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
         }
+        
+        for(int index = 0; index < routeOrders.size(); index++) {
+            RouteOrder routeOrder = routeOrders.get(index);
+
+            boolean isLocked = routeOrder.getStatus() != RouteOrderStatus.PENDING;
+
+            if(isLocked
+            && !routeOrder.getTransportOrder().getId().equals(requestedTransportOrdersIds.get(index))) {
+                throw new ApiException(ErrorCode.ROUTE_TRANSPORT_ORDER_CANNOT_BE_REORDERED);
+            }
+        }
 
         Map<Long, RouteOrder> routeOrdersByTransportOrderId = routeOrders.stream()
                 .collect(Collectors.toMap(

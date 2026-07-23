@@ -1,5 +1,6 @@
 import { axiosClient } from "./axiosClient";
 import type { RouteResponse } from "../types/route";
+import type { CancelTransportOrderRequest } from "../types/transportOrder";
 
 export type CreateRouteFromOrderRequest = {
   shiftId: number;
@@ -111,4 +112,16 @@ export async function resolveTransportOrder(
     { action }
   );
   return response.data
+}
+
+export async function cancelTransportOrderInRoute(
+  routeId: number,
+  transportOrderId: number,
+  request: CancelTransportOrderRequest
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}/cancel`,
+    request
+  );
+  return response.data;
 }
