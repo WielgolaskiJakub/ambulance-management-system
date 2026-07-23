@@ -15,7 +15,13 @@ import {
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, LockKeyhole } from "lucide-react";
+import {
+  GripVertical,
+  LockKeyhole,
+  MapPin,
+  Route,
+  Users,
+} from "lucide-react";
 import axios from "axios";
 import { formatDateTime } from "../utils/dateTimeFormat";
 import {
@@ -177,6 +183,16 @@ function getTransportOrderDisplayName(
   );
 }
 
+function getRouteOrderStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    IN_PROGRESS: "Do realizacji",
+    COMPLETED: "Zrealizowane",
+    CANCELLED: "Anulowane",
+  };
+
+  return labels[status] ?? status;
+}
+
 type SortableRouteOrderProps = {
   order: RouteTransportOrderReference;
   index: number;
@@ -242,12 +258,19 @@ function SortableRouteOrder({
       </button>
 
       <div className="my-route-card__order-details">
-        <span className="my-route-card__order-number">
-          {index + 1}. {order.orderNumber}
-        </span>
+        <div className="my-route-card__order-heading">
+          <span className="my-route-card__order-position">{index + 1}</span>
+          <span className="my-route-card__order-number">{order.orderNumber}</span>
+          <span
+            className={`my-route-card__order-status my-route-card__order-status--${order.status.toLowerCase()}`}
+          >
+            {getRouteOrderStatusLabel(order.status)}
+          </span>
+        </div>
 
         <span className="my-route-card__order-route">
-          {order.pickupAddress ?? "Brak miejsca odbioru"} →{" "}
+          <MapPin size={15} aria-hidden="true" />
+          {order.pickupAddress ?? "Brak miejsca odbioru"} <span aria-hidden="true">→</span>{" "}
           {order.destinationAddress ?? "Brak celu"}
         </span>
       </div>
@@ -1097,97 +1120,31 @@ export function MyRoutesPage() {
             );
 
             return (
-              <article className="my-route-card" key={route.id}>
+              <article className={`my-route-card my-route-card--${route.status.toLowerCase()}`} key={route.id}>
                 <header className="my-route-card__header">
-                  <div>
-                    <h2 className="my-route-card__title">Trasa #{route.id}</h2>
-
-                    <section className="my-route-card__orders">
-                      <h3 className="my-route-card__section-title">
-                        Kolejność zleceń
-                      </h3>
-
-                      <DndContext
-                        sensors={sensors}
-                        onDragEnd={(event) => handleTransportOrderDragEnd(route, event)}
-                      >
-                        <SortableContext
-                          items={route.transportOrders.map((order) => order.id)}
-                          strategy={verticalListSortingStrategy}
-                        >
-                          <div className="my-route-card__orders-list">
-                            {route.transportOrders.map((order, index) => {
-                              const canReorder =
-                                order.status === "IN_PROGRESS" &&
-                                reorderingRouteId !== route.id;
-
-                              const canCancel =
-                                (route.status === "CREATED" || route.status === "IN_PROGRESS") &&
-                                order.status === "IN_PROGRESS";
-
-                              return (
-                                <SortableRouteOrder
-                                  key={order.id}
-                                  order={order}
-                                  index={index}
-                                  canReorder={canReorder}
-                                  isReordering={reorderingRouteId === route.id}
-                                  canCancel={canCancel}
-                                  isCancelling={cancellingTransportOrderId === order.id}
-                                  onCancel={() => openCancelRouteOrderModal(route.id, order)}
-                                />
-                              );
-                            })}
-                          </div>
-                        </SortableContext>
-                      </DndContext>
-
-                      <div className="my-route-card__add-order">
-                        <select
-                          className="my-route-card__add-member-input"
-                          value={selectedTransportOrderIdByRouteId[route.id] ?? ""}
-                          onChange={(event) =>
-                            setSelectedTransportOrderIdByRouteId((currentValues) => ({
-                              ...currentValues,
-                              [route.id]: event.target.value,
-                            }))
-                          }
-                        >
-                          <option value="">Wybierz dostępne zlecenie</option>
-
-                          {availableTransportOrders.map((order) => (
-                            <option key={order.id} value={order.id}>
-                              {order.orderNumber} = {order.pickupAddress} → {order.destinationAddress}
-                            </option>
-                          ))}
-                        </select>
-
-                        <button
-                          type="button"
-                          className="my-route-card__secondary-button"
-                          disabled={addingTransportOrderRouteId === route.id}
-                          onClick={() => handleAddTransportOrderToRoute(route.id)}
-                        >
-                          {addingTransportOrderRouteId === route.id
-                            ? "Dodawanie..."
-                            : "+ Dodaj zlecenie"}
-                        </button>
-                      </div>
-                    </section>
+                  <div className="my-route-card__title-group">
+                    <span className="my-route-card__eyebrow">Aktywna trasa</span>
+                    <h2 className="my-route-card__title"><Route size={22} aria-hidden="true" /> Trasa #{route.id}</h2>
+                    <p className="my-route-card__subtitle">
+                      {route.transportOrders.length} {route.transportOrders.length === 1 ? "zlecenie" : "zlecenia"} w kolejce
+                    </p>
                   </div>
 
-                  <span className="my-route-card__status">
+                  <span className={`my-route-card__status my-route-card__status--${route.status.toLowerCase()}`}>
                     {getRouteStatusLabel(route.status)}
                   </span>
                 </header>
 
                 <div className="my-route-card__body">
-                  <p className="my-route-card__detail">
-                    <strong>Następny kurs:</strong>{" "}
-                    {nextTransportOrder
-                      ? `${currentStartAddress} → ${nextTransportOrder.destinationAddress}`
-                      : "Brak zleceń"}
-                  </p>
+                  <section className="my-route-card__next-stop">
+                    <div className="my-route-card__next-stop-label">Następny kurs</div>
+                    <strong>
+                      <MapPin size={18} aria-hidden="true" />
+                      {nextTransportOrder
+                        ? `${currentStartAddress} → ${nextTransportOrder.destinationAddress}`
+                        : "Brak zleceń do realizacji"}
+                    </strong>
+                  </section>
 
                   {route.status === "IN_PROGRESS" && nextTransportOrder && (
                     <div className="my-route-card__resolve-actions">
@@ -1230,7 +1187,64 @@ export function MyRoutesPage() {
                   )}
                 </div>
 
-                {(routeMembersByRouteId[route.id] ?? []).map((member) => {
+                <section className="my-route-card__orders">
+                  <div className="my-route-card__section-heading">
+                    <div>
+                      <h3 className="my-route-card__section-title">Kolejka zleceń</h3>
+                      <p>Przeciągaj wyłącznie pozycje oznaczone jako „Do realizacji”.</p>
+                    </div>
+                  </div>
+
+                  <DndContext sensors={sensors} onDragEnd={(event) => handleTransportOrderDragEnd(route, event)}>
+                    <SortableContext items={route.transportOrders.map((order) => order.id)} strategy={verticalListSortingStrategy}>
+                      <div className="my-route-card__orders-list">
+                        {route.transportOrders.map((order, index) => {
+                          const canReorder = order.status === "IN_PROGRESS" && reorderingRouteId !== route.id;
+                          const canCancel = (route.status === "CREATED" || route.status === "IN_PROGRESS") && order.status === "IN_PROGRESS";
+
+                          return (
+                            <SortableRouteOrder
+                              key={order.id}
+                              order={order}
+                              index={index}
+                              canReorder={canReorder}
+                              isReordering={reorderingRouteId === route.id}
+                              canCancel={canCancel}
+                              isCancelling={cancellingTransportOrderId === order.id}
+                              onCancel={() => openCancelRouteOrderModal(route.id, order)}
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+
+                  <div className="my-route-card__add-order">
+                    <select
+                      className="my-route-card__add-member-input"
+                      value={selectedTransportOrderIdByRouteId[route.id] ?? ""}
+                      onChange={(event) => setSelectedTransportOrderIdByRouteId((currentValues) => ({ ...currentValues, [route.id]: event.target.value }))}
+                    >
+                      <option value="">Wybierz dostępne zlecenie</option>
+                      {availableTransportOrders.map((order) => (
+                        <option key={order.id} value={order.id}>{order.orderNumber} = {order.pickupAddress} → {order.destinationAddress}</option>
+                      ))}
+                    </select>
+                    <button type="button" className="my-route-card__secondary-button" disabled={addingTransportOrderRouteId === route.id} onClick={() => handleAddTransportOrderToRoute(route.id)}>
+                      {addingTransportOrderRouteId === route.id ? "Dodawanie..." : "+ Dodaj zlecenie"}
+                    </button>
+                  </div>
+                </section>
+
+                <section className="my-route-card__crew">
+                  <div className="my-route-card__section-heading">
+                    <div>
+                      <h3 className="my-route-card__section-title"><Users size={18} aria-hidden="true" /> Załoga trasy</h3>
+                      <p>Osoby przypisane do tego wyjazdu.</p>
+                    </div>
+                  </div>
+                  <div className="my-route-card__crew-list">
+                  {(routeMembersByRouteId[route.id] ?? []).map((member) => {
                   const canDelete = !(
                     member.role === "DRIVER" && member.source === "SHIFT_TEAM"
                   );
@@ -1261,8 +1275,10 @@ export function MyRoutesPage() {
                         )}
                       </div>
                     </div>
-                  )
+                  );
                 })}
+                  </div>
+                </section>
 
                 <section className="my-route-card__add-member">
                   <button
@@ -1634,7 +1650,7 @@ export function MyRoutesPage() {
               {cancelRouteOrderModal.transportOrder.destinationAddress ?? "Brak celu"}
             </p>
 
-            <label className="my-route-modal__field">
+            <label className="my-routes-modal__field">
               <span>Powód anulowania </span>
               <select
                 value={cancelReason}
@@ -1660,14 +1676,14 @@ export function MyRoutesPage() {
               />
             </label>
 
-            <div className="my-routes-modal__actins">
+            <div className="my-routes-modal__actions">
               <button
                 type="button"
                 className="my-routes-modal__cancel-button"
                 onClick={closeCancelRouteOrderModal}
                 disabled={cancellingTransportOrderId !== null}
               >
-                Wróc
+                Wróć
               </button>
 
               <button
