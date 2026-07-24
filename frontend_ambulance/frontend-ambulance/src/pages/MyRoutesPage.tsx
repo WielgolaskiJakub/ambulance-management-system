@@ -21,7 +21,7 @@ import {
 
 import type {
   RouteResponse,
-  RouteTransportOrderReference,
+  RouteTransportOrderReference
 } from "../types/route";
 
 import { getRouteStatusLabel } from "../utils/routeLabels";
@@ -55,11 +55,11 @@ import {
   type AddRouteMemberFormState
 } from "../components/routes/RouteCrewSection";
 
+import { RouteFinishModal } from "../components/routes/RouteFinishModal";
+
 type FinishRouteModalState = {
   routeId: number;
   finishOdometerLastThree: string;
-  orderActionByTransportOrderId: Record<number, RouteOrderFinishAction>;
-  transportOrders: RouteTransportOrderReference[];
 }
 
 type CancelRouteOrderModalState = {
@@ -79,16 +79,6 @@ function formatTransportOrders(
   }
 
   return orders.map((order) => `${order.orderNumber}`).join(", ");
-}
-
-function getTransportOrderDisplayName(
-  orders: RouteTransportOrderReference[],
-  transportOrderId: number
-): string {
-  return String(
-    orders.find((order) => order.id === transportOrderId)?.orderNumber ??
-    `Zlecenie #${transportOrderId}`
-  );
 }
 
 export function MyRoutesPage() {
@@ -745,40 +735,9 @@ export function MyRoutesPage() {
   }
 
   function openFinishRouteModal(route: RouteResponse) {
-    const orderActionByTransportOrderId = Object.fromEntries(
-      route.transportOrders.filter((transportOrder) => transportOrder.routeOrderStatus === "PENDING")
-        .map((transportOrder) => [
-          transportOrder.id,
-          "COMPLETE" as RouteOrderFinishAction,
-        ])
-    ) as Record<number, RouteOrderFinishAction>;
-
     setFinishModal({
       routeId: route.id,
-      transportOrders: route.transportOrders.filter(
-        (transportOrder) => transportOrder.routeOrderStatus === "PENDING"
-      ),
       finishOdometerLastThree: "",
-      orderActionByTransportOrderId,
-    });
-  }
-
-  function updateFinishOrderAction(
-    transportOrderId: number,
-    action: RouteOrderFinishAction
-  ) {
-    setFinishModal((previous) => {
-      if (!previous) {
-        return previous;
-      }
-
-      return {
-        ...previous,
-        orderActionByTransportOrderId: {
-          ...previous.orderActionByTransportOrderId,
-          [transportOrderId]: action,
-        },
-      };
     });
   }
 
@@ -903,6 +862,11 @@ export function MyRoutesPage() {
             const nextTransportOrder = route.transportOrders.find(
               (order) => order.routeOrderStatus === "PENDING"
             );
+
+            const canFinishRoute = route.transportOrders.length > 0 &&
+              route.transportOrders.every(
+                (order) => order.routeOrderStatus !== "PENDING"
+              );
 
             const routeMembers = routeMembersByRouteId[route.id] ?? [];
             const isOrdersExpanded = expandedOrderRouteId === route.id;
@@ -1051,18 +1015,20 @@ export function MyRoutesPage() {
                       >
                         {waitingRouteId === route.id ? "Zapisywanie..." : "Konsultacja"}
                       </button>
-
-                      <button
-                        className="my-route-card__secondary-button"
-                        type="button"
-                        disabled={finishingRouteId === route.id}
-                        onClick={() => openFinishRouteModal(route)}
-                      >
-                        {finishingRouteId === route.id ? "Kończenie..." : "Zakończ trasę"}
-                      </button>
-
+                      
+                      {canFinishRoute && (
+                        <button
+                          className="my-route-card__secondary-button"
+                          type="button"
+                          disabled={finishingRouteId === route.id}
+                          onClick={() => openFinishRouteModal(route)}
+                        >
+                          {finishingRouteId === route.id ? "Kończenie..." : "Zakończ trasę"}
+                        </button>
+                      )}
                     </>
                   )}
+
 
                   {route.status === "WAITING" && (
                     <button
@@ -1150,86 +1116,25 @@ export function MyRoutesPage() {
           )}
         </section>
       )}
+
       {finishModal && (
-        <div className="my-routes-modal-backdrop">
-          <div className="my-routes-modal" role="dialog" aria-modal="true">
-            <h2>Zakończenie trasy #{finishModal.routeId}</h2>
-
-            <label className="my-routes-modal__field">
-              <span>Ostatnie 3 cyfry licznika</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={3}
-                value={finishModal.finishOdometerLastThree}
-                onChange={(event) =>
-                  setFinishModal((previous) =>
-                    previous
-                      ? {
-                        ...previous,
-                        finishOdometerLastThree: event.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 3),
-                      }
-                      : previous
-                  )
+        <RouteFinishModal
+          routeId={finishModal.routeId}
+          finishOdometerLastThree={finishModal.finishOdometerLastThree}
+          isSubmitting={finishingRouteId === finishModal.routeId}
+          onOdometerChange={(value) =>
+            setFinishModal((previous) =>
+              previous
+                ? {
+                  ...previous,
+                  finishOdometerLastThree: value,
                 }
-              />
-            </label>
-
-            <div className="my-routes-modal__orders">
-              <h3>Status zleceń po zakończeniu trasy</h3>
-
-              {Object.entries(finishModal.orderActionByTransportOrderId).map(
-                ([transportOrderId, action]) => (
-                  <label
-                    className="my-routes-modal__order-row"
-                    key={transportOrderId}
-                  >
-                    <span>
-                      {getTransportOrderDisplayName(finishModal.transportOrders,
-                        Number(transportOrderId)
-                      )}
-                    </span>
-
-                    <select
-                      value={action}
-                      onChange={(event) =>
-                        updateFinishOrderAction(
-                          Number(transportOrderId),
-                          event.target.value as RouteOrderFinishAction
-                        )
-                      }
-                    >
-                      <option value="COMPLETE">Zlecenie zakończone</option>
-                      <option value="WAITING_FOR_PICKUP">
-                        Oczekuje na odbiór
-                      </option>
-                    </select>
-                  </label>
-                )
-              )}
-            </div>
-
-            <div className="my-routes-modal__actions">
-              <button
-                type="button"
-                className="my-routes-modal__cancel-button"
-                onClick={() => setFinishModal(null)}
-              >
-                Anuluj
-              </button>
-
-              <button
-                type="button"
-                className="my-routes-modal__confirm-button"
-                onClick={handleConfirmFinishRoute}
-              >
-                Zakończ trasę
-              </button>
-            </div>
-          </div>
-        </div>
+                : previous
+            )
+          }
+          onCancel={() => setFinishModal(null)}
+          onConfirm={handleConfirmFinishRoute}
+        />
       )}
 
       {cancelRouteOrderModal && (
