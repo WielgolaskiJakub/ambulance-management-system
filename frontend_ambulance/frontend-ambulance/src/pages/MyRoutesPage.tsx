@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import {
-  CircleChevronDown,
   MapPin,
   Route,
-  Users,
 } from "lucide-react";
 import axios from "axios";
 import { formatDateTime } from "../utils/dateTimeFormat";
@@ -30,24 +28,16 @@ import { getRouteStatusLabel } from "../utils/routeLabels";
 import "./MyRoutesPage.css";
 import { Link, useLocation } from "react-router-dom";
 import {
-
   addRouteMemberToRoute,
   deleteRouteMemberFromRoute,
   getRouteMemberCandidates,
   getRouteMembersByRoute,
-  type ExternalRouteMemberSource,
   type RouteMemberCreateRequest,
 } from "../api/routeMemberApi";
 
 import type {
   RouteMemberResponse,
-  RouteMemberRole,
 } from "../types/routeMember";
-
-import {
-  routeMemberRoleLabels,
-  routeMemberSourceLabels,
-} from "../utils/routeMemberLabels";
 
 import type { CrewMemberOptionResponse } from "../api/crewMemberApi";
 
@@ -58,6 +48,12 @@ import {
 import type { TransportOrderResponse } from "../types/transportOrder";
 import { getTransportCancelOptions } from "../utils/transportOrderLabels";
 import { RouteOrdersSection } from "../components/routes/RouteOrdersSection";
+import {
+  RouteCrewSection,
+  initialAddRouteMemberForm,
+  isAnonymousMedicalSource,
+  type AddRouteMemberFormState
+} from "../components/routes/RouteCrewSection";
 
 type FinishRouteModalState = {
   routeId: number;
@@ -75,78 +71,6 @@ type MyRoutesLocationState = {
   warningMessage?: string
 };
 
-type AddRouteMemberMode = "SYSTEM_USER" | "EXTERNAL";
-
-type AddRouteMemberFormState = {
-  mode: AddRouteMemberMode;
-  userId: string;
-  memberName: string;
-  memberRole: RouteMemberRole;
-  memberSource: ExternalRouteMemberSource;
-};
-
-const initialAddRouteMemberForm: AddRouteMemberFormState = {
-  mode: "SYSTEM_USER",
-  userId: "",
-  memberName: "",
-  memberRole: "SANITARY_WORKER",
-  memberSource: "SOR_STAFF",
-};
-
-const externalRouteMemberSources: ExternalRouteMemberSource[] = [
-  "SOR_STAFF",
-  "HOSPITAL_STAFF",
-  "OTHER",
-];
-
-const manualRouteMemberRoles: RouteMemberRole[] = [
-  "SANITARY_WORKER",
-  "PARAMEDIC",
-  "NURSE",
-  "DOCTOR",
-  "OTHER",
-];
-
-function getAutomaticMedicalMemberSource(
-  route: RouteResponse
-): "NPL" | "POZ" | null {
-  const orderSources = route.transportOrders.map((order) => order.source);
-
-  if (orderSources.includes("NIGHT_MEDICAL_ASSISTANCE")) {
-    return "NPL";
-  }
-
-  if (orderSources.includes("PRIMARY_HEALTH_CARE")) {
-    return "POZ";
-  }
-  return null;
-}
-
-function isAnonymousMedicalSource(
-  source: ExternalRouteMemberSource
-): source is "NPL" | "POZ" {
-  return source === "NPL" || source === "POZ";
-}
-
-function getAvailableExternalRouteMemberSources(
-  route: RouteResponse
-): ExternalRouteMemberSource[] {
-  const orderSources = new Set(
-    route.transportOrders.map((order) => order.source)
-  );
-
-  return externalRouteMemberSources.filter((source) => {
-    if (source === "NPL") {
-      return orderSources.has("NIGHT_MEDICAL_ASSISTANCE");
-    }
-
-    if (source === "POZ") {
-      return orderSources.has("PRIMARY_HEALTH_CARE");
-    }
-
-    return true;
-  });
-}
 
 function formatTransportOrders(
   orders: RouteTransportOrderReference[]): string {
@@ -875,7 +799,7 @@ export function MyRoutesPage() {
       setErrorMessage(null);
       setSuccessMessage(null);
 
-      const updatedRoute = await finishRoute(finishModal.routeId,{
+      const updatedRoute = await finishRoute(finishModal.routeId, {
         finishOdometerLastThree,
         notes: null
       })
@@ -1080,223 +1004,28 @@ export function MyRoutesPage() {
                   }
                 />
 
-                <section className="my-route-card__collapsible-section">
-                  <button
-                    type="button"
-                    className="my-route-card__collapsible-toggle"
-                    aria-expanded={isCrewExpanded}
-                    onClick={() =>
-                      setExpandedCrewRouteId((previousRouteId) =>
-                        previousRouteId === route.id ? null : route.id
-                      )
-                    }
-                  >
-                    <span className="my-route-card__collapsible-label">
-                      <span className="my-route-card__collapsible-title">
-                        <Users size={18} aria-hidden="true" />
-                        <strong>Załoga trasy</strong>
-                      </span>
-                      <small>{routeMembers.length} os.</small>
-                    </span>
-                    <CircleChevronDown
-                      size={22}
-                      aria-hidden="true"
-                      className={
-                        isCrewExpanded
-                          ? "my-route-card__collapsible-chevron my-route-card__collapsible-chevron--expanded"
-                          : "my-route-card__collapsible-chevron"
-                      }
-                    />
-                  </button>
-
-                  {isCrewExpanded && (
-                    <div className="my-route-card__collapsible-content my-route-card__collapsible-content--crew">
-                      <div className="my-route-card__crew-list">
-                        {routeMembers.map((member) => {
-                          const canDelete = !(
-                            member.role === "DRIVER" && member.source === "SHIFT_TEAM"
-                          );
-
-                          return (
-                            <div className="my-route-card__crew-item" key={member.id}>
-                              <strong className="my-route-card__crew-role">
-                                {routeMemberRoleLabels[member.role]}
-                              </strong>
-
-                              <span className="my-route-card__crew-name">
-                                {member.fullName}
-                              </span>
-
-                              <div className="my-route-card__crew-actions">
-                                <small className="my-route-card__crew-source">
-                                  {routeMemberSourceLabels[member.source]}
-                                </small>
-
-                                {canDelete && (
-                                  <button
-                                    type="button"
-                                    className="my-route-card__crew-delete-button"
-                                    onClick={() => handleDeleteRouteMember(route.id, member.id)}
-                                  >
-                                    Usuń
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="my-route-card__crew-management">
-                        <button
-                          type="button"
-                          className="my-route-card__toggle-add-member-button"
-                          onClick={() => toggleAddMemberForm(route.id)}
-                        >
-                          {expandedAddMemberRouteId === route.id
-                            ? "Ukryj dodawanie członka"
-                            : "+ Dodaj członka trasy"}
-                        </button>
-
-                        {expandedAddMemberRouteId === route.id && (
-                          <div className="my-route-card__add-member-panel">
-                            <div className="my-route-card__add-member-mode">
-                              <button
-                                className={
-                                  getAddMemberForm(route.id).mode === "SYSTEM_USER"
-                                    ? "my-route-card__mode-button my-route-card__mode-button--active"
-                                    : "my-route-card__mode-button"
-                                }
-                                type="button"
-                                onClick={() =>
-                                  updateAddMemberForm(route.id, {
-                                    mode: "SYSTEM_USER",
-                                    memberName: "",
-                                    memberRole: "SANITARY_WORKER",
-                                  })
-                                }
-                              >
-                                Transport
-                              </button>
-
-                              <button
-                                className={
-                                  getAddMemberForm(route.id).mode === "EXTERNAL"
-                                    ? "my-route-card__mode-button my-route-card__mode-button--active"
-                                    : "my-route-card__mode-button"
-                                }
-                                type="button"
-                                onClick={() => {
-                                  const automaticSource = getAutomaticMedicalMemberSource(route);
-
-                                  updateAddMemberForm(route.id, {
-                                    mode: "EXTERNAL",
-                                    userId: "",
-                                    memberName: "",
-                                    memberRole: automaticSource ? "DOCTOR" : "PARAMEDIC",
-                                    memberSource: automaticSource ?? "SOR_STAFF",
-                                  })
-                                }}
-                              >
-                                Szpital
-                              </button>
-                            </div>
-
-                            <div className="my-route-card__add-member-form">
-                              {getAddMemberForm(route.id).mode === "SYSTEM_USER" ? (
-                                <select
-                                  className="my-route-card__add-member-input"
-                                  value={getAddMemberForm(route.id).userId}
-                                  onChange={(event) =>
-                                    updateAddMemberForm(route.id, { userId: event.target.value })
-                                  }
-                                >
-                                  <option value="">Wybierz użytkownika</option>
-                                  {(routeMemberCandidatesByRouteId[route.id] ?? []).map((member) => (
-                                    <option key={member.id} value={member.id}>
-                                      {member.firstName} {member.lastName}
-                                    </option>
-                                  ))}
-                                </select>
-                              ) : !isAnonymousMedicalSource(
-                                getAddMemberForm(route.id).memberSource
-                              ) ? (
-                                <input
-                                  className="my-route-card__add-member-input"
-                                  placeholder="Imię i nazwisko, np. Andrzej Kowalski"
-                                  value={getAddMemberForm(route.id).memberName}
-                                  onChange={(event) =>
-                                    updateAddMemberForm(route.id, {
-                                      memberName: event.target.value,
-                                    })
-                                  }
-                                />
-                              ) : null}
-
-                              {getAddMemberForm(route.id).mode === "EXTERNAL" && (
-                                <select
-                                  className="my-route-card__add-member-input"
-                                  value={getAddMemberForm(route.id).memberRole}
-                                  onChange={(event) =>
-                                    updateAddMemberForm(route.id, {
-                                      memberRole: event.target.value as RouteMemberRole,
-                                    })
-                                  }
-                                >
-                                  {(isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource)
-                                    ? (["DOCTOR", "NURSE"] as const)
-                                    : manualRouteMemberRoles
-                                  ).map((role) => (
-                                    <option key={role} value={role}>
-                                      {routeMemberRoleLabels[role]}
-                                    </option>
-                                  ))}
-                                </select>
-                              )}
-
-                              {getAddMemberForm(route.id).mode === "EXTERNAL" &&
-                                isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource) && (
-                                  <span className="my-route-card__automatic-member-source">
-                                    {routeMemberSourceLabels[getAddMemberForm(route.id).memberSource]}
-                                  </span>
-                                )}
-
-                              {getAddMemberForm(route.id).mode === "EXTERNAL" &&
-                                !isAnonymousMedicalSource(getAddMemberForm(route.id).memberSource) && (
-                                  <select
-                                    className="my-route-card__add-member-input"
-                                    value={getAddMemberForm(route.id).memberSource}
-                                    onChange={(event) =>
-                                      updateAddMemberForm(route.id, {
-                                        memberSource: event.target.value as ExternalRouteMemberSource,
-                                        memberName: "",
-                                        memberRole: "PARAMEDIC",
-                                      })
-                                    }
-                                  >
-                                    {getAvailableExternalRouteMemberSources(route).map((source) => (
-                                      <option key={source} value={source}>
-                                        {routeMemberSourceLabels[source]}
-                                      </option>
-                                    ))}
-                                  </select>
-                                )}
-
-                              <button
-                                className="my-route-card__secondary-button"
-                                type="button"
-                                disabled={addingMemberRouteId === route.id}
-                                onClick={() => handleAddRouteMember(route.id)}
-                              >
-                                {addingMemberRouteId === route.id ? "Dodawanie..." : "Dodaj członka"}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </section>
+                <RouteCrewSection
+                  route={route}
+                  routeMembers={routeMembers}
+                  candidates={routeMemberCandidatesByRouteId[route.id] ?? []}
+                  form={getAddMemberForm(route.id)}
+                  isExpanded={isCrewExpanded}
+                  isAddFormExpanded={expandedAddMemberRouteId === route.id}
+                  isAdding={addingMemberRouteId === route.id}
+                  onToggle={() =>
+                    setExpandedCrewRouteId((previousRouteId) =>
+                      previousRouteId === route.id ? null : route.id
+                    )
+                  }
+                  onToggleAddForm={() => toggleAddMemberForm(route.id)}
+                  onFormChange={(partialForm) =>
+                    updateAddMemberForm(route.id, partialForm)
+                  }
+                  onAddMember={() => handleAddRouteMember(route.id)}
+                  onDeleteMember={(memberId) =>
+                    handleDeleteRouteMember(route.id, memberId)
+                  }
+                />
 
                 <div className="my-route-card__actions">
                   {route.status === "CREATED" && (
