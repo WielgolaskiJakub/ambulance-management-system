@@ -46,7 +46,6 @@ import {
 } from "../api/transportOrdersApi";
 
 import type { TransportOrderResponse } from "../types/transportOrder";
-import { getTransportCancelOptions } from "../utils/transportOrderLabels";
 import { RouteOrdersSection } from "../components/routes/RouteOrdersSection";
 import {
   RouteCrewSection,
@@ -56,6 +55,7 @@ import {
 } from "../components/routes/RouteCrewSection";
 
 import { RouteFinishModal } from "../components/routes/RouteFinishModal";
+import { RouteOrderCancelModal } from "../components/routes/RouteOrderCancelModal";
 
 type FinishRouteModalState = {
   routeId: number;
@@ -1015,7 +1015,7 @@ export function MyRoutesPage() {
                       >
                         {waitingRouteId === route.id ? "Zapisywanie..." : "Konsultacja"}
                       </button>
-                      
+
                       {canFinishRoute && (
                         <button
                           className="my-route-card__secondary-button"
@@ -1138,72 +1138,18 @@ export function MyRoutesPage() {
       )}
 
       {cancelRouteOrderModal && (
-        <div className="my-routes-modal-backdrop">
-          <section
-            className="my-routes-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cancel-route-order-title"
-          >
-            <h2 id="cancel-route-order-title">Anuluj zlecenie</h2>
-
-            <p className="my-routes-modal__description">
-              Zlecenie {cancelRouteOrderModal.transportOrder.orderNumber}:{" "}
-              {cancelRouteOrderModal.transportOrder.pickupAddress ?? "Brak miejsca odbioru"} {" "}
-              →{" "}
-              {cancelRouteOrderModal.transportOrder.destinationAddress ?? "Brak celu"}
-            </p>
-
-            <label className="my-routes-modal__field">
-              <span>Powód anulowania </span>
-              <select
-                value={cancelReason}
-                onChange={(event) => setCancelReason(event.target.value)}
-                disabled={cancellingTransportOrderId !== null}
-              >
-                {getTransportCancelOptions().map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="my-routes-modal__field">
-              <span>Dodatkowy opis</span>
-              <textarea
-                value={cancelDescription}
-                onChange={(event) => setCancelDescription(event.target.value)}
-                placeholder="Opcjonalne szczegóły anulowania"
-                rows={3}
-                disabled={cancellingTransportOrderId !== null}
-              />
-            </label>
-
-            <div className="my-routes-modal__actions">
-              <button
-                type="button"
-                className="my-routes-modal__cancel-button"
-                onClick={closeCancelRouteOrderModal}
-                disabled={cancellingTransportOrderId !== null}
-              >
-                Wróć
-              </button>
-
-              <button
-                type="button"
-                className="my-routes-modal__danger-button"
-                onClick={handleCancelTransportOrderInRoute}
-                disabled={cancellingTransportOrderId !== null}
-              >
-                {cancellingTransportOrderId !== null
-                  ? "Anulowanie..."
-                  : "Potwierdź anulowanie"}
-              </button>
-            </div>
-          </section>
-        </div>
+        <RouteOrderCancelModal
+          transportOrder={cancelRouteOrderModal.transportOrder}
+          cancelReason={cancelReason}
+          cancelDescription={cancelDescription}
+          isSubmitting={cancellingTransportOrderId !== null}
+          onCancelReasonChange={setCancelReason}
+          onCancelDescriptionChange={setCancelDescription}
+          onBack={closeCancelRouteOrderModal}
+          onConfirm={handleCancelTransportOrderInRoute}
+        />
       )}
+
     </main>
   );
 }
