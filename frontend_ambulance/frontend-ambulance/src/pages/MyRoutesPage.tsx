@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
-import {
-  MapPin,
-  Route,
-} from "lucide-react";
 import axios from "axios";
 import {
   resolveTransportOrder,
@@ -22,8 +18,6 @@ import type {
   RouteResponse,
   RouteTransportOrderReference
 } from "../types/route";
-
-import { getRouteStatusLabel } from "../utils/routeLabels";
 import "./MyRoutesPage.css";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -56,6 +50,7 @@ import {
 import { RouteFinishModal } from "../components/routes/RouteFinishModal";
 import { RouteOrderCancelModal } from "../components/routes/RouteOrderCancelModal";
 import { RouteHistorySection } from "../components/routes/RouteHistorySection";
+import { RouteCardOverview } from "../components/routes/RouteCardOverview";
 
 type FinishRouteModalState = {
   routeId: number;
@@ -840,96 +835,26 @@ export function MyRoutesPage() {
         <section className="my-routes-list">
           {activeRoutes.map((route) => {
 
-            const completedTransportOrders = route.transportOrders.filter(
-              (order) => order.routeOrderStatus === "COMPLETED"
-            );
-
-            const currentStartAddress =
-              completedTransportOrders.at(-1)?.destinationAddress ?? route.startAddress;
-
-            const nextTransportOrder = route.transportOrders.find(
-              (order) => order.routeOrderStatus === "PENDING"
-            );
-
-            const canFinishRoute = route.transportOrders.length > 0 &&
-              route.transportOrders.every(
-                (order) => order.routeOrderStatus !== "PENDING"
-              );
-
             const routeMembers = routeMembersByRouteId[route.id] ?? [];
             const isOrdersExpanded = expandedOrderRouteId === route.id;
             const isCrewExpanded = expandedCrewRouteId === route.id;
 
             return (
               <article className={`my-route-card my-route-card--${route.status.toLowerCase()}`} key={route.id}>
-                <header className="my-route-card__header">
-                  <div className="my-route-card__title-group">
-                    <span className="my-route-card__eyebrow">Aktywna trasa</span>
-                    <h2 className="my-route-card__title"><Route size={22} aria-hidden="true" /> Trasa #{route.id}</h2>
-                    <p className="my-route-card__subtitle">
-                      {route.transportOrders.length} {route.transportOrders.length === 1 ? "zlecenie" : "zlecenia"} w kolejce
-                    </p>
-                  </div>
 
-                  <span className={`my-route-card__status my-route-card__status--${route.status.toLowerCase()}`}>
-                    {getRouteStatusLabel(route.status)}
-                  </span>
-                </header>
-
-                <div className="my-route-card__body">
-                  <section className="my-route-card__next-stop">
-                    <div className="my-route-card__next-stop-label">Następny kurs</div>
-                    <strong>
-                      <MapPin size={18} aria-hidden="true" />
-                      {nextTransportOrder
-                        ? `${currentStartAddress} → ${nextTransportOrder.destinationAddress}`
-                        : "Brak zleceń do realizacji"}
-                    </strong>
-                  </section>
-
-                  {route.status === "IN_PROGRESS" && nextTransportOrder && (
-                    <div className="my-route-card__resolve-actions">
-
-                      <button
-                        type="button"
-                        className="my-route-card__return-order-button"
-                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
-                        onClick={() => handleResolveTransportOrder(
-                          route.id,
-                          nextTransportOrder,
-                          "WAITING_FOR_PICKUP"
-                        )
-                        }
-                      >
-                        Pacjent pozostawiony w poradnii
-                      </button>
-
-                      <button
-                        type="button"
-                        className="my-route-card__complete-order-button"
-                        disabled={resolvingTransportOrderId === nextTransportOrder.id}
-                        onClick={() => handleResolveTransportOrder(
-                          route.id,
-                          nextTransportOrder,
-                          "COMPLETE"
-                        )
-                        }
-                      >
-                        {resolvingTransportOrderId === nextTransportOrder.id
-                          ? "Zapisywanie..."
-                          : "Pacjent przekazany"}
-                      </button>
-
-
-                    </div>
-                  )}
-
-                  {route.notes && (
-                    <p className="my-route-card__row">
-                      <strong>Notatki:</strong> {route.notes}
-                    </p>
-                  )}
-                </div>
+                <RouteCardOverview
+                  route={route}
+                  startingRouteId={startingRouteId}
+                  finishingRouteId={finishingRouteId}
+                  waitingRouteId={waitingRouteId}
+                  resumingRouteId={resumingRouteId}
+                  resolvingTransportOrderId={resolvingTransportOrderId}
+                  onStartRoute={handleStartRoute}
+                  onResolveTransportOrder={handleResolveTransportOrder}
+                  onMarkRouteAsWaiting={handleMarkRouteAsWaiting}
+                  onOpenFinishRouteModal={openFinishRouteModal}
+                  onResumeRoute={handleResumeRoute}
+                />
 
                 <RouteOrdersSection
                   route={route}
@@ -978,57 +903,6 @@ export function MyRoutesPage() {
                     handleDeleteRouteMember(route.id, memberId)
                   }
                 />
-
-                <div className="my-route-card__actions">
-                  {route.status === "CREATED" && (
-                    <button
-                      className="my-route-card__primary-button"
-                      type="button"
-                      disabled={startingRouteId === route.id}
-                      onClick={() => handleStartRoute(route.id)}
-                    >
-                      {startingRouteId === route.id
-                        ? "Rozpoczynanie..."
-                        : "Start trasy"}
-                    </button>
-                  )}
-
-                  {route.status === "IN_PROGRESS" && (
-                    <>
-                      <button
-                        className="my-route-card__secondary-button"
-                        type="button"
-                        disabled={waitingRouteId === route.id}
-                        onClick={() => handleMarkRouteAsWaiting(route.id)}
-                      >
-                        {waitingRouteId === route.id ? "Zapisywanie..." : "Konsultacja"}
-                      </button>
-
-                      {canFinishRoute && (
-                        <button
-                          className="my-route-card__secondary-button"
-                          type="button"
-                          disabled={finishingRouteId === route.id}
-                          onClick={() => openFinishRouteModal(route)}
-                        >
-                          {finishingRouteId === route.id ? "Kończenie..." : "Zakończ trasę"}
-                        </button>
-                      )}
-                    </>
-                  )}
-
-
-                  {route.status === "WAITING" && (
-                    <button
-                      className="my-route-card__primary-button"
-                      type="button"
-                      disabled={resumingRouteId === route.id}
-                      onClick={() => handleResumeRoute(route.id)}
-                    >
-                      {resumingRouteId === route.id ? "Wznawianie..." : "Wznów trasę"}
-                    </button>
-                  )}
-                </div>
               </article>
             );
           })}
