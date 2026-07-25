@@ -6,9 +6,6 @@ import {
   addTransportOrderToRoute,
   reorderTransportOrders,
   getMyRoutes,
-  startRoute,
-  markRouteAsWaiting,
-  resumeRoute,
   type RouteOrderFinishAction,
   cancelTransportOrderInRoute,
 } from "../api/routesApi";
@@ -50,7 +47,7 @@ import { RouteFinishModal } from "../components/routes/RouteFinishModal";
 import { RouteOrderCancelModal } from "../components/routes/RouteOrderCancelModal";
 import { RouteHistorySection } from "../components/routes/RouteHistorySection";
 import { RouteCardOverview } from "../components/routes/RouteCardOverview";
-import { useFinishRoute } from "../hooks/useFinishRoute";
+import { useRouteLifecycle } from "../hooks/useRouteLifecycle";
 
 type CancelRouteOrderModalState = {
   routeId: number,
@@ -62,15 +59,11 @@ type MyRoutesLocationState = {
 };
 
 
-
 export function MyRoutesPage() {
   const location = useLocation();
 
   const [routes, setRoutes] = useState<RouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startingRouteId, setStartingRouteId] = useState<number | null>(null);
-  const [waitingRouteId, setWaitingRouteId] = useState<number | null>(null);
-  const [resumingRouteId, setResumingRouteId] = useState<number | null>(null);
   const [routeMemberCandidatesByRouteId, setRouteMemberCandidatesByRouteId] =
     useState<Record<number, CrewMemberOptionResponse[]>>({});
 
@@ -99,10 +92,17 @@ export function MyRoutesPage() {
     updateFinishOdometerLastThree,
     closeFinishRouteModal,
     handleConfirmFinishRoute,
-  } = useFinishRoute({
+    startingRouteId,
+    waitingRouteId,
+    resumingRouteId,
+    handleStartRoute,
+    handleMarkRouteAsWaiting,
+    handleResumeRoute,
+  } = useRouteLifecycle({
     setRoutes,
     setErrorMessage,
-    setSuccessMessage
+    setSuccessMessage,
+    onRouteStarted: () => setExpandedAddMemberRouteId(null),
   });
 
   const [expandedAddMemberRouteId, setExpandedAddMemberRouteId] = useState<number | null>(null);
@@ -183,157 +183,6 @@ export function MyRoutesPage() {
 
     loadRoutes();
   }, []);
-
-  async function handleStartRoute(routeId: number) {
-    try {
-      setStartingRouteId(routeId);
-      setErrorMessage(null);
-      setSuccessMessage(null);
-
-      const updatedRoute = await startRoute(routeId);
-
-      setRoutes((currentRoutes) =>
-        currentRoutes.map((route) =>
-          route.id === routeId ? updatedRoute : route
-        )
-      );
-
-      setExpandedAddMemberRouteId(null);
-      setSuccessMessage("Trasa została rozpoczęta.");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 400) {
-          setErrorMessage("Nie można teraz rozpocząć tej trasy.");
-          return;
-        }
-
-        if (error.response?.status === 401) {
-          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
-          return;
-        }
-
-        if (error.response?.status === 403) {
-          setErrorMessage("Brak uprawnień do rozpoczęcia trasy.");
-          return;
-        }
-
-        if (error.response?.status === 404) {
-          setErrorMessage("Nie znaleziono trasy.");
-          return;
-        }
-
-        setErrorMessage(
-          `Błąd rozpoczynania trasy: ${error.response?.status ?? "brak odpowiedzi"
-          }`
-        );
-        return;
-      }
-
-      setErrorMessage("Nieznany błąd rozpoczynania trasy.");
-    } finally {
-      setStartingRouteId(null);
-    }
-  }
-
-  async function handleMarkRouteAsWaiting(routeId: number) {
-    try {
-      setWaitingRouteId(routeId);
-      setErrorMessage(null);
-      setSuccessMessage(null);
-
-      const updatedRoute = await markRouteAsWaiting(routeId);
-
-      setRoutes((currentRoutes) =>
-        currentRoutes.map((route) =>
-          route.id === routeId ? updatedRoute : route
-        )
-      );
-
-      setSuccessMessage("Trasa została oznaczona jako oczekująca.");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 400) {
-          setErrorMessage("Nie można teraz oznaczyć tej trasy jako oczekującej.");
-          return;
-        }
-
-        if (error.response?.status === 401) {
-          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
-          return;
-        }
-
-        if (error.response?.status === 403) {
-          setErrorMessage("Brak uprawnień do zmiany statusu trasy.");
-          return;
-        }
-
-        if (error.response?.status === 404) {
-          setErrorMessage("Nie znaleziono trasy.");
-          return;
-        }
-
-        setErrorMessage(
-          `Błąd oznaczania trasy jako oczekującej: ${error.response?.status ?? "brak odpowiedzi"
-          }`
-        );
-        return;
-      }
-
-      setErrorMessage("Nieznany błąd oznaczania trasy jako oczekującej.");
-    } finally {
-      setWaitingRouteId(null);
-    }
-  }
-
-  async function handleResumeRoute(routeId: number) {
-    try {
-      setResumingRouteId(routeId);
-      setErrorMessage(null);
-      setSuccessMessage(null);
-
-      const updatedRoute = await resumeRoute(routeId);
-
-      setRoutes((currentRoutes) =>
-        currentRoutes.map((route) =>
-          route.id === routeId ? updatedRoute : route
-        )
-      );
-
-      setSuccessMessage("Trasa została wznowiona.");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 400) {
-          setErrorMessage("Nie można teraz wznowić tej trasy.");
-          return;
-        }
-
-        if (error.response?.status === 401) {
-          setErrorMessage("Sesja wygasła. Zaloguj się ponownie.");
-          return;
-        }
-
-        if (error.response?.status === 403) {
-          setErrorMessage("Brak uprawnień do wznowienia trasy.");
-          return;
-        }
-
-        if (error.response?.status === 404) {
-          setErrorMessage("Nie znaleziono trasy.");
-          return;
-        }
-
-        setErrorMessage(
-          `Błąd wznawiania trasy: ${error.response?.status ?? "brak odpowiedzi"
-          }`
-        );
-        return;
-      }
-
-      setErrorMessage("Nieznany błąd wznawiania trasy.");
-    } finally {
-      setResumingRouteId(null);
-    }
-  }
 
   function getAddMemberForm(routeId: number): AddRouteMemberFormState {
     return addMemberFormByRouteId[routeId] ?? initialAddRouteMemberForm;
