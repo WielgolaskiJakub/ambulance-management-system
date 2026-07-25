@@ -5,7 +5,6 @@ import {
   resolveTransportOrder,
   addTransportOrderToRoute,
   reorderTransportOrders,
-  finishRoute,
   getMyRoutes,
   startRoute,
   markRouteAsWaiting,
@@ -51,11 +50,7 @@ import { RouteFinishModal } from "../components/routes/RouteFinishModal";
 import { RouteOrderCancelModal } from "../components/routes/RouteOrderCancelModal";
 import { RouteHistorySection } from "../components/routes/RouteHistorySection";
 import { RouteCardOverview } from "../components/routes/RouteCardOverview";
-
-type FinishRouteModalState = {
-  routeId: number;
-  finishOdometerLastThree: string;
-}
+import { useFinishRoute } from "../hooks/useFinishRoute";
 
 type CancelRouteOrderModalState = {
   routeId: number,
@@ -74,7 +69,6 @@ export function MyRoutesPage() {
   const [routes, setRoutes] = useState<RouteResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [startingRouteId, setStartingRouteId] = useState<number | null>(null);
-  const [finishingRouteId, setFinishingRouteId] = useState<number | null>(null);
   const [waitingRouteId, setWaitingRouteId] = useState<number | null>(null);
   const [resumingRouteId, setResumingRouteId] = useState<number | null>(null);
   const [routeMemberCandidatesByRouteId, setRouteMemberCandidatesByRouteId] =
@@ -98,11 +92,22 @@ export function MyRoutesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const {
+    finishModal,
+    finishingRouteId,
+    openFinishRouteModal,
+    updateFinishOdometerLastThree,
+    closeFinishRouteModal,
+    handleConfirmFinishRoute,
+  } = useFinishRoute({
+    setRoutes,
+    setErrorMessage,
+    setSuccessMessage
+  });
+
   const [expandedAddMemberRouteId, setExpandedAddMemberRouteId] = useState<number | null>(null);
   const [expandedOrderRouteId, setExpandedOrderRouteId] = useState<number | null>(null);
   const [expandedCrewRouteId, setExpandedCrewRouteId] = useState<number | null>(null);
-
-  const [finishModal, setFinishModal] = useState<FinishRouteModalState | null>(null);
 
   const [availableTransportOrders, setAvailableTransportOrders] = useState<TransportOrderResponse[]>([]);
   const [selectedTransportOrderIdByRouteId, setSelectedTransportOrderIdByRouteId] = useState<Record<number, string>>({});
@@ -720,58 +725,7 @@ export function MyRoutesPage() {
     }
   }
 
-  function openFinishRouteModal(route: RouteResponse) {
-    setFinishModal({
-      routeId: route.id,
-      finishOdometerLastThree: "",
-    });
-  }
-
-  async function handleConfirmFinishRoute() {
-    if (!finishModal) {
-      return;
-    }
-
-    if (!/^\d{1,3}$/.test(finishModal.finishOdometerLastThree)) {
-      setErrorMessage("Podaj od 1 do 3 ostatnich cyfr licznika.");
-      return;
-    }
-
-    const finishOdometerLastThree = Number(finishModal.finishOdometerLastThree);
-
-    try {
-      setFinishingRouteId(finishModal.routeId);
-      setErrorMessage(null);
-      setSuccessMessage(null);
-
-      const updatedRoute = await finishRoute(finishModal.routeId, {
-        finishOdometerLastThree,
-        notes: null
-      })
-
-      setRoutes((currentRoutes) =>
-        currentRoutes.map((route) =>
-          route.id === updatedRoute.id ? updatedRoute : route
-        )
-      );
-
-      setFinishModal(null);
-      setSuccessMessage("Trasa została zakończona.");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        setErrorMessage(
-          `Błąd kończenia trasy: ${error.response?.status ?? "brak odpowiedzi"
-          }`
-        );
-        return;
-      }
-
-      setErrorMessage("Nieznany błąd kończenia trasy.");
-    } finally {
-      setFinishingRouteId(null);
-    }
-  }
-
+ 
   if (loading) {
     return (
       <main className="my-routes-page">
@@ -916,17 +870,8 @@ export function MyRoutesPage() {
           routeId={finishModal.routeId}
           finishOdometerLastThree={finishModal.finishOdometerLastThree}
           isSubmitting={finishingRouteId === finishModal.routeId}
-          onOdometerChange={(value) =>
-            setFinishModal((previous) =>
-              previous
-                ? {
-                  ...previous,
-                  finishOdometerLastThree: value,
-                }
-                : previous
-            )
-          }
-          onCancel={() => setFinishModal(null)}
+          onOdometerChange={updateFinishOdometerLastThree}
+          onCancel={closeFinishRouteModal}
           onConfirm={handleConfirmFinishRoute}
         />
       )}
