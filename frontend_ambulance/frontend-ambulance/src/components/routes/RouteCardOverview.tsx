@@ -50,6 +50,12 @@ export function RouteCardOverview({
             (order) => order.routeOrderStatus !== "PENDING"
         );
 
+    const canMarkAsWaitingRoute =
+        route.transportOrders.length > 0 &&
+        route.transportOrders.some(
+            (order) => order.routeOrderStatus === "PENDING"
+        );
+
     return (
         <>
             <header className="my-route-card__header">
@@ -145,14 +151,16 @@ export function RouteCardOverview({
 
                 {route.status === "IN_PROGRESS" && (
                     <>
-                        <button
-                            className="my-route-card__secondary-button"
-                            type="button"
-                            disabled={waitingRouteId === route.id}
-                            onClick={() => onMarkRouteAsWaiting(route.id)}
-                        >
-                            {waitingRouteId === route.id ? "Zapisywanie..." : "Konsultacja"}
-                        </button>
+                        {canMarkAsWaitingRoute && (
+                            <button
+                                className="my-route-card__secondary-button"
+                                type="button"
+                                disabled={waitingRouteId === route.id}
+                                onClick={() => onMarkRouteAsWaiting(route.id)}
+                            >
+                                {waitingRouteId === route.id ? "Zapisywanie..." : "Konsultacja"}
+                            </button>
+                        )}
 
                         {canFinishRoute && (
                             <button

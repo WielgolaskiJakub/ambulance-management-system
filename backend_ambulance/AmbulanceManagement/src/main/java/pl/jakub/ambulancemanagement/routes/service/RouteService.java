@@ -384,6 +384,16 @@ public class RouteService {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_MARKED_AS_WAITING);
         }
 
+        List<RouteOrder> routeOrders =
+                routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(
+                        route.getId(),
+                        RouteOrderStatus.PENDING
+                );
+
+        if (routeOrders.isEmpty()) {
+            throw new ApiException(ErrorCode.ROUTE_HAS_NO_TRANSPORT_ORDERS);
+        }
+
         route.setStatus(RouteStatus.WAITING);
         return routeRepository.save(route);
     }
