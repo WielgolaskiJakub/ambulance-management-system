@@ -7,6 +7,7 @@ import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,4 +47,9 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
     Optional<Route> findFirstByShift_IdAndStatusInOrderByStartedAtDesc(
             Long shiftId,
             List<RouteStatus> statuses);
+
+    List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanAndStatusInAndShift_Ambulance_Id(LocalDateTime startedAtFrom,
+                                                                                                         LocalDateTime startedAtToExclusive,
+                                                                                                         List<RouteStatus> statuses,
+                                                                                                         Long ambulanceId);
 }

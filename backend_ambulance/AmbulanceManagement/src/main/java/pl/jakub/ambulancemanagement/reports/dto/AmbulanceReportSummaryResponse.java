@@ -1,4 +1,12 @@
 package pl.jakub.ambulancemanagement.reports.dto;
 
-public record AmbulanceReportSummaryResponse() {
-}
+import java.math.BigDecimal;
+import java.util.List;
+
+public record AmbulanceReportSummaryResponse(
+
+        List<AmbulanceReportResponse> ambulances,
+        long totalDistanceKm,
+        int completedRoutesCount,
+        BigDecimal totalEstimatedFuelConsumptionLiters
+) { }
