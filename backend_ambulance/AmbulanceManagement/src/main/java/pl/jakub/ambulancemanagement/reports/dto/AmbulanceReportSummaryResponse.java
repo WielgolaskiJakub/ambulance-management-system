@@ -6,7 +6,7 @@ import java.util.List;
 public record AmbulanceReportSummaryResponse(
 
         List<AmbulanceReportResponse> ambulances,
-        long totalDistanceKm,
-        int completedRoutesCount,
-        BigDecimal totalEstimatedFuelConsumptionLiters
+        long allTotalDistanceKm,
+        int allCompletedRoutesCount,
+        BigDecimal allTotalEstimatedFuelConsumptionLiters
 ) { }

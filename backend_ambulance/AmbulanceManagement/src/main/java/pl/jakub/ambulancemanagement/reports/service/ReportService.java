@@ -8,7 +8,7 @@ import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.reports.dto.AmbulanceReportResponse;
 import pl.jakub.ambulancemanagement.reports.dto.AmbulanceReportSummaryResponse;
-import pl.jakub.ambulancemanagement.reports.dto.ReportCreateRequest;
+import pl.jakub.ambulancemanagement.reports.dto.AmbulanceReportRequest;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
@@ -28,7 +28,7 @@ public class ReportService {
     private final RouteRepository routeRepository;
     private final AmbulanceRepository ambulanceRepository;
 
-    public AmbulanceReportSummaryResponse getReport(ReportCreateRequest request){
+    public AmbulanceReportSummaryResponse getReport(AmbulanceReportRequest request){
 
         if(request.dateFrom().isAfter(request.dateTo())){
             throw new ApiException(ErrorCode.INVALID_DATE_TIME);

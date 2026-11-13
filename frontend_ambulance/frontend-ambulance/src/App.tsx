@@ -19,6 +19,7 @@ import { ManagerUsersPage } from "./pages/ManagerUsersPage";
 import { ManagerAmbulancesPage } from "./pages/ManagerAmbulancesPage"
 import { ChangeTemporaryPasswordPage } from "./pages/ChangeTemporaryPasswordPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
+import { ManagerReportsPage } from "./pages/ManagerReportsPage";
 
 function App() {
   return (
@@ -67,6 +68,7 @@ function App() {
 
           <Route path="/manager/users" element={<ManagerUsersPage />} />
           <Route path="/manager/ambulances" element={<ManagerAmbulancesPage />} />
+          <Route path="/manager/reports" element={<ManagerReportsPage />} />
 
 
         </Route>

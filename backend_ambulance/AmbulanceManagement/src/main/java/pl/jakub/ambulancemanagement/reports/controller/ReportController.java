@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.jakub.ambulancemanagement.reports.dto.AmbulanceReportSummaryResponse;
-import pl.jakub.ambulancemanagement.reports.dto.ReportCreateRequest;
+import pl.jakub.ambulancemanagement.reports.dto.AmbulanceReportRequest;
 import pl.jakub.ambulancemanagement.reports.service.ReportService;
 
 @RestController
@@ -21,7 +21,7 @@ public class ReportController {
     @GetMapping("/ambulances")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
     public AmbulanceReportSummaryResponse getReport(
-            @Valid @ModelAttribute ReportCreateRequest request){
+            @Valid @ModelAttribute AmbulanceReportRequest request){
         return reportService.getReport(request);
     }
 }

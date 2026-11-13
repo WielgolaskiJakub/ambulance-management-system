@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.List;
 
-public record ReportCreateRequest(
+public record AmbulanceReportRequest(
 
         @NotEmpty
         List<@NotNull @Positive Long> ambulanceIds,

@@ -97,7 +97,12 @@ export function TopNavigation() {
            <NavLink className="top-navigation__link" to="/manager/ambulances">
             Pojazdy
           </NavLink>
+
+          <NavLink className="top-navigation__link" to="/manager/reports">
+            Raporty
+          </NavLink>
           </>
+          
         )}
       </nav>
 
