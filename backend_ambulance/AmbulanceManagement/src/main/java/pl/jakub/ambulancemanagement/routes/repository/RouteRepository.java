@@ -52,4 +52,6 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
                                                                                                          LocalDateTime startedAtToExclusive,
                                                                                                          List<RouteStatus> statuses,
                                                                                                          Long ambulanceId);
+
+    List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(LocalDateTime startedAtFrom, LocalDateTime startedAtToExclusive);
 }
