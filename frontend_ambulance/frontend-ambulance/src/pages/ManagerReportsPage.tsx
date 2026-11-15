@@ -6,7 +6,6 @@ import { getAllAmbulances } from "../api/ambulancesApi";
 import type {AmbulanceResponse} from "../types/ambulance";
 import "./ManagerReportsPage.css";
 
-
 export function ManagerReportsPage() {
 
 

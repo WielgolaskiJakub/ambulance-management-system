@@ -20,6 +20,8 @@ import { ManagerAmbulancesPage } from "./pages/ManagerAmbulancesPage"
 import { ChangeTemporaryPasswordPage } from "./pages/ChangeTemporaryPasswordPage";
 import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { ManagerReportsPage } from "./pages/ManagerReportsPage";
+import { ManagerDailyReportPage } from "./pages/ManagerDailyReportPage";
+import { ReportsLayout } from "./layouts/ReportsLayout";
 
 function App() {
   return (
@@ -68,7 +70,12 @@ function App() {
 
           <Route path="/manager/users" element={<ManagerUsersPage />} />
           <Route path="/manager/ambulances" element={<ManagerAmbulancesPage />} />
-          <Route path="/manager/reports" element={<ManagerReportsPage />} />
+        
+      <Route path="/manager/reports" element={<ReportsLayout />}>
+        <Route index element={<ManagerReportsPage />} />
+        <Route path="daily" element={<ManagerDailyReportPage />} />
+        </Route>
+          
 
 
         </Route>
