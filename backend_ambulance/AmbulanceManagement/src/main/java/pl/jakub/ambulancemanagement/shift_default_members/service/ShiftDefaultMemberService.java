@@ -12,12 +12,16 @@ import pl.jakub.ambulancemanagement.shift_default_members.dto.UpdateShiftDefault
 import pl.jakub.ambulancemanagement.shift_default_members.model.ShiftDefaultMember;
 import pl.jakub.ambulancemanagement.shift_default_members.repository.ShiftDefaultMemberRepository;
 import pl.jakub.ambulancemanagement.shifts.model.Shift;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -51,6 +55,7 @@ public class ShiftDefaultMemberService {
     @Transactional
     public ShiftDefaultMember createShiftDefaultMember(CreateShiftDefaultMemberRequest request){
 
+        //TODO to trzeba bedzie zrobić razem z createShift jako jedna metoda transational żeby nie łaczyć dwoch postów w jednym formularzu
         User user =  userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
@@ -60,6 +65,12 @@ public class ShiftDefaultMemberService {
         validateShiftDefaultMemberRole(request.getRole());
         validateUserCanBeShiftDefaultMember(user, shift);
         validateShiftDefaultMemberTime(request.getStartTime(),request.getEndTime(),shift);
+        validateNoOverlappingAssignmentOnWorkingDay(
+                user,
+                request.getStartTime(),
+                request.getEndTime(),
+                -1L
+        );
 
         if(shiftDefaultMemberRepository.existsByShift_IdAndUser_Id(shift.getId(),user.getId())){
             throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_ALREADY_EXIST);
@@ -112,6 +123,12 @@ public class ShiftDefaultMemberService {
 
         validateCurrentUserCanManageShift(shift);
         validateShiftDefaultMemberTime(startTime,endTime,shift);
+        validateNoOverlappingAssignmentOnWorkingDay(
+                user,
+                startTime,
+                endTime,
+                shiftDefaultMemberToUpdate.getId()
+        );
         validateUserCanBeShiftDefaultMember(user, shift);
         validateShiftDefaultMemberRole(role);
 
@@ -131,6 +148,42 @@ public class ShiftDefaultMemberService {
 
         return shiftDefaultMemberRepository.save(shiftDefaultMemberToUpdate);
     }
+    @Transactional
+    public ShiftDefaultMember extendShiftDefaultMemberOpenEnded(long id) {
+        ShiftDefaultMember shiftDefaultMember = getShiftDefaultMemberById(id);
+
+        validateCurrentUserCanManageShift(shiftDefaultMember.getShift());
+
+        if (shiftDefaultMember.getShift().getStatus() != ShiftStatus.ACTIVE) {
+            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
+        }
+
+        shiftDefaultMember.setEndTime(null);
+
+        return shiftDefaultMemberRepository.save(shiftDefaultMember);
+    }
+
+    @Transactional
+    public ShiftDefaultMember finishShiftDefaultMember(long id) {
+        ShiftDefaultMember shiftDefaultMember = getShiftDefaultMemberById(id);
+
+        validateCurrentUserCanManageShift(shiftDefaultMember.getShift());
+
+        LocalDateTime now = LocalDateTime.now();
+        if(shiftDefaultMember.getStartTime().isAfter(now)){
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_NOT_STARTED);
+        }
+
+        if(shiftDefaultMember.getEndTime() != null
+        && !shiftDefaultMember.getEndTime().isAfter(now)){
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_ALREADY_FINISHED);
+        }
+
+        shiftDefaultMember.setEndTime(now);
+
+        return shiftDefaultMemberRepository.save(shiftDefaultMember);
+    }
+
 
     @Transactional
     public void deleteShiftDefaultMemberById(long id) {
@@ -163,16 +216,16 @@ public class ShiftDefaultMemberService {
             LocalDateTime endTime,
             Shift shift
     ) {
-        if (startTime == null || endTime == null) {
+        if (startTime == null ) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
 
-        if (!endTime.isAfter(startTime)) {
+        if (endTime != null && !endTime.isAfter(startTime)) {
             throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
         }
 
-        if (startTime.isBefore(shift.getStartTime()) || endTime.isAfter(shift.getEndTime())) {
-            throw new ApiException(ErrorCode.INVALID_SHIFT_TIME);
+        if (startTime.isBefore(shift.getStartTime())) {
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_START_BEFORE_SHIFT);
         }
     }
     private void validateCurrentUserCanManageShift(Shift shift) {
@@ -188,5 +241,48 @@ public class ShiftDefaultMemberService {
         }
 
         throw new ApiException(ErrorCode.SHIFT_ACCESS_DENIED);
+    }
+    public void validateNoOverlappingAssignmentOnWorkingDay(
+            User user,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Long excludedMemberId
+    ) {
+        if (isWeekendOperationalTime(startTime)) {
+            return;
+        }
+
+        boolean hasConflict = endTime == null
+                ? shiftDefaultMemberRepository
+                .existsOpenEndedOverlappingAssignmentForUser(
+                        user.getId(),
+                        startTime,
+                        ShiftStatus.ACTIVE,
+                        excludedMemberId
+
+                )
+                : shiftDefaultMemberRepository
+                .existsOverlappingAssignmentForUser(
+                        user.getId(),
+                        startTime,
+                        endTime,
+                        ShiftStatus.ACTIVE,
+                        excludedMemberId
+                );
+
+        if (hasConflict) {
+            throw new ApiException(ErrorCode.SHIFT_DEFAULT_MEMBER_TIME_CONFLICT);
+        }
+    }
+
+    private boolean isWeekendOperationalTime(LocalDateTime dateTime) {
+        LocalDate operationalDate = dateTime.toLocalTime().isBefore(LocalTime.of(7, 0))
+                ? dateTime.toLocalDate().minusDays(1)
+                : dateTime.toLocalDate();
+
+        DayOfWeek operationalDay = operationalDate.getDayOfWeek();
+
+        return operationalDay == DayOfWeek.SATURDAY
+                || operationalDay == DayOfWeek.SUNDAY;
     }
 }

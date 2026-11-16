@@ -1,6 +1,6 @@
 package pl.jakub.ambulancemanagement.auth.security;
 
-
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,29 +41,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String jwt = authHeader.substring(7);
-        String username = jwtService.extractUsername(jwt);
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findByUsername(username).orElse(null);
+        try {
+            String username = jwtService.extractUsername(jwt);
 
-            if (user != null && jwtService.isTokenValid(jwt, user)) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                User user = userRepository.findByUsername(username).orElse(null);
 
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
+                if (user != null && jwtService.isTokenValid(jwt, user)) {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                authToken.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
-                );
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
 
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    authToken.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
-        }
 
-        filterChain.doFilter(request, response);
+            filterChain.doFilter(request, response);
+
+        } catch (JwtException | IllegalArgumentException exception) {
+            SecurityContextHolder.clearContext();
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("""
+                    {
+                      "error": "JWT_INVALID_OR_EXPIRED",
+                      "message": "Token is invalid or expired"
+                    }
+                    """);
+        }
     }
 }

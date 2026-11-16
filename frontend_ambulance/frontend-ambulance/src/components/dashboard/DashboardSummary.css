@@ -1,0 +1,105 @@
+.driver-dashboard-overview {
+    display: grid;
+    grid-template-columns: 180px 100px 145px 105px 95px minmax(285px, 1fr) 130px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 14px;
+}
+
+.driver-dashboard-identity,
+.driver-dashboard-finish-button,
+.driver-dashboard-overview .dashboard-summary__compact-item,
+.driver-dashboard-overview .shift-crew-sidebar {
+    height: 78px;
+}
+
+.driver-dashboard-identity {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+    background: #111827;
+    overflow: hidden;
+}
+
+.driver-dashboard-identity span,
+.driver-dashboard-overview .dashboard-summary__compact-item span {
+    display: block;
+    margin-bottom: 4px;
+    color: #93c5fd;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.driver-dashboard-identity strong {
+    display: block;
+    color: #f8fafc;
+    font-size: 18px;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.driver-dashboard-identity small,
+.driver-dashboard-overview .dashboard-summary__compact-item small {
+    display: block;
+    margin-top: 4px;
+    color: #bfdbfe;
+    font-size: 12px;
+    line-height: 1.15;
+}
+
+.driver-dashboard-overview .dashboard-summary__compact-item {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 10px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+    background: #111827;
+    overflow: hidden;
+}
+
+.driver-dashboard-overview .dashboard-summary__compact-item strong {
+    display: block;
+    color: #f8fafc;
+    font-size: 15px;
+    line-height: 1.15;
+    white-space: nowrap;
+}
+
+.driver-dashboard-finish-button {
+    width: 100%;
+    align-self: center;
+    justify-content: center;
+    padding: 10px 12px;
+    text-align: center;
+    line-height: 1.15;
+}
+
+.driver-dashboard-overview .dashboard-summary__success-message {
+    grid-column: 1 / -1;
+    margin: 0;
+}
+
+@media (max-width: 1180px) {
+    .driver-dashboard-overview {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .driver-dashboard-identity,
+    .driver-dashboard-finish-button,
+    .driver-dashboard-overview .dashboard-summary__compact-item,
+    .driver-dashboard-overview .shift-crew-sidebar {
+        height: auto;
+        min-height: 78px;
+    }
+}
+
+@media (max-width: 640px) {
+    .driver-dashboard-overview {
+        grid-template-columns: 1fr;
+    }
+}

@@ -7,6 +7,8 @@ import type { AmbulanceDashboardResponse } from "../../types/dashboard";
 import { getUserRoleLabel } from "../../utils/userRoleLabels";
 import { formatDate } from "../../utils/dateTimeFormat";
 import { finishShift } from "../../api/shiftsApi";
+import { ShiftDefaultMembersPanel } from "./ShiftDefaultMembersPanel";
+import "./DashboardSummary.css";
 
 type ApiErrorResponse = {
     code?: string;
@@ -105,7 +107,7 @@ export function DashboardSummary() {
                         state: {
                             warningMessage:
                                 "Nie można zakończyć zmiany, ponieważ masz niezakończone trasy.",
-                        }
+                        },
                     });
                     return;
                 }
@@ -142,7 +144,7 @@ export function DashboardSummary() {
 
     if (loading) {
         return (
-            <section className="dashboard-summary dashboard-summary-loading">
+            <section className="dashboard-summary dashboard-summary--compact dashboard-summary-loading">
                 <p className="dashboard-summary__message">Ładowanie danych...</p>
             </section>
         );
@@ -187,81 +189,58 @@ export function DashboardSummary() {
     }
 
     return (
-        <section className="dashboard-summary">
-            <div className="dashboard-summary__header">
-                <div className="dashboard-summary__user">
-                    <h2 className="dashboard-summary__title">
-                        {dashboard.loggedUserFullName}
-                    </h2>
-
-                    <p className="dashboard-summary__subtitle">
-                        {getUserRoleLabel(dashboard.loggedUserRole)}
-                    </p>
-                </div>
-
-                <div className="dashboard-summary__date">
-                    {formatDate(dashboard.currentDate)}
-                </div>
+        <section className="dashboard-summary driver-dashboard-overview">
+            <div className="driver-dashboard-identity">
+                <span>Kierowca</span>
+                <strong>{dashboard.loggedUserFullName}</strong>
+                <small>
+                    {getUserRoleLabel(dashboard.loggedUserRole)} • {formatDate(dashboard.currentDate)}
+                </small>
             </div>
 
-            <div className="dashboard-summary__grid">
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Zmiana</span>
-                    <strong className="dashboard-summary__value">
-                        {getShiftStatusLabel(dashboard.shiftStatus)}
-                    </strong>
-                    <span className="dashboard-summary__hint">
-                        {dashboard.shiftTimeLabel ?? "Brak godzin"}
-                    </span>
-                </div>
-
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Karetka</span>
-                    <strong className="dashboard-summary__value">
-                        {dashboard.registrationPlates}
-                    </strong>
-                    <span className="dashboard-summary__hint">
-                        {dashboard.carBrand} {dashboard.model}
-                    </span>
-                </div>
-
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Przebieg</span>
-                    <strong className="dashboard-summary__value">
-                        {dashboard.mileage} km
-                    </strong>
-                </div>
-
-                <div className="dashboard-summary__card">
-                    <span className="dashboard-summary__label">Szacowane paliwo</span>
-                    <strong className="dashboard-summary__value">
-                        {dashboard.estimatedFuelLitersDisplay !== null
-                            ? `${dashboard.estimatedFuelLitersDisplay} l`
-                            : "Brak danych"}
-                    </strong>
-
-                    {dashboard.tankCapacityLiters !== null && (
-                        <span className="dashboard-summary__hint">
-                            Zbiornik: {dashboard.tankCapacityLiters} l
-                        </span>
-                    )}
-                </div>
+            <div className="dashboard-summary__compact-item">
+                <span>Zmiana</span>
+                <strong>{getShiftStatusLabel(dashboard.shiftStatus)}</strong>
+                <small>{dashboard.shiftTimeLabel ?? "Brak godzin"}</small>
             </div>
+
+            <div className="dashboard-summary__compact-item dashboard-summary__compact-item--wide">
+                <span>Karetka</span>
+                <strong>{dashboard.registrationPlates}</strong>
+                <small>{dashboard.carBrand} {dashboard.model}</small>
+            </div>
+
+            <div className="dashboard-summary__compact-item">
+                <span>Przebieg</span>
+                <strong>{dashboard.mileage} km</strong>
+            </div>
+
+            <div className="dashboard-summary__compact-item">
+                <span>Paliwo</span>
+                <strong>
+                    {dashboard.estimatedFuelLitersDisplay !== null
+                        ? `${dashboard.estimatedFuelLitersDisplay} l`
+                        : "Brak danych"}
+                </strong>
+                {dashboard.tankCapacityLiters !== null && (
+                    <small>Zbiornik: {dashboard.tankCapacityLiters} l</small>
+                )}
+            </div>
+
+            <ShiftDefaultMembersPanel shiftId={dashboard.shiftId} />
+
+            <button
+                className="dashboard-summary__finish-button driver-dashboard-finish-button"
+                type="button"
+                disabled={finishingShift}
+                onClick={handleFinishShift}
+            >
+                {finishingShift ? "Kończenie..." : "Zakończ zmianę"}
+            </button>
 
             {successMessage && (
                 <p className="dashboard-summary__success-message">{successMessage}</p>
             )}
-
-            <div className="dashboard-summary__actions">
-                <button
-                    className="dashboard-summary__finish-button"
-                    type="button"
-                    disabled={finishingShift}
-                    onClick={handleFinishShift}
-                >
-                    {finishingShift ? "Kończenie zmiany..." : "Zakończ zmianę"}
-                </button>
-            </div>
         </section>
     );
 }

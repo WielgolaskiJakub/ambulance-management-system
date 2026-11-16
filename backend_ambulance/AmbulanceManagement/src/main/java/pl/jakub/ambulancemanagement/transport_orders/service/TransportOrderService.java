@@ -14,6 +14,7 @@ import pl.jakub.ambulancemanagement.routes.dto.RouteSummaryResponse;
 import pl.jakub.ambulancemanagement.shifts.model.ShiftStatus;
 import pl.jakub.ambulancemanagement.shifts.repository.ShiftRepository;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.repository.TransportOrderPatientDataRepository;
 import pl.jakub.ambulancemanagement.transport_orders.dto.*;
@@ -23,9 +24,11 @@ import pl.jakub.ambulancemanagement.transport_orders.repository.TransportOrderRe
 import pl.jakub.ambulancemanagement.users.model.User;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +42,7 @@ public class TransportOrderService {
     private final RouteMemberRepository routeMemberRepository;
     private final CurrentUserService currentUserService;
     private final ShiftRepository shiftRepository;
+    private final TransportOrderNumberService transportOrderNumberService;
 
 
     public List<TransportOrder> getAllTransportOrders() {
@@ -109,7 +113,7 @@ public class TransportOrderService {
 
         User user = currentUserService.getCurrentUser();
 
-        String orderNumber = prepareOptionalOrderNumber(request.getOrderNumber());
+        String orderNumber = transportOrderNumberService.generateOrderNumber();
 
 
         if (!Boolean.TRUE.equals(user.getActive())) {
@@ -129,23 +133,6 @@ public class TransportOrderService {
     }
 
     @Transactional
-    public TransportOrder assignTransportOrderNumber(AssignOrderNumberRequest request, long id) {
-
-        TransportOrder transportOrder = getTransportOrderById(id);
-
-
-        if (transportOrder.getOrderNumber() != null) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_ASSIGNED);
-        }
-
-        String orderNumber = prepareRequiredOrderNumber(request.getOrderNumber());
-
-        transportOrder.setOrderNumber(orderNumber);
-
-        return transportOrderRepository.save(transportOrder);
-    }
-
-    @Transactional
     public TransportOrder createTransportOrderByUser(CreateTransportOrderByUserRequest request) {
 
         User user = currentUserService.getCurrentUser();
@@ -159,6 +146,10 @@ public class TransportOrderService {
         }
 
         TransportOrder transportOrder = buildTransportOrderByUser(request, user);
+
+        transportOrder.setOrderNumber(transportOrderNumberService.generateOrderNumber());
+        transportOrder.setPlannedDate(LocalDate.now());
+        transportOrder.setPlannedDepartureTime(null);
 
         TransportOrder savedTransportOrder = transportOrderRepository.save(transportOrder);
 
@@ -187,22 +178,6 @@ public class TransportOrderService {
         TransportOrder transportOrderToUpdate = getTransportOrderById(id);
 
         validateTransportOrderCanBeModified(transportOrderToUpdate);
-
-        if (request.getOrderNumber() != null) {
-            if (request.getOrderNumber().isBlank()) {
-                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
-            }
-
-            String orderNumber = request.getOrderNumber().trim();
-
-            boolean orderNumberChanged = !orderNumber.equals(transportOrderToUpdate.getOrderNumber());
-
-            if (orderNumberChanged && transportOrderRepository.existsByOrderNumber(orderNumber)) {
-                throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-            }
-
-            transportOrderToUpdate.setOrderNumber(orderNumber);
-        }
 
         if (request.getPickupAddress() != null && request.getPickupAddress().isBlank()) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
@@ -270,6 +245,18 @@ public class TransportOrderService {
     }
 
     @Transactional(readOnly = true)
+    public List<TransportOrder> getOrderByStatuses(List<TransportStatus> statuses) {
+        if(statuses==null || statuses.isEmpty()){
+            statuses=List.of(
+                    TransportStatus.NEW,
+                    TransportStatus.WAITING_FOR_PICKUP,
+                    TransportStatus.IN_PROGRESS
+            );
+        }
+        return transportOrderRepository.findByStatusInOrderByCreatedAtAsc(statuses);
+    }
+
+    @Transactional(readOnly = true)
     public TransportOrderCrewPreviewResponse getTransportOrderCrewPreviewById(Long id){
         TransportOrder transportOrder = getTransportOrderById(id);
 
@@ -322,6 +309,8 @@ public class TransportOrderService {
                                                String pickupAddress, String destinationAddress) {
         TransportOrder transportOrder = new TransportOrder();
 
+        transportOrder.setPlannedDate(request.getPlannedDate());
+        transportOrder.setPlannedDepartureTime(request.getPlannedDepartureTime());
         transportOrder.setOrderNumber(orderNumber);
         transportOrder.setOrderType(request.getOrderType());
         transportOrder.setSource(request.getSource());
@@ -351,20 +340,6 @@ public class TransportOrderService {
         return transportOrder;
     }
 
-    private String prepareOptionalOrderNumber(String requestOrderNumber) {
-        if (requestOrderNumber == null || requestOrderNumber.isBlank()) {
-            return null;
-        }
-
-        String orderNumber = requestOrderNumber.trim();
-
-        if (transportOrderRepository.existsByOrderNumber(orderNumber)) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-        }
-
-        return orderNumber;
-    }
-
     private void updateTransportOrderByManagerFields(UpdateTransportOrderByManagerRequest request,
                                                      TransportOrder transportOrderToUpdate) {
         if (request.getOrderType() != null) {
@@ -388,6 +363,15 @@ public class TransportOrderService {
         if (request.getDestinationAddress() != null) {
             transportOrderToUpdate.setDestinationAddress(request.getDestinationAddress().trim());
         }
+        if (request.getPlannedDate() != null) {
+            transportOrderToUpdate.setPlannedDate(request.getPlannedDate());
+        }
+        if(request.getPatients() != null) {
+            syncPatientDataForTransportOrder(transportOrderToUpdate, request.getPatients());
+        }
+        if(request.getPlannedDepartureTime() != null) {
+            transportOrderToUpdate.setPlannedDepartureTime(request.getPlannedDepartureTime());
+        }
     }
 
     private void updateTransportOrderByUserFields(UpdateTransportOrderByUserRequest request,
@@ -407,21 +391,13 @@ public class TransportOrderService {
         if (request.getDescription() != null) {
             transportOrderToUpdate.setDescription(normalizeNullableText(request.getDescription()));
         }
-
-    }
-
-    private String prepareRequiredOrderNumber(String requestOrderNumber) {
-        if (requestOrderNumber == null || requestOrderNumber.isBlank()) {
-            throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+        if (request.getPickupAddress() != null) {
+            transportOrderToUpdate.setPickupAddress(request.getPickupAddress().trim());
+        }
+        if (request.getDestinationAddress() != null) {
+            transportOrderToUpdate.setDestinationAddress(request.getDestinationAddress().trim());
         }
 
-        String orderNumber = requestOrderNumber.trim();
-
-        if (transportOrderRepository.existsByOrderNumber(orderNumber)) {
-            throw new ApiException(ErrorCode.ORDER_NUMBER_ALREADY_EXIST);
-        }
-
-        return orderNumber;
     }
 
     private void validateTransportOrderCanBeModified(TransportOrder transportOrder) {
@@ -526,5 +502,60 @@ public class TransportOrderService {
     }
     private void validateCurrentUserCanCancelTransportOrder(TransportOrder transportOrder) {
         validateCurrentUserCanAccessTransportOrder(transportOrder);
+    }
+    private void syncPatientDataForTransportOrder(
+            TransportOrder transportOrder,
+            List<TransportOrderPatientDataUpdateRequest> patientRequests
+    ) {
+        List<TransportOrderPatientData> existingPatients =
+                transportOrderPatientDataRepository.findByTransportOrderId(transportOrder.getId());
+
+        List<Long> requestPatientIds = patientRequests.stream()
+                .map(TransportOrderPatientDataUpdateRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<TransportOrderPatientData> patientsToDelete = existingPatients.stream()
+                .filter(patient -> patient.getId() != null)
+                .filter(patient -> !requestPatientIds.contains(patient.getId()))
+                .toList();
+
+        transportOrderPatientDataRepository.deleteAll(patientsToDelete);
+
+        for (TransportOrderPatientDataUpdateRequest patientRequest : patientRequests) {
+            validatePatientUpdateRequest(patientRequest);
+
+            if (patientRequest.getId() == null) {
+                TransportOrderPatientData newPatient = new TransportOrderPatientData();
+
+                newPatient.setTransportOrder(transportOrder);
+                newPatient.setPatientFirstName(normalizeRequiredText(patientRequest.getPatientFirstName()));
+                newPatient.setPatientLastName(normalizeRequiredText(patientRequest.getPatientLastName()));
+                newPatient.setPickupDetails(normalizeNullableText(patientRequest.getPickupDetails()));
+
+                transportOrderPatientDataRepository.save(newPatient);
+                continue;
+            }
+
+            TransportOrderPatientData patientToUpdate = existingPatients.stream()
+                    .filter(patient -> patient.getId().equals(patientRequest.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST));
+
+            if (patientToUpdate.getAnonymizedAt() != null) {
+                throw new ApiException(ErrorCode.PATIENT_ALREADY_ANONYMIZED);
+            }
+
+            patientToUpdate.setPatientFirstName(normalizeRequiredText(patientRequest.getPatientFirstName()));
+            patientToUpdate.setPatientLastName(normalizeRequiredText(patientRequest.getPatientLastName()));
+            patientToUpdate.setPickupDetails(normalizeNullableText(patientRequest.getPickupDetails()));
+
+            transportOrderPatientDataRepository.save(patientToUpdate);
+        }
+    }
+
+    private void validatePatientUpdateRequest(TransportOrderPatientDataUpdateRequest request) {
+        normalizeRequiredText(request.getPatientFirstName());
+        normalizeRequiredText(request.getPatientLastName());
     }
 }

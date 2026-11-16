@@ -1,5 +1,9 @@
+import type { RouteMemberResponse } from "./routeMember";
+
 export type TransportOrderResponse = {
   id: number;
+  plannedDate: string | null;
+  plannedDepartureTime: string | null;
   orderNumber: string | null;
   orderType: string;
   source: string;
@@ -68,6 +72,18 @@ export type CreateTransportOrderByUserRequest = {
   patients: TransportOrderPatientCreateItemRequest[];
 };
 
+export type CreateTransportOrderByManagerRequest = {
+  plannedDate: string;
+  plannedDepartureTime: string | null;
+  orderType: string;
+  source: string;
+  priority: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  description: string | null;
+  patients: TransportOrderPatientCreateItemRequest[];
+};
+
 export type TransportOrderRouteMemberResponse = {
   id: number;
   userId: number | null;
@@ -86,22 +102,61 @@ export type TransportOrderRouteSummaryResponse = {
   finishedAt: string | null;
   notes: string | null;
   status: string;
-  routeMembers: TransportOrderRouteMemberResponse[];
+  routeMembers: RouteMemberResponse[];
 };
 
 export type TransportOrderDetailsResponse = {
   id: number;
   orderNumber: string | null;
+  plannedDate: string | null;
+  plannedDepartureTime: string | null;
   orderType: string;
   source: string;
   priority: string;
   status: string;
+
+  createdById: number;
+  createdByFullName: string;
+  createdByRole: string;
+
   pickupAddress: string | null;
   destinationAddress: string | null;
   description: string | null;
+
   createdAt: string | null;
   completedAt: string | null;
   cancelledAt: string | null;
+
+  cancelledById: number | null;
+  cancelledByFullName: string | null;
+  cancelReason: string | null;
+  cancelDescription: string | null;
+
   patients: TransportOrderPatientDataResponse[];
   routes: TransportOrderRouteSummaryResponse[];
+};
+
+export type TransportOrderPatientDataUpdateRequest = {
+  id: number | null;
+  patientFirstName: string;
+  patientLastName: string;
+  pickupDetails: string | null;
+};
+
+
+export type  UpdateTransportOrderByManagerRequest = {
+  plannedDate: string | null;
+  plannedDepartureTime: string | null;
+  orderType: string;
+  source: string;
+  priority: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  description: string | null;
+  patients: TransportOrderPatientDataUpdateRequest[];
+};
+
+export type CancelTransportOrderRequest = {
+  cancelReason: string;
+  cancelDescription: string | null;
 };

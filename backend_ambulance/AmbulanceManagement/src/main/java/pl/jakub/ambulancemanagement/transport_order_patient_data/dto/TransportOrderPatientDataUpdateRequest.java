@@ -10,7 +10,7 @@ import lombok.Setter;
 public class TransportOrderPatientDataUpdateRequest {
 
 
-    private Long transportOrderId;
+    private Long id;
 
     @Size(max = 100)
     private String patientFirstName;

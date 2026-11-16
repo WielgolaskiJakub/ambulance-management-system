@@ -10,6 +10,7 @@ import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberUpdateRequest;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
 import pl.jakub.ambulancemanagement.route_members.service.RouteMemberService;
+import pl.jakub.ambulancemanagement.users.dto.CrewMemberOptionResponse;
 
 import java.util.List;
 @RestController
@@ -25,6 +26,15 @@ public class RouteMemberController {
         return routeMemberService.getRouteMembersByRoute(routeId)
                 .stream()
                 .map(RouteMemberResponse::fromEntity)
+                .toList();
+    }
+
+    @GetMapping("/candidates")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    public List<CrewMemberOptionResponse> getRouteMemberCandidates(@PathVariable Long routeId) {
+        return routeMemberService.getRouteMemberCandidates(routeId)
+                .stream()
+                .map(CrewMemberOptionResponse::fromEntity)
                 .toList();
     }
 
@@ -53,10 +63,10 @@ public class RouteMemberController {
     @DeleteMapping("/{memberId}")
     @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY', 'ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteRouteMember(
+    public void deleteRouteMemberFromRoute(
             @PathVariable Long routeId,
             @PathVariable Long memberId
     ) {
-        routeMemberService.deleteRouteMember(routeId, memberId);
+        routeMemberService.deleteRouteMemberFromRoute(routeId, memberId);
     }
 }

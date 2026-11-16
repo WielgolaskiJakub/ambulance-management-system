@@ -34,8 +34,9 @@ public class TransportOrderController {
 
     @GetMapping("/queue")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public List<TransportOrderResponse> getTransportOrdersByStatus(@RequestParam TransportStatus status) {
-        return transportOrderService.getOrderByStatus(status)
+    public List<TransportOrderResponse> getTransportOrdersByStatus(
+            @RequestParam(name = "status", required = false) List<TransportStatus> statuses) {
+        return transportOrderService.getOrderByStatuses(statuses)
                 .stream()
                 .map(TransportOrderResponse::fromEntity)
                 .toList();
@@ -105,16 +106,6 @@ public class TransportOrderController {
     ) {
         TransportOrder newTransportOrder = transportOrderService.createTransportOrderByUser(request);
         return TransportOrderResponse.fromEntity(newTransportOrder);
-    }
-
-    @PatchMapping("/{id}/assign-order-number")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public TransportOrderResponse assignTransportOrderNumber(
-            @PathVariable long id,
-            @Valid @RequestBody AssignOrderNumberRequest request
-    ) {
-        TransportOrder transportOrder = transportOrderService.assignTransportOrderNumber(request, id);
-        return TransportOrderResponse.fromEntity(transportOrder);
     }
 
     @PatchMapping("/{id}/manager")

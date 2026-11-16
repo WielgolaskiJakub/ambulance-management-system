@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.ambulances.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pl.jakub.ambulancemanagement.ambulances.dto.CreateAmbulanceRequest;
 import pl.jakub.ambulancemanagement.ambulances.dto.UpdateAmbulanceRequest;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
@@ -54,6 +55,24 @@ public class AmbulanceService {
     public Ambulance updateAmbulance(UpdateAmbulanceRequest request, long id) {
         Ambulance ambulanceToUpdate = getAmbulanceById(id);
 
+        if(request.getCarBrand() !=null){
+            if(request.getCarBrand().isBlank()){
+                throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);
+            }
+            ambulanceToUpdate.setCarBrand(request.getCarBrand().trim());
+        }
+
+        if(request.getModel() !=null){
+            if(request.getModel().isBlank()){
+                throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);
+            }
+            ambulanceToUpdate.setModel(request.getModel().trim());
+        }
+
+        if(request.getTankCapacityLiters() !=null){
+            ambulanceToUpdate.setTankCapacityLiters(request.getTankCapacityLiters());
+        }
+
         if (request.getRegistrationPlates() != null) {
             if (request.getRegistrationPlates().isBlank()) {
                 throw new ApiException(ErrorCode.AMBULANCE_INVALID_REQUEST);
@@ -76,12 +95,6 @@ public class AmbulanceService {
         }
         if (request.getWinterFuelConsumptionNorm() != null) {
             ambulanceToUpdate.setWinterFuelConsumptionNorm(request.getWinterFuelConsumptionNorm());
-        }
-        if (request.getStatus() != null) {
-            ambulanceToUpdate.setStatus(request.getStatus());
-        }
-        if (request.getActive() != null) {
-            ambulanceToUpdate.setActive(request.getActive());
         }
         return ambulanceRepository.save(ambulanceToUpdate);
     }
@@ -120,9 +133,28 @@ public class AmbulanceService {
 
     public void deactivateAmbulanceById(long id) {
         Ambulance ambulanceToDelete = getAmbulanceById(id);
+
+       if(ambulanceToDelete.getStatus() == AmbulanceStatus.IN_USE) {
+           throw new ApiException(ErrorCode.AMBULANCE_CURRENTLY_IN_USE);
+       }
         ambulanceToDelete.setActive(false);
         ambulanceToDelete.setStatus(AmbulanceStatus.OUT_OF_SERVICE);
         ambulanceRepository.save(ambulanceToDelete);
+    }
 
+    @Transactional
+    public Ambulance restoreAmbulance(long id) {
+        Ambulance ambulance = getAmbulanceById(id);
+
+        if (ambulance.getActive()) {
+            throw new ApiException(
+                    ErrorCode.AMBULANCE_ALREADY_ACTIVE
+            );
+        }
+
+        ambulance.setActive(true);
+        ambulance.setStatus(AmbulanceStatus.OUT_OF_SERVICE);
+
+        return ambulanceRepository.save(ambulance);
     }
 }

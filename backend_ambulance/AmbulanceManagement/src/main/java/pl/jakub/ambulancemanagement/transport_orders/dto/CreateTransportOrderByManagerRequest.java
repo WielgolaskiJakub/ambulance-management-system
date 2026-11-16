@@ -1,5 +1,6 @@
 package pl.jakub.ambulancemanagement.transport_orders.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -11,14 +12,20 @@ import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrderType;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportPriority;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportSource;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Getter
 @Setter
 public class CreateTransportOrderByManagerRequest {
 
+     @NotNull
+     @JsonFormat(pattern = "yyyy-MM-dd")
+     private LocalDate plannedDate;
 
-     private String orderNumber;
+     @JsonFormat(pattern = "HH:mm")
+     private LocalTime plannedDepartureTime;
 
      @NotNull
      private TransportOrderType orderType;
@@ -38,6 +45,6 @@ public class CreateTransportOrderByManagerRequest {
      @NotBlank
      private String destinationAddress;
 
-     @NotEmpty
+
      private List<@Valid TransportOrderPatientCreateItemRequest> patients;
 }

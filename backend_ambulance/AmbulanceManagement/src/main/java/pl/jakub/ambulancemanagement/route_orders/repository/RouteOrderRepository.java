@@ -4,13 +4,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
+import pl.jakub.ambulancemanagement.route_orders.model.RouteOrderStatus;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
-    List<RouteOrder> findByRoute_Id(Long routeId);
+    List<RouteOrder> findByRoute_IdOrderByPositionAsc(Long routeId);
 
     List<RouteOrder> findByTransportOrder_Id(Long transportOrderId);
 
@@ -32,4 +34,14 @@ public interface RouteOrderRepository extends JpaRepository<RouteOrder, Long> {
             where ro.route.shift.driver.id = :driverId
             """)
     List<TransportOrder> findTransportOrdersByRouteDriverId(@Param("driverId") Long driverId);
+
+    List<RouteOrder> findByRoute_IdAndStatusOrderByPositionAsc(
+            Long routeId,
+            RouteOrderStatus status
+    );
+
+    Optional<RouteOrder> findByRoute_IdAndTransportOrder_Id(
+            Long routeId,
+            Long transportOrderId
+    );
 }

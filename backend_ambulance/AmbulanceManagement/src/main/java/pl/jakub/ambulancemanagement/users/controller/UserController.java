@@ -22,22 +22,33 @@ public class UserController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public List<UserResponse> getAllUsers() {
-        return userService.getAllUsers().stream().map(UserResponse::fromEntity).toList();
+        return userService.getAllUsersVisibleForCurrentUser()
+                .stream()
+                .map(UserResponse::fromEntity)
+                .toList();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public UserResponse getUserById(@PathVariable long id) {
-        User user = userService.getUserById(id);
+        User user = userService.getUserByIdForManagement(id);
         return UserResponse.fromEntity(user);
+    }
+
+    @GetMapping("/available-sanitary-members")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'DRIVER')")
+    public List<CrewMemberOptionResponse> getAvailableSanitaryMembers() {
+        return userService.getAvailableSanitaryMembers()
+                .stream()
+                .map(CrewMemberOptionResponse::fromEntity)
+                .toList();
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(@Valid @RequestBody UserCreateRequest request) {
-        User createdUser = userService.createUser(request);
-        return UserResponse.fromEntity(createdUser);
+    public UserCreateResponse createUser(@Valid @RequestBody UserCreateRequest request) {
+        return userService.createUser(request);
     }
 
     @PutMapping("/{id}")
@@ -79,11 +90,12 @@ public class UserController {
 
     @PatchMapping("/{id}/temporary-password/reset")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void resetTemporaryPasswordByAdmin(@PathVariable long id,
-                                              @Valid @RequestBody AdminResetTemporaryPasswordRequest request) {
-        userService.resetTemporaryPasswordByAdmin(request, id);
+    public UserTemporaryPasswordResetResponse resetTemporaryPasswordByAdmin(
+            @PathVariable long id
+    ){
+        return userService.resetTemporaryPasswordByAdmin(id);
     }
+
 
     @PatchMapping("/me/password")
     @PreAuthorize("isAuthenticated()")

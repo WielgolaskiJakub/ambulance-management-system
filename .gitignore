@@ -14,3 +14,7 @@ frontend_ambulance/frontend-ambulance/.env
 
 # Logs
 *.log
+
+# Local IDE and browser-debug files
+/.idea/
+/.vscode/

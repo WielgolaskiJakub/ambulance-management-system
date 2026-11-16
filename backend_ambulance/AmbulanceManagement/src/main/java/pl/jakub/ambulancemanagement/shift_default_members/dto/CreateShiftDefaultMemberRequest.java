@@ -20,6 +20,6 @@ public class CreateShiftDefaultMemberRequest {
     private RouteMemberRole role;
     @NotNull
     private LocalDateTime startTime;
-    @NotNull
+
     private LocalDateTime endTime;
 }

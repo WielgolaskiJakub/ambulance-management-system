@@ -75,6 +75,7 @@ export function CreateTransportOrderPage() {
 
         if (!hasText(form.destinationAddress)) {
             setErrorMessage("Podaj adres docelowy");
+            return;
         }
 
         const hasPatientFirstName = hasText(form.patientFirstName);

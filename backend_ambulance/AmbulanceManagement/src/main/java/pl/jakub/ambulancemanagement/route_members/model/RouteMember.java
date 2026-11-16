@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import pl.jakub.ambulancemanagement.routes.model.Route;
+import pl.jakub.ambulancemanagement.shifts.model.Shift;
 import pl.jakub.ambulancemanagement.users.model.User;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,10 @@ public class RouteMember {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "origin_shift_id")
+    private Shift originShift;
 
     @Column(name = "member_name")
     private String memberName;

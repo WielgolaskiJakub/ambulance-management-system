@@ -1,6 +1,22 @@
+export type RouteStatus = 
+  | "CREATED"
+  | "IN_PROGRESS"
+  | "WAITING"
+  | "COMPLETED"
+
+export type RouteTransportOrderReference = {
+  id: number;
+  orderNumber: string;
+  source: string;
+  transportOrderStatus: string;
+  routeOrderStatus: "PENDING" | "COMPLETED" | "CANCELLED";
+  pickupAddress: string | null;
+  destinationAddress: string | null;
+};
+
 export type RouteResponse = {
   id: number;
-  transportOrderIds: number[];
+  transportOrders: RouteTransportOrderReference[];
   shiftId: number;
   startAddress: string;
   actualDestinationAddress: string;

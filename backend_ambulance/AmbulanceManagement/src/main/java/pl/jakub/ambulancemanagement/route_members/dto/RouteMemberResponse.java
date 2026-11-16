@@ -11,6 +11,7 @@ public record RouteMemberResponse(
         Long id,
         Long routeId,
         Long userId,
+        Long originShiftId,
         String memberName,
         String fullName,
         RouteMemberRole role,
@@ -26,13 +27,27 @@ public record RouteMemberResponse(
         if (user != null) {
             userId = user.getId();
             fullName = user.getFirstName() + " " + user.getLastName();
-        } else {
+        } else if(routeMember.getSource() == RouteMemberSource.NPL) {
+            fullName = routeMember.getRole() == RouteMemberRole.DOCTOR
+                    ? "Lekarz NPL"
+                    : "Pielęgniarka NPL";
+        } else if(routeMember.getSource() == RouteMemberSource.POZ) {
+            fullName = routeMember.getRole() == RouteMemberRole.DOCTOR
+                    ? "Lekarz POZ"
+                    : "Pielęgniarka POZ";
+        }else {
             fullName = routeMember.getMemberName();
         }
+
+        Long originShiftId = routeMember.getOriginShift() != null
+                ? routeMember.getOriginShift().getId()
+                : null;
+
         return new RouteMemberResponse(
                 routeMember.getId(),
                 routeMember.getRoute().getId(),
                 userId,
+                originShiftId,
                 routeMember.getMemberName(),
                 fullName,
                 routeMember.getRole(),

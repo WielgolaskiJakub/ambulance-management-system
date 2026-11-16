@@ -68,5 +68,6 @@ public class Route {
     private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "route")
+    @OrderBy("position ASC")
     private List<RouteOrder> routeOrders;
 }

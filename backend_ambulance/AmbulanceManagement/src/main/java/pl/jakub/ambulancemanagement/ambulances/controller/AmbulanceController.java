@@ -62,6 +62,11 @@ public class AmbulanceController {
         Ambulance ambulance = ambulanceService.markAmbulanceOutOfService(id);
         return AmbulanceResponse.fromEntity(ambulance);
     }
+    @PatchMapping("/{id}/restore")
+    @PreAuthorize("hasRole('ADMIN')")
+    public AmbulanceResponse restoreAmbulance(@PathVariable long id) {
+        return AmbulanceResponse.fromEntity(ambulanceService.restoreAmbulance(id));
+    }
 
     @PatchMapping("/{id}/available")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
@@ -73,7 +78,7 @@ public class AmbulanceController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteAmbulanceById(@PathVariable long id) {
+    public void deactivateAmbulanceById(@PathVariable long id) {
         ambulanceService.deactivateAmbulanceById(id);
     }
 }

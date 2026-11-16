@@ -7,6 +7,7 @@ export type LoginRequest = {
 
 export type LoginResponse = {
     token: string;
+    mustChangePassword: boolean;
 };
 
 export async function login(request: LoginRequest): Promise<LoginResponse> {

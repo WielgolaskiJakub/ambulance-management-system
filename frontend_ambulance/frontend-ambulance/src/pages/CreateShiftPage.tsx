@@ -1,20 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getAvailableAmbulances } from "../api/ambulancesApi";
 import { createShift } from "../api/shiftsApi";
+import {
+    getAvailableSanitaryMembers,
+    type CrewMemberOptionResponse,
+} from "../api/crewMemberApi";
 import type { AmbulanceShortResponse } from "../types/ambulance";
 import type { ShiftType } from "../types/shift";
 import { shiftTypeLabels } from "../utils/shiftLabels";
-import "./CreateShiftPage.css";
 import { formatDateTime } from "../utils/dateTimeFormat";
+import "./CreateShiftPage.css";
 
 type FormState = {
     ambulanceId: string;
     shiftType: ShiftType;
-    shiftDate: string;
     startTime: string;
     endTime: string;
+    defaultMemberUserId: string;
+    defaultMemberStartTime: string;
+    defaultMemberEndTime: string;
 };
 
 type ApiErrorResponse = {
@@ -30,8 +36,28 @@ function getApiErrorCode(error: unknown): string | null {
     return (error.response?.data as ApiErrorResponse | undefined)?.code ?? null;
 }
 
+function isStandardWindow(now = new Date()): boolean {
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    return hour < 17 || (hour === 17 && minute === 0);
+}
+
+function getAvailableShiftTypes(): ShiftType[] {
+    if (isStandardWindow()) {
+        return ["DAY_12H", "FULL_24H", "OTHER"]
+    }
+
+    return ["NIGHT_12H", "OTHER"];
+}
+
 function getTodayDate(): string {
-    return new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
 }
 
 function getDateTime(date: string, time: string): string {
@@ -40,7 +66,6 @@ function getDateTime(date: string, time: string): string {
 
 function getNextDayDate(date: string): string {
     const [year, month, day] = date.split("-").map(Number);
-
     const nextDate = new Date(Date.UTC(year, month - 1, day + 1));
 
     return nextDate.toISOString().slice(0, 10);
@@ -74,24 +99,74 @@ function calculateShiftTimes(shiftType: ShiftType, shiftDate: string) {
     };
 }
 
+function getDefaultSanitaryTimes(
+    shiftType: ShiftType,
+    shiftDate: string
+): {
+    defaultMemberStartTime: string;
+    defaultMemberEndTime: string;
+} | null {
+    if (shiftType === "NIGHT_12H" || shiftType === "OTHER") {
+        return null;
+    }
+
+    const [year, month, day] = shiftDate.split("-").map(Number);
+    const dayOfWeek = new Date(year, month - 1, day).getDay();
+
+    // Niedziela: standardowo nie ma sanitariusza.
+    if (dayOfWeek === 0) {
+        return null;
+    }
+
+    // Sobota: jeden sanitariusz 08:00–14:00.
+    if (dayOfWeek === 6) {
+        return {
+            defaultMemberStartTime: getDateTime(shiftDate, "08:00"),
+            defaultMemberEndTime: getDateTime(shiftDate, "14:00"),
+        };
+    }
+
+    // Poniedziałek–piątek: standardowy dzienny skład.
+    return {
+        defaultMemberStartTime: getDateTime(shiftDate, "07:00"),
+        defaultMemberEndTime: getDateTime(shiftDate, "19:00"),
+    };
+}
+
 const today = getTodayDate();
+
+const initialShiftType: ShiftType = isStandardWindow()
+    ? "FULL_24H"
+    : "NIGHT_12H";
+
+const initialShiftTimes = calculateShiftTimes(initialShiftType, today);
+
+const initialDefaultMemberTimes = getDefaultSanitaryTimes(
+    initialShiftType,
+    today
+);
 
 const initialFormState: FormState = {
     ambulanceId: "",
-    shiftType: "FULL_24H",
-    shiftDate: today,
-    startTime: getDateTime(today, "07:00"),
-    endTime: getDateTime(getNextDayDate(today), "07:00"),
+    shiftType: initialShiftType,
+    startTime: initialShiftTimes.startTime,
+    endTime: initialShiftTimes.endTime,
+    defaultMemberUserId: "",
+    defaultMemberStartTime: initialDefaultMemberTimes?.defaultMemberStartTime ?? "",
+    defaultMemberEndTime: initialDefaultMemberTimes?.defaultMemberEndTime ?? "",
 };
 
 export function CreateShiftPage() {
     const navigate = useNavigate();
 
     const [ambulances, setAmbulances] = useState<AmbulanceShortResponse[]>([]);
+    const [crewMembers, setCrewMembers] = useState<CrewMemberOptionResponse[]>([]);
     const [form, setForm] = useState<FormState>(initialFormState);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const [isExceptionalSanitaryEnabled, setIsExceptionalSanitaryEnabled] = useState(false);
 
     const selectedAmbulance = useMemo(
         () =>
@@ -102,18 +177,23 @@ export function CreateShiftPage() {
     );
 
     useEffect(() => {
-        async function loadAmbulances() {
+        async function loadInitialData() {
             try {
                 setLoading(true);
                 setErrorMessage(null);
 
-                const data = await getAvailableAmbulances();
-                setAmbulances(data);
+                const [ambulancesData, crewMembersData] = await Promise.all([
+                    getAvailableAmbulances(),
+                    getAvailableSanitaryMembers(),
+                ]);
 
-                if (data.length > 0) {
+                setAmbulances(ambulancesData);
+                setCrewMembers(crewMembersData);
+
+                if (ambulancesData.length > 0) {
                     setForm((currentForm) => ({
                         ...currentForm,
-                        ambulanceId: String(data[0].id),
+                        ambulanceId: String(ambulancesData[0].id),
                     }));
                 }
             } catch (error) {
@@ -124,65 +204,97 @@ export function CreateShiftPage() {
                     }
 
                     if (error.response?.status === 403) {
-                        setErrorMessage("Brak uprawnień do pobrania karetek.");
+                        setErrorMessage("Brak uprawnień do pobrania danych formularza.");
                         return;
                     }
 
                     setErrorMessage(
-                        `Błąd pobierania karetek: ${error.response?.status ?? "brak odpowiedzi"
+                        `Błąd pobierania danych formularza: ${error.response?.status ?? "brak odpowiedzi"
                         }`
                     );
                     return;
                 }
 
-                setErrorMessage("Nieznany błąd pobierania karetek.");
+                setErrorMessage("Nieznany błąd pobierania danych formularza.");
             } finally {
                 setLoading(false);
             }
         }
 
-        loadAmbulances();
+        loadInitialData();
     }, []);
 
     function updateShiftType(shiftType: ShiftType) {
+        setIsExceptionalSanitaryEnabled(false);
         if (shiftType === "OTHER") {
             setForm((currentForm) => ({
                 ...currentForm,
                 shiftType,
+                defaultMemberUserId: "",
+                defaultMemberStartTime: "",
+                defaultMemberEndTime: "",
             }));
             return;
         }
 
-        const calculatedTimes = calculateShiftTimes(shiftType, form.shiftDate);
+        const calculatedTimes = calculateShiftTimes(shiftType, getTodayDate());
+        const defaultMemberTimes = getDefaultSanitaryTimes(
+            shiftType,
+            getTodayDate()
+        );
 
         setForm((currentForm) => ({
             ...currentForm,
             shiftType,
             startTime: calculatedTimes.startTime,
             endTime: calculatedTimes.endTime,
+            defaultMemberUserId: defaultMemberTimes ? currentForm.defaultMemberUserId : "",
+            defaultMemberStartTime: defaultMemberTimes?.defaultMemberStartTime ?? "",
+            defaultMemberEndTime: defaultMemberTimes?.defaultMemberEndTime ?? "",
         }));
     }
 
-    function updateShiftDate(shiftDate: string) {
-        if (form.shiftType === "OTHER") {
-            setForm((currentForm) => ({
-                ...currentForm,
-                shiftDate,
-            }));
-            return;
-        }
-
-        const calculatedTimes = calculateShiftTimes(form.shiftType, shiftDate);
+    function toggleExceptionalSanitary(enabled: boolean) {
+        setIsExceptionalSanitaryEnabled(enabled);
 
         setForm((currentForm) => ({
             ...currentForm,
-            shiftDate,
-            startTime: calculatedTimes.startTime,
-            endTime: calculatedTimes.endTime,
+            defaultMemberUserId: enabled
+                ? currentForm.defaultMemberUserId
+                : "",
+            defaultMemberStartTime: enabled
+                ? currentForm.startTime
+                : "",
+            defaultMemberEndTime: enabled
+                ? currentForm.endTime
+                : "",
         }));
     }
 
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    function validateDefaultMemberTimes(): boolean {
+        if (!form.defaultMemberUserId) {
+            return true;
+        }
+
+        if (!form.defaultMemberStartTime || !form.defaultMemberEndTime) {
+            setErrorMessage("Podaj godziny pracy członka załogi.");
+            return false;
+        }
+
+        if (new Date(form.defaultMemberEndTime) <= new Date(form.defaultMemberStartTime)) {
+            setErrorMessage("Koniec pracy członka załogi musi być późniejszy niż start.");
+            return false;
+        }
+
+        if (new Date(form.defaultMemberStartTime) < new Date(form.startTime)) {
+            setErrorMessage("Członek załogi nie może zaczynać przed początkiem zmiany.");
+            return false;
+        }
+
+        return true;
+    }
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         const ambulanceId = Number(form.ambulanceId);
@@ -192,10 +304,6 @@ export function CreateShiftPage() {
             return;
         }
 
-        if (!form.shiftDate) {
-            setErrorMessage("Wybierz datę zmiany.");
-            return;
-        }
 
         if (!form.startTime || !form.endTime) {
             setErrorMessage("Podaj czas rozpoczęcia i zakończenia zmiany.");
@@ -207,6 +315,10 @@ export function CreateShiftPage() {
             return;
         }
 
+        if (!validateDefaultMemberTimes()) {
+            return;
+        }
+
         try {
             setSubmitting(true);
             setErrorMessage(null);
@@ -214,10 +326,17 @@ export function CreateShiftPage() {
             await createShift({
                 ambulanceId,
                 shiftType: form.shiftType,
-                shiftDate: form.shiftDate,
                 startTime: form.startTime,
                 endTime: form.endTime,
+                defaultMember: form.defaultMemberUserId
+                    ? {
+                        userId: Number(form.defaultMemberUserId),
+                        startTime: form.defaultMemberStartTime,
+                        endTime: form.defaultMemberEndTime,
+                    }
+                    : null,
             });
+
 
             navigate("/dashboard", { replace: true });
         } catch (error) {
@@ -244,6 +363,30 @@ export function CreateShiftPage() {
 
                 if (errorCode === "INVALID_SHIFT_TIME") {
                     setErrorMessage("Czas zakończenia musi być późniejszy niż czas rozpoczęcia.");
+                    return;
+                }
+                if (errorCode === "SHIFT_END_TIME_IN_PAST") {
+                    setErrorMessage(
+                        "Nie możesz utworzyć zmiany, która już się zakończyła."
+                    );
+                    return;
+                }
+                if (errorCode === "SHIFT_DEFAULT_MEMBER_TIME_CONFLICT") {
+                    setErrorMessage(
+                        "Wybrany sanitariusz jest już przypisany do innej aktywnej zmiany w tych godzinach."
+                    );
+                    return;
+                }
+                if (errorCode === "SHIFT_TYPE_NOT_AVAILABLE_AT_CURRENT_TIME") {
+                    setErrorMessage(
+                        "O tej godzinie wybierz zmianę nocną albo nietypowy dyżur."
+                    );
+                    return;
+                }
+                if (errorCode === "SHIFT_DEFAULT_MEMBER_START_BEFORE_SHIFT") {
+                    setErrorMessage(
+                        "Sanitariusz nie może zaczynać przed rozpoczęciem tej zmiany."
+                    );
                     return;
                 }
 
@@ -277,7 +420,6 @@ export function CreateShiftPage() {
             }
 
             setErrorMessage("Nieznany błąd tworzenia zmiany.");
-
         } finally {
             setSubmitting(false);
         }
@@ -286,10 +428,22 @@ export function CreateShiftPage() {
     if (loading) {
         return (
             <main className="create-shift-page">
-                <p className="create-shift-page__message">Ładowanie dostępnych karetek...</p>
+                <p className="create-shift-page__message">
+                    Ładowanie dostępnych karetek...
+                </p>
             </main>
         );
     }
+    const availableShiftTypes = getAvailableShiftTypes();
+
+    const regularSanitaryTimes = getDefaultSanitaryTimes(
+        form.shiftType,
+        getTodayDate()
+    );
+
+    const hasRegularSanitary = regularSanitaryTimes !== null;
+
+    const shouldShowSanitarySection = hasRegularSanitary || isExceptionalSanitaryEnabled;
 
     return (
         <main className="create-shift-page">
@@ -368,22 +522,15 @@ export function CreateShiftPage() {
                                         updateShiftType(event.target.value as ShiftType)
                                     }
                                 >
-                                    {Object.entries(shiftTypeLabels).map(([value, label]) => (
-                                        <option key={value} value={value}>
-                                            {label}
+                                    {availableShiftTypes.map((shiftType) => (
+                                        <option key={shiftType} value={shiftType}>
+                                            {shiftTypeLabels[shiftType]}
                                         </option>
                                     ))}
                                 </select>
                             </label>
 
-                            <label className="create-shift-form__field">
-                                <span>Data zmiany</span>
-                                <input
-                                    type="date"
-                                    value={form.shiftDate}
-                                    onChange={(event) => updateShiftDate(event.target.value)}
-                                />
-                            </label>
+
                         </div>
 
                         {form.shiftType === "OTHER" ? (
@@ -397,6 +544,7 @@ export function CreateShiftPage() {
                                             setForm((currentForm) => ({
                                                 ...currentForm,
                                                 startTime: event.target.value,
+                                                defaultMemberStartTime: event.target.value,
                                             }))
                                         }
                                     />
@@ -411,6 +559,7 @@ export function CreateShiftPage() {
                                             setForm((currentForm) => ({
                                                 ...currentForm,
                                                 endTime: event.target.value,
+                                                defaultMemberEndTime: event.target.value,
                                             }))
                                         }
                                     />
@@ -425,6 +574,92 @@ export function CreateShiftPage() {
                                     <strong>Koniec:</strong> {formatDateTime(form.endTime)}
                                 </p>
                             </article>
+                        )}
+
+                        {!hasRegularSanitary && (
+                            <section className="create-shift-exception">
+                                <div>
+                                    <strong>Sanitariusz poza standardową obsadą</strong>
+                                    <p>
+                                        {form.shiftType === "NIGHT_12H"
+                                            ? "Nocna zmiana standardowo odbywa się bez sanitariusza."
+                                            : "Dla tej zmiany sanitariusz nie jest standardowo zaplanowany."}
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className={
+                                        isExceptionalSanitaryEnabled
+                                            ? "create-shift-exception__button create-shift-exception__button--active"
+                                            : "create-shift-exception__button"
+                                    }
+                                    onClick={() =>
+                                        toggleExceptionalSanitary(!isExceptionalSanitaryEnabled)
+                                    }
+                                >
+                                    {isExceptionalSanitaryEnabled
+                                        ? "Usuń sanitariusza"
+                                        : "Dodaj sanitariusza"}
+                                </button>
+                            </section>
+                        )}
+
+                        {shouldShowSanitarySection && (
+                            <>
+                                <label className="create-shift-form__field">
+                                    <span>Członek załogi</span>
+                                    <select
+                                        value={form.defaultMemberUserId}
+                                        onChange={(event) =>
+                                            setForm((currentForm) => ({
+                                                ...currentForm,
+                                                defaultMemberUserId: event.target.value,
+                                            }))
+                                        }
+                                    >
+                                        <option value="">Brak / dyżur bez sanitariusza</option>
+
+                                        {crewMembers.map((member) => (
+                                            <option key={member.id} value={member.id}>
+                                                {member.firstName} {member.lastName}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+
+                                {form.defaultMemberUserId && (
+                                    <div className="create-shift-form__grid">
+                                        <label className="create-shift-form__field">
+                                            <span>Start członka załogi</span>
+                                            <input
+                                                type="datetime-local"
+                                                value={form.defaultMemberStartTime}
+                                                onChange={(event) =>
+                                                    setForm((currentForm) => ({
+                                                        ...currentForm,
+                                                        defaultMemberStartTime: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </label>
+
+                                        <label className="create-shift-form__field">
+                                            <span>Koniec członka załogi</span>
+                                            <input
+                                                type="datetime-local"
+                                                value={form.defaultMemberEndTime}
+                                                onChange={(event) =>
+                                                    setForm((currentForm) => ({
+                                                        ...currentForm,
+                                                        defaultMemberEndTime: event.target.value,
+                                                    }))
+                                                }
+                                            />
+                                        </label>
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         <div className="create-shift-form__actions">

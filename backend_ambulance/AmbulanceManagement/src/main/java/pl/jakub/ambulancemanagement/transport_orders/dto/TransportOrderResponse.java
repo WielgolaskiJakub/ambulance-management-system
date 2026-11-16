@@ -6,13 +6,17 @@ import pl.jakub.ambulancemanagement.transport_orders.model.*;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
 import pl.jakub.ambulancemanagement.users.model.UserRole;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @AllArgsConstructor
 public class TransportOrderResponse {
 
     private Long id;
+    private LocalDate plannedDate;
+    private LocalTime plannedDepartureTime;
     private String orderNumber;
     private TransportOrderType orderType;
     private TransportSource source;
@@ -39,6 +43,8 @@ public class TransportOrderResponse {
 
         return new TransportOrderResponse(
                 order.getId(),
+                order.getPlannedDate(),
+                order.getPlannedDepartureTime(),
                 order.getOrderNumber(),
                 order.getOrderType(),
                 order.getSource(),

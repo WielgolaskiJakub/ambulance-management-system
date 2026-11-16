@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataPatchRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataResponse;
-import pl.jakub.ambulancemanagement.transport_order_patient_data.dto.TransportOrderPatientDataUpdateRequest;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.model.TransportOrderPatientData;
 import pl.jakub.ambulancemanagement.transport_order_patient_data.service.TransportOrderPatientDataService;
 
@@ -31,7 +31,7 @@ public class TransportOrderPatientDataController {
     @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY', 'ADMIN', 'MANAGER')")
     public TransportOrderPatientDataResponse updateTransportOrderPatientData(
             @PathVariable Long id,
-            @Valid @RequestBody TransportOrderPatientDataUpdateRequest request
+            @Valid @RequestBody TransportOrderPatientDataPatchRequest request
     ) {
         TransportOrderPatientData patientData =
                 transportOrderPatientDataService.updateTransportOrderPatientData(request, id);

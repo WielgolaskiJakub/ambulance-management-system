@@ -17,6 +17,7 @@ public class UserResponse {
     private UserRole userRole;
     private Boolean active;
     private Boolean mustChangePassword;
+    private Boolean canWorkAsSanitary;
 
 
     public static UserResponse fromEntity(User user) {
@@ -28,7 +29,8 @@ public class UserResponse {
                 user.getEmail(),
                 user.getUserRole(),
                 user.getActive(),
-                user.getMustChangePassword()
+                user.getMustChangePassword(),
+                user.getCanWorkAsSanitary()
         );
     }
 }

@@ -2,12 +2,18 @@ export type ShiftType = "DAY_12H" | "NIGHT_12H" | "FULL_24H" | "OTHER";
 
 export type ShiftStatus = "ACTIVE" | "FINISHED" | "CANCELLED";
 
+export type ShiftDefaultMemberCreateRequest = {
+  userId: number;
+  startTime: string;
+  endTime: string | null;
+};
+
 export type ShiftCreateRequest = {
   ambulanceId: number;
   shiftType: ShiftType;
-  shiftDate: string | null;
   startTime: string;
   endTime: string;
+  defaultMember: ShiftDefaultMemberCreateRequest | null;
 };
 
 export type ShiftResponse = {

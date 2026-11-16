@@ -1,8 +1,16 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/authApi";
 import "./LoginPage.css";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+type JwtPayload = {
+  sub: string;
+  userId: number;
+  role: "ADMIN" | "MANAGER" | "DRIVER" | "SANITARY";
+  exp: number;
+  iat: number;
+};
 
 export function LoginPage() {
   const [username, setUsername] = useState("");
@@ -14,16 +22,43 @@ export function LoginPage() {
 
     try {
       const response = await login({ username, password });
+
       localStorage.setItem("token", response.token);
-      navigate("/dashboard");
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.log("STATUS:", error.response?.status);
-        console.log("DATA:", error.response?.data);
-        console.log("URL:", error.config?.baseURL, error.config?.url);
+
+      localStorage.setItem("mustChangePassword", String(response.mustChangePassword));
+
+      if (response.mustChangePassword) {
+        navigate("/change-temporary-password", { replace: true });
+        return;
       }
 
-      alert("Nie udało się zalogować");
+      const decodedToken = jwtDecode<JwtPayload>(response.token);
+
+      if (decodedToken.role === "ADMIN" || decodedToken.role === "MANAGER") {
+        navigate("/manager/dashboard");
+        return;
+      }
+      if (decodedToken.role === "DRIVER" || decodedToken.role === "SANITARY") {
+        navigate("/dashboard");
+        return;
+      }
+
+      navigate("/unauthorized");
+
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        alert(
+          `Błąd logowania: ${error.message}\n` +
+          `Status: ${error.response?.status ?? "brak"}\n` +
+          `Odpowiedź: ${JSON.stringify(error.response?.data ?? "brak")}`
+        );
+        return;
+      }
+
+      alert(
+        `Błąd po odpowiedzi z API: ${error instanceof Error ? error.message : "nieznany"
+        }`
+      );
     }
   }
 

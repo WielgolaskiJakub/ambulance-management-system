@@ -19,4 +19,5 @@ public interface ShiftRepository extends JpaRepository<Shift, Long> {
 
     Optional<Shift> findByIdAndDriver_Id(Long id, Long driverId);
 
+    List<Shift> findByStatusOrderByAmbulance_RegistrationPlatesAsc(ShiftStatus status);
 }

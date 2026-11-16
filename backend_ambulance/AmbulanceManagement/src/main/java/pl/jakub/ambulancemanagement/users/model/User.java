@@ -46,4 +46,7 @@ public class User {
 
     @NotNull
     private Boolean mustChangePassword = true;
+
+    @Column(name = "can_work_as_sanitary", nullable = false)
+    private Boolean canWorkAsSanitary = false;
 }

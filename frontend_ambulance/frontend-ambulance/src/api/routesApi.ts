@@ -1,5 +1,6 @@
 import { axiosClient } from "./axiosClient";
 import type { RouteResponse } from "../types/route";
+import type { CancelTransportOrderRequest } from "../types/transportOrder";
 
 export type CreateRouteFromOrderRequest = {
   shiftId: number;
@@ -8,15 +9,13 @@ export type CreateRouteFromOrderRequest = {
 
 export type RouteOrderFinishAction = "WAITING_FOR_PICKUP" | "COMPLETE";
 
-export type RouteFinishOrderItemRequest = {
-  transportOrderId: number;
-  action: RouteOrderFinishAction;
-};
-
 export type RouteFinishRequest = {
   finishOdometerLastThree: number;
   notes: string | null;
-  orders: RouteFinishOrderItemRequest[];
+};
+
+export type RouteTransportOrdersReorderRequest = {
+  transportOrderIds: number[];
 };
 
 export async function createRouteFromOrder(
@@ -73,4 +72,50 @@ export async function resumeRoute(
     `/api/v1/routes/${routeId}/resume`
   );
   return response.data
+}
+
+export async function reorderTransportOrders(
+  routeId: number,
+  request: RouteTransportOrdersReorderRequest
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/reorder`,
+    request
+  );
+  return response.data;
+}
+
+export async function addTransportOrderToRoute(
+  routeId: number,
+  transportOrderId: number
+): Promise<RouteResponse> {
+  const response = await axiosClient.post<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}`
+  );
+
+  return response.data;
+}
+
+export async function resolveTransportOrder(
+  routeId: number,
+  transportOrderId: number,
+  action: RouteOrderFinishAction
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}/resolve`,
+    { action }
+  );
+  return response.data
+}
+
+export async function cancelTransportOrderInRoute(
+  routeId: number,
+  transportOrderId: number,
+  request: CancelTransportOrderRequest
+): Promise<RouteResponse> {
+  const response = await axiosClient.patch<RouteResponse>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}/cancel`,
+    request
+  );
+  return response.data;
 }

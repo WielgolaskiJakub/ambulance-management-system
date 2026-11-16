@@ -9,6 +9,7 @@ import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberCreateRequest;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberUpdateRequest;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMemberRole;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
 import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.routes.model.Route;
@@ -38,33 +39,52 @@ public class RouteMemberService {
         return routeMemberRepository.findByRouteIdOrderByCreatedAtAsc(routeId);
     }
 
+    public List<User> getRouteMemberCandidates(Long routeId) {
+        Route route = routeService.getRouteById(routeId);
+
+        validateCurrentUserCanAccessRoute(route);
+
+        return userService.getRouteMemberCandidates(routeId);
+    }
+
     public RouteMember addRouteMemberToRoute(Long routeId, RouteMemberCreateRequest request) {
 
         Route route = routeService.getRouteById(routeId);
 
         validateCurrentUserCanAccessRoute(route);
 
-        validateRouteMemberCreateRequest(request);
-
         RouteMember routeMember = new RouteMember();
         routeMember.setRoute(route);
         routeMember.setRole(request.getMemberRole());
         routeMember.setCreatedAt(LocalDateTime.now());
 
-        if(request.getUserId() != null){
+        if (request.getUserId() != null) {
             User memberUser = userService.getUserById(request.getUserId());
 
-            if(!Boolean.TRUE.equals(memberUser.getActive())){
+            if (!Boolean.TRUE.equals(memberUser.getActive())) {
                 throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
+            }
+
+            if (request.getMemberSource() != RouteMemberSource.SHIFT_TEAM &&
+                    request.getMemberSource() != RouteMemberSource.SUPPORT_SHIFT_TEAM) {
+                throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
             }
             routeMember.setUser(memberUser);
             routeMember.setMemberName(null);
-            routeMember.setSource(RouteMemberSource.SHIFT_TEAM);
-        }else{
+            routeMember.setSource(request.getMemberSource());
+        } else {
             routeMember.setUser(null);
-            routeMember.setMemberName(request.getMemberName().trim());
+            routeMember.setMemberName(request.getMemberName() == null
+                    ? null
+                    : request.getMemberName().trim()
+            );
             routeMember.setSource(request.getMemberSource());
         }
+
+        if (routeMember.getSource() == RouteMemberSource.SHIFT_TEAM) {
+            routeMember.setOriginShift(route.getShift());
+        }
+        validateRouteMemberEntity(routeMember);
 
         return routeMemberRepository.save(routeMember);
     }
@@ -118,11 +138,11 @@ public class RouteMemberService {
         return routeMemberRepository.save(routeMemberToUpdate);
     }
 
-    public void deleteRouteMember(Long routeId, Long memberId) {
+    public void deleteRouteMemberFromRoute(Long routeId, Long memberId) {
 
         Route route = routeService.getRouteById(routeId);
 
-      validateCurrentUserCanAccessRoute(route);
+        validateCurrentUserCanAccessRoute(route);
 
         RouteMember routeMemberToDelete = routeMemberRepository.findByIdAndRouteId(memberId, routeId)
                 .orElseThrow(() -> new ApiException(ErrorCode.ROUTE_MEMBER_NOT_FOUND));
@@ -132,40 +152,57 @@ public class RouteMemberService {
 
     private void validateRouteMemberEntity(RouteMember routeMember) {
         boolean hasUser = routeMember.getUser() != null;
-        boolean hasMemberName = routeMember.getMemberName() != null && !routeMember.getMemberName().isBlank();
+        boolean hasMemberName = routeMember.getMemberName() != null
+                && !routeMember.getMemberName().isBlank();
 
-        if (hasUser == hasMemberName) {
+        RouteMemberSource source = routeMember.getSource();
+        RouteMemberRole role = routeMember.getRole();
+
+        if (source == null || role == null) {
             throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
         }
 
-        if (routeMember.getRole() == null) {
-            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
-        }
+        boolean isSystemCrew = source == RouteMemberSource.SHIFT_TEAM
+                || source == RouteMemberSource.SUPPORT_SHIFT_TEAM;
 
-        if (routeMember.getSource() == null) {
-            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
-        }
-    }
-    private void validateRouteMemberCreateRequest(RouteMemberCreateRequest request) {
-        boolean hasUserId = request.getUserId() != null;
-        boolean hasMemberName = request.getMemberName() != null && !request.getMemberName().isBlank();
+        boolean isAnonymousNplOrPoz = source == RouteMemberSource.NPL
+                || source == RouteMemberSource.POZ;
 
-        if (hasUserId == hasMemberName) {
-            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
-        }
-    }
-    private void validateCurrentUserCanAccessRoute(Route route) {
-        User currentUser = currentUserService.getCurrentUser();
-
-        if (currentUser.getUserRole() == UserRole.ADMIN ||
-                currentUser.getUserRole() == UserRole.MANAGER) {
+        if (isSystemCrew) {
+            if (!hasUser || hasMemberName) {
+                throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+            }
             return;
         }
 
-        if (route.getShift().getDriver().getId().equals(currentUser.getId())) {
+        if (isAnonymousNplOrPoz) {
+            boolean isMedicalRole = role == RouteMemberRole.DOCTOR
+                    || role == RouteMemberRole.NURSE;
+
+            if (hasUser || hasMemberName || !isMedicalRole) {
+                throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+            }
             return;
         }
 
-        throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
+        if (hasUser || !hasMemberName) {
+            throw new ApiException(ErrorCode.ROUTE_MEMBER_INVALID_REQUEST);
+        }
     }
+
+
+private void validateCurrentUserCanAccessRoute(Route route) {
+    User currentUser = currentUserService.getCurrentUser();
+
+    if (currentUser.getUserRole() == UserRole.ADMIN ||
+            currentUser.getUserRole() == UserRole.MANAGER) {
+        return;
+    }
+
+    if (route.getShift().getDriver().getId().equals(currentUser.getId())) {
+        return;
+    }
+
+    throw new ApiException(ErrorCode.ROUTE_ACCESS_DENIED);
+}
 }

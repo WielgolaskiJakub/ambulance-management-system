@@ -290,3 +290,888 @@
     flex-direction: column;
   }
 }
+.my-route-card__crew,
+.my-route-card__add-member {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #374151;
+}
+
+.my-route-card__section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #f9fafb;
+}
+
+.my-route-card__empty-text {
+  margin: 0;
+  color: #9ca3af;
+}
+
+.my-route-card__crew-list {
+  display: grid;
+  gap: 8px;
+}
+
+.my-route-card__crew-item {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 170px;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background: #111827;
+}
+
+.my-route-card__crew-item strong {
+  color: #93c5fd;
+}
+
+.my-route-card__crew-item span {
+  color: #f9fafb;
+  font-weight: 700;
+}
+
+.my-route-card__crew-item small {
+  color: #d1d5db;
+  text-align: right;
+}
+
+.my-route-card__add-member-mode {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.my-route-card__mode-button {
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background: #111827;
+  color: #d1d5db;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-route-card__mode-button--active {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.my-route-card__add-member-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) 150px 150px auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.my-route-card__add-member-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  background-color: #111827;
+  color: #f9fafb;
+  outline: none;
+}
+
+.my-route-card__add-member-input:focus {
+  border-color: #9ca3af;
+}
+
+@media (max-width: 900px) {
+  .my-route-card__crew-item {
+    grid-template-columns: 1fr;
+  }
+
+  .my-route-card__crew-item small {
+    text-align: left;
+  }
+
+  .my-route-card__add-member-form {
+    grid-template-columns: 1fr;
+  }
+
+  .my-route-card__add-member-mode {
+    flex-direction: column;
+  }
+}
+.my-route-card__crew-item {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.my-route-card__crew-role {
+  color: #93c5fd;
+}
+
+.my-route-card__crew-name {
+  font-weight: 700;
+}
+
+.my-route-card__crew-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  justify-self: end;
+}
+
+.my-route-card__crew-source {
+  color: #e5e7eb;
+  white-space: nowrap;
+}
+
+.my-route-card__crew-delete-button {
+  padding: 4px 8px;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 700;
+  cursor: pointer;
+}
+.my-routes-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.75);
+}
+
+.my-routes-modal {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: #1e293b;
+  color: #f8fafc;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.my-routes-modal h2 {
+  margin: 0 0 18px;
+}
+
+.my-routes-modal__field {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.my-routes-modal__field input {
+  max-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.my-routes-modal__orders {
+  display: grid;
+  gap: 12px;
+}
+
+.my-routes-modal__orders h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.my-routes-modal__order-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.my-routes-modal__order-row select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.my-routes-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.my-routes-modal__cancel-button,
+.my-routes-modal__confirm-button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-routes-modal__cancel-button {
+  border: 1px solid #475569;
+  background: transparent;
+  color: #f8fafc;
+}
+
+.my-routes-modal__confirm-button {
+  border: 1px solid #f8fafc;
+  background: #f8fafc;
+  color: #0f172a;
+}
+.my-route-card__toggle-add-member-button {
+  width: fit-content;
+  padding: 9px 14px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.my-route-card__toggle-add-member-button:hover {
+  border-color: #93c5fd;
+  background: #1e293b;
+  color: #ffffff;
+}
+
+.my-route-card__add-member-panel {
+  margin-top: 12px;
+  padding: 16px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #172033;
+}
+
+.my-route-card__add-member-mode {
+  margin-bottom: 12px;
+}
+
+.my-route-card__add-member-form {
+  grid-template-columns: minmax(180px, 1fr) minmax(130px, 170px) auto auto;
+  padding-top: 4px;
+}
+
+.my-route-card__automatic-member-source {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #93c5fd;
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.my-route-card__add-member-form .my-route-card__secondary-button {
+  min-height: 40px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .my-route-card__add-member-form {
+    grid-template-columns: 1fr;
+  }
+
+  .my-route-card__toggle-add-member-button {
+    width: 100%;
+  }
+}
+.my-route-card__orders {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #374151;
+}
+
+.my-route-card__collapsible-section {
+  border-top: 1px solid #374151;
+}
+
+.my-route-card__collapsible-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border: 0;
+  background: transparent;
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+}
+
+.my-route-card__collapsible-toggle:hover {
+  color: #bfdbfe;
+}
+
+
+.my-route-card__collapsible-label,
+.my-route-card__collapsible-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.my-route-card__collapsible-label small {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.my-route-card__collapsible-title svg {
+  color: #93c5fd;
+}
+.my-route-card__collapsible-chevron {
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.my-route-card__collapsible-chevron--expanded {
+  transform: rotate(180deg);
+}
+.my-route-card__collapsible-content {
+  padding: 0 0 16px;
+}
+.my-route-card__collapsible-content--crew {
+  padding-right: 24px;
+  padding-left: 24px;
+}
+.my-route-card__collapsible-toggle:hover .my-route-card__collapsible-chevron {
+  color: #bfdbfe;
+}
+
+.my-route-card__collapsible-content .my-route-card__orders {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.my-route-card__crew-management {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #374151;
+}
+
+.my-route-card__orders-list {
+  display: grid;
+  gap: 8px;
+}
+
+.my-route-card__order-item,
+.my-route-card__add-order {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.my-route-card__order-position {
+  min-width: 24px;
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.my-route-card__order-number {
+  flex: 1;
+  font-weight: 700;
+}
+
+.my-route-card__order-actions {
+  display: flex;
+  gap: 6px;
+}
+
+
+.my-route-card__add-order {
+  margin-top: 12px;
+}
+.my-route-card__order-details {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.my-route-card__order-route {
+  color: #d1d5db;
+  font-size: 14px;
+}
+.my-route-card__resolve-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.my-route-card__complete-order-button,
+.my-route-card__return-order-button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-route-card__complete-order-button {
+  border: none;
+  background: #22c55e;
+  color: #052e16;
+}
+
+.my-route-card__return-order-button {
+  border: 1px solid #f59e0b;
+  background: #451a03;
+  color: #fef3c7;
+}
+
+.my-route-card__complete-order-button:disabled,
+.my-route-card__return-order-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+@media (max-width: 700px) {
+  .my-route-card__resolve-actions {
+    flex-direction: column;
+  }
+
+  .my-route-card__complete-order-button,
+  .my-route-card__return-order-button {
+    width: 100%;
+  }
+  .my-route-card__collapsible-toggle{
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  .my-route-card__collapsible-content--crew {
+  padding-right: 16px;
+  padding-left: 16px;
+}
+}
+.my-route-card__order-cancel-button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #ef4444;
+  border-radius: 8px;
+  background: #450a0a;
+  color: #fecaca;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-route-card__order-cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.my-routes-modal__description {
+  margin: -8px 0 20px;
+  color: #d1d5db;
+}
+
+.my-routes-modal__field select,
+.my-routes-modal__field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.my-routes-modal__field textarea {
+  resize: vertical;
+}
+
+.my-routes-modal__danger-button {
+  border: 1px solid #ef4444;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.my-routes-modal__danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.my-route-card__order-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  background: #0f172a;
+}
+
+.my-route-card__order-item--draggable {
+  border-color: #475569;
+}
+
+.my-route-card__order-item--draggable:hover {
+  border-color: #60a5fa;
+}
+
+.my-route-card__order-item--locked {
+  opacity: 0.62;
+  background: #111827;
+}
+
+.my-route-card__order-item--dragging {
+  z-index: 2;
+  opacity: 0.9;
+  border-color: #60a5fa;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 35%);
+}
+
+.my-route-card__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  min-width: 52px;
+  height: 52px;
+  border: 1px solid #60a5fa;
+  border-radius: 12px;
+  background: #1e293b;
+  color: #bfdbfe;
+  cursor: grab;
+}
+
+.my-route-card__drag-handle:active {
+  cursor: grabbing;
+}
+
+.my-route-card__drag-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.my-route-card__order-actions {
+  align-self: stretch;
+  align-items: center;
+}
+
+/* Driver workspace refresh */
+.my-routes-page {
+  max-width: 1120px;
+  padding: 40px 28px 56px;
+}
+
+.my-routes-page__header {
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.my-routes-page__title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  letter-spacing: -0.04em;
+}
+
+.my-routes-page__message {
+  padding: 12px 16px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background: #172033;
+}
+
+.my-routes-page__message--error {
+  border-color: #7f1d1d;
+  background: #2b1117;
+}
+
+.my-routes-page__message--success {
+  border-color: #166534;
+  background: #112a21;
+}
+
+.my-route-card {
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: #172033;
+  box-shadow: 0 18px 45px rgb(0 0 0 / 18%);
+}
+
+.my-route-card--in_progress {
+  border-color: #2563eb;
+}
+
+.my-route-card__header {
+  align-items: flex-start;
+  margin: 0;
+  padding: 22px 24px;
+  border-bottom: 1px solid #334155;
+  background: linear-gradient(110deg, #1d2b47 0%, #172033 58%);
+}
+
+.my-route-card__title-group {
+  min-width: 0;
+}
+
+.my-route-card__eyebrow,
+.my-route-card__next-stop-label {
+  display: block;
+  margin-bottom: 5px;
+  color: #93c5fd;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.my-route-card__title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 1.45rem;
+}
+
+.my-route-card__status {
+  padding: 7px 11px;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+.my-route-card__status--in_progress {
+  border-color: #2563eb;
+  background: #172554;
+  color: #bfdbfe;
+}
+
+.my-route-card__status--waiting {
+  border-color: #b45309;
+  background: #451a03;
+  color: #fde68a;
+}
+
+.my-route-card__body,
+.my-route-card__orders,
+.my-route-card__crew,
+.my-route-card__add-member,
+.my-route-card__actions {
+  margin: 0;
+  padding: 22px 24px;
+  border: 0;
+}
+
+.my-route-card__body,
+.my-route-card__orders,
+.my-route-card__crew,
+.my-route-card__add-member {
+  border-bottom: 1px solid #334155;
+}
+
+.my-route-card__next-stop {
+  padding: 16px;
+  border: 1px solid #1d4ed8;
+  border-radius: 12px;
+  background: #101d38;
+}
+
+.my-route-card__next-stop strong {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #f8fafc;
+  line-height: 1.45;
+}
+
+.my-route-card__section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.my-route-card__section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 1.05rem;
+}
+
+.my-route-card__section-heading p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.my-route-card__order-item {
+  min-height: 76px;
+  padding: 12px 14px;
+  border-color: #334155;
+  border-radius: 12px;
+  background: #0f172a;
+}
+
+.my-route-card__order-item--draggable:hover {
+  border-color: #60a5fa;
+  background: #14213a;
+}
+
+.my-route-card__order-item--locked {
+  opacity: 1;
+  border-color: #263244;
+  background: #121a2a;
+}
+
+.my-route-card__order-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.my-route-card__order-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  border-radius: 999px;
+  background: #334155;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.my-route-card__order-number {
+  flex: 0 1 auto;
+  color: #f8fafc;
+}
+
+.my-route-card__order-status {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #dbeafe;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.my-route-card__order-status--completed {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.my-route-card__order-status--cancelled {
+  background: #4c1d1d;
+  color: #fecaca;
+}
+
+.my-route-card__order-route {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #cbd5e1;
+}
+
+.my-route-card__drag-handle {
+  border-color: #60a5fa;
+}
+
+.my-route-card__add-order {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed #475569;
+  border-radius: 12px;
+  background: #111c30;
+}
+
+.my-route-card__crew-list {
+  gap: 9px;
+}
+
+.my-route-card__crew-item {
+  min-height: 50px;
+  border-color: #334155;
+  border-radius: 10px;
+}
+
+.my-route-card__actions {
+  justify-content: flex-end;
+  gap: 10px;
+  background: #111827;
+}
+
+.my-route-card__primary-button,
+.my-route-card__secondary-button,
+.my-route-card__complete-order-button,
+.my-route-card__return-order-button {
+  min-height: 42px;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+
+.my-route-card__primary-button:hover:not(:disabled),
+.my-route-card__secondary-button:hover:not(:disabled),
+.my-route-card__complete-order-button:hover:not(:disabled),
+.my-route-card__return-order-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 700px) {
+  .my-routes-page {
+    padding: 28px 16px 44px;
+  }
+
+  .my-route-card__header,
+  .my-route-card__body,
+  .my-route-card__orders,
+  .my-route-card__crew,
+  .my-route-card__add-member,
+  .my-route-card__actions {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .my-route-card__header,
+  .my-route-card__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .my-route-card__status {
+    align-self: flex-start;
+  }
+
+  .my-route-card__add-order {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .my-route-card__actions > button {
+    width: 100%;
+  }
+}

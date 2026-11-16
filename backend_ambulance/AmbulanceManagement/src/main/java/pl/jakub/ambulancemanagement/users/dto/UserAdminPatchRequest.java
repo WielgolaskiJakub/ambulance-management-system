@@ -16,5 +16,6 @@ public class UserAdminPatchRequest {
     private String email;
     private UserRole userRole;
     private Boolean active;
+    private Boolean canWorkAsSanitary;
 }
 

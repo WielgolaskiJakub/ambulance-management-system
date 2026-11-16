@@ -4,8 +4,6 @@ import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 public class RouteFinishRequest {
@@ -17,9 +15,4 @@ public class RouteFinishRequest {
 
     @Size(max = 1000)
     private String notes;
-
-    @NotNull
-    @NotEmpty
-    private List<RouteFinishOrderItemRequest> orders;
-
 }
