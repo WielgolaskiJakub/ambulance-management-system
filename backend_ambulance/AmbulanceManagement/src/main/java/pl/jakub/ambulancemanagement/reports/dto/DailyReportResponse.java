@@ -7,7 +7,7 @@ import java.util.List;
 public record DailyReportResponse(
 
         LocalDate date,
-        List<DailyRouteReportResponse> routes,
+        List<RouteReportResponse> routes,
         int totalRoutesCount,
         int completedRoutesCount,
         int unsettledRoutesCount,

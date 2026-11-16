@@ -293,3 +293,44 @@
     font-size: 22px;
   }
 }
+.daily-report-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.daily-report-crew {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.daily-report-crew li {
+  padding: 12px 0;
+}
+
+.daily-report-crew li:first-child {
+  padding-top: 0;
+}
+.daily-report-filters select {
+  box-sizing: border-box;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #0f172a;
+  color: #f8fafc;
+  font: inherit;
+  color-scheme: dark;
+}
+
+.daily-report-filters select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.daily-report-filters select:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}

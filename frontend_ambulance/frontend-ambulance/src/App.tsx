@@ -22,6 +22,7 @@ import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { ManagerReportsPage } from "./pages/ManagerReportsPage";
 import { ManagerDailyReportPage } from "./pages/ManagerDailyReportPage";
 import { ReportsLayout } from "./layouts/ReportsLayout";
+import { ManagerDriverReportPage } from "./pages/ManagerDriverReportPage";
 
 function App() {
   return (
@@ -74,6 +75,7 @@ function App() {
       <Route path="/manager/reports" element={<ReportsLayout />}>
         <Route index element={<ManagerReportsPage />} />
         <Route path="daily" element={<ManagerDailyReportPage />} />
+        <Route path="drivers" element={<ManagerDriverReportPage />} />
         </Route>
           
 

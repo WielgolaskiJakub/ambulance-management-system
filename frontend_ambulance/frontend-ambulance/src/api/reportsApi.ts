@@ -2,7 +2,9 @@ import { axiosClient } from "./axiosClient";
 import type {
    AmbulanceReportRequest,
    AmbulanceReportSummaryResponse, 
-   DailyReportResponse 
+   DailyReportResponse,
+   DriverReportRequest,
+   DriverReportResponse
   } 
    from "../types/reports";
 
@@ -28,6 +30,22 @@ export async function getDailyReport(
     {
       params: {
         date: date,
+      },
+    }
+  );
+  return response.data;
+}
+
+export async function getDriverReport(
+  request: DriverReportRequest
+): Promise<DriverReportResponse> {
+  const response = await axiosClient.get<DriverReportResponse>(
+    "/api/v1/reports/drivers",
+    {
+      params: {
+        driverId: request.driverId,
+        dateFrom: request.dateFrom,
+        dateTo: request.dateTo,
       },
     }
   );

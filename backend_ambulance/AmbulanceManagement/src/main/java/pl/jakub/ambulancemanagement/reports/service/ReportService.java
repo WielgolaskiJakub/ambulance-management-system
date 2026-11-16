@@ -7,12 +7,17 @@ import pl.jakub.ambulancemanagement.ambulances.repository.AmbulanceRepository;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.reports.dto.*;
+import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
+import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
+import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
 import pl.jakub.ambulancemanagement.routes.dto.RouteTransportOrderReferenceResponse;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
 import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
+import pl.jakub.ambulancemanagement.users.model.User;
+import pl.jakub.ambulancemanagement.users.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -30,6 +35,8 @@ public class ReportService {
     private final RouteRepository routeRepository;
     private final AmbulanceRepository ambulanceRepository;
     private final RouteOrderRepository routeOrderRepository;
+    private final RouteMemberRepository routeMemberRepository;
+    private final UserRepository userRepository;
 
     public AmbulanceReportSummaryResponse getReport(AmbulanceReportRequest request) {
 
@@ -107,7 +114,7 @@ public class ReportService {
                         startedAtToExclusive
                 );
 
-        List<DailyRouteReportResponse> routeReports = new ArrayList<>();
+        List<RouteReportResponse> routeReports = new ArrayList<>();
 
         int totalRoutesCount = routes.size();
         int completedRoutesCount = 0;
@@ -127,36 +134,7 @@ public class ReportService {
                     route.getStatus() == RouteStatus.WAITING) {
                 unsettledRoutesCount++;
             }
-
-            String registrationPlates = route.getShift().getAmbulance().getRegistrationPlates();
-            String driverFullName = route.getShift().getDriver().getFirstName()
-                    + " " + route.getShift().getDriver().getLastName();
-            LocalDateTime startedAt = route.getStartedAt();
-            LocalDateTime finishedAt = route.getFinishedAt();
-            RouteStatus status = route.getStatus();
-            Integer distanceKm = route.getDistanceKm();
-            BigDecimal estimatedFuelConsumedLiters = route.getEstimatedFuelConsumedLiters();
-
-            List<RouteOrder> routeOrders = routeOrderRepository
-                    .findByRoute_IdOrderByPositionAsc(route.getId());
-
-            List<RouteTransportOrderReferenceResponse> transportOrders = new ArrayList<>();
-
-            for (RouteOrder routeOrder : routeOrders) {
-                transportOrders.add(RouteTransportOrderReferenceResponse.fromEntity(routeOrder));
-            }
-
-            routeReports.add(new DailyRouteReportResponse(
-                    route.getId(),
-                    registrationPlates,
-                    driverFullName,
-                    startedAt,
-                    finishedAt,
-                    status,
-                    distanceKm,
-                    estimatedFuelConsumedLiters,
-                    transportOrders
-            ));
+            routeReports.add(toRouteReportResponse(route));
         }
 
         return new DailyReportResponse(
@@ -169,4 +147,112 @@ public class ReportService {
                 totalEstimatedFuelConsumptionLiters
         );
     }
-}
+
+    public DriverReportResponse getDriverReport(DriverReportRequest request){
+
+        if(request.dateFrom().isAfter(request.dateTo())){
+            throw new ApiException(ErrorCode.INVALID_DATE_TIME);
+        }
+
+        LocalDateTime startedAtFrom = request.dateFrom().atStartOfDay();
+        LocalDateTime startedAtToExclusive = request.dateTo().plusDays(1).atStartOfDay();
+
+        User driver = userRepository.findById(request.driverId()).orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        String driverFullName = driver.getFirstName() + " " + driver.getLastName();
+
+        List<Route> routes = routeRepository.findRouteByShift_Driver_IdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(
+                request.driverId(),
+                startedAtFrom,
+                startedAtToExclusive
+        );
+
+
+        List<RouteReportResponse> routeReports = new ArrayList<>();
+
+        int totalRoutesCount = routes.size();
+        int completedRoutesCount = 0;
+        int unsettledRoutesCount = 0;
+        long totalDistanceKm = 0;
+        BigDecimal totalEstimatedFuelConsumptionLiters = BigDecimal.ZERO;
+
+        for(Route route: routes){
+            if (route.getStatus() == RouteStatus.COMPLETED) {
+                completedRoutesCount++;
+                totalDistanceKm += route.getDistanceKm();
+                totalEstimatedFuelConsumptionLiters =
+                        totalEstimatedFuelConsumptionLiters
+                                .add(route.getEstimatedFuelConsumedLiters());
+            }
+            if (route.getStatus() == RouteStatus.IN_PROGRESS ||
+                    route.getStatus() == RouteStatus.WAITING) {
+                unsettledRoutesCount++;
+            }
+
+            routeReports.add(toRouteReportResponse(route));
+
+        }
+        return new DriverReportResponse(
+                request.driverId(),
+                driverFullName,
+                request.dateFrom(),
+                request.dateTo(),
+                routeReports,
+                totalRoutesCount,
+                completedRoutesCount,
+                unsettledRoutesCount,
+                totalDistanceKm,
+                totalEstimatedFuelConsumptionLiters
+        );
+    }
+
+    private RouteReportResponse toRouteReportResponse(Route route){
+            String registrationPlates =
+                    route.getShift().getAmbulance().getRegistrationPlates();
+
+            String driverFullName = route.getShift().getDriver().getFirstName()
+                    + " " + route.getShift().getDriver().getLastName();
+
+            LocalDateTime startedAt = route.getStartedAt();
+            LocalDateTime finishedAt = route.getFinishedAt();
+            RouteStatus status = route.getStatus();
+            Integer distanceKm = route.getDistanceKm();
+            BigDecimal estimatedFuelConsumedLiters =
+                    route.getEstimatedFuelConsumedLiters();
+
+            List<RouteOrder> routeOrders = routeOrderRepository
+                    .findByRoute_IdOrderByPositionAsc(route.getId());
+
+            List<RouteTransportOrderReferenceResponse> transportOrders =
+                    new ArrayList<>();
+
+            for (RouteOrder routeOrder : routeOrders) {
+                transportOrders.add(
+                        RouteTransportOrderReferenceResponse.fromEntity(routeOrder)
+                );
+            }
+
+            List<RouteMember> routeMembers = routeMemberRepository
+                    .findByRouteIdOrderByCreatedAtAsc(route.getId());
+
+            List<RouteMemberResponse> membersResponse = new ArrayList<>();
+
+            for (RouteMember routeMember : routeMembers) {
+                membersResponse.add(RouteMemberResponse.fromEntity(routeMember));
+            }
+
+            return new RouteReportResponse(
+                    route.getId(),
+                    registrationPlates,
+                    driverFullName,
+                    startedAt,
+                    finishedAt,
+                    status,
+                    distanceKm,
+                    estimatedFuelConsumedLiters,
+                    transportOrders,
+                    membersResponse
+            );
+        }
+    }
+

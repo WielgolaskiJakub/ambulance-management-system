@@ -54,4 +54,6 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
                                                                                                          Long ambulanceId);
 
     List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(LocalDateTime startedAtFrom, LocalDateTime startedAtToExclusive);
+
+    List<Route> findRouteByShift_Driver_IdAndStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(Long driverId, LocalDateTime startedAtFrom, LocalDateTime startedAtToExclusive);
 }

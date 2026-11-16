@@ -13,6 +13,10 @@ export function ReportTabs() {
       <NavLink to="/manager/reports/daily">
         Raport dzienny
       </NavLink>
+
+      <NavLink to="/manager/reports/drivers">
+      Raport kierowcy
+      </NavLink>
     </nav>
   );
 }
