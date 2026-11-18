@@ -106,5 +106,13 @@ public class UserController {
         userService.changePasswordByUser(request);
     }
 
+    @PatchMapping("/{id}/restore-operations-permission")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateRestoreOperationsPermission(
+            @PathVariable Long id,
+            @Valid @RequestBody UserRestoreOperationsPermissionRequest request){
+        userService.updateRestoreOperationsPermissions(id, request);
+    }
 
 }

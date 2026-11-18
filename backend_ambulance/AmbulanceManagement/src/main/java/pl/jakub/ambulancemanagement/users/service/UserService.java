@@ -3,6 +3,10 @@ package pl.jakub.ambulancemanagement.users.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import pl.jakub.ambulancemanagement.audit.model.AuditAction;
+import pl.jakub.ambulancemanagement.audit.model.AuditEntityType;
+import pl.jakub.ambulancemanagement.audit.service.AuditService;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
@@ -15,6 +19,7 @@ import pl.jakub.ambulancemanagement.users.dto.*;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +28,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CurrentUserService currentUserService;
+    private final AuditService auditService;
 
     private static final String UPPERCASE_LETTERS ="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String LOWERCASE_LETTERS ="abcdefghijklmnopqrstuvwxyz";
@@ -267,6 +273,44 @@ public class UserService {
         currentUser.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(currentUser);
     }
+
+    @Transactional
+    public void updateRestoreOperationsPermissions(long userId,
+            UserRestoreOperationsPermissionRequest request){
+
+        User user = getUserById(userId);
+        validateCurrentUserCanManage(user);
+
+        boolean previousValue = Boolean.TRUE.equals(user.getCanRestoreOperations());
+        boolean newValue = request.canRestoreOperations();
+
+        if(previousValue == newValue){
+            return;
+        }
+
+        user.setCanRestoreOperations(newValue);
+        userRepository.save(user);
+
+        AuditAction action = newValue
+                ? AuditAction.RESTORE_PERMISSION_GRANTED
+                : AuditAction.RESTORE_PERMISSION_REVOKED;
+
+        Map<String, Object> details = Map.of(
+                "targetUsername", user.getUsername(),
+                "targetFullName", user.getFirstName() + " " + user.getLastName(),
+                "previousValue", previousValue,
+                "newValue", newValue
+        );
+
+        auditService.record(
+                action,
+                AuditEntityType.USER,
+                user.getId(),
+                details,
+                null
+        );
+    }
+
 
     private boolean currentUserIsAdmin(){
         return currentUserService.getCurrentUser().getUserRole() == UserRole.ADMIN;

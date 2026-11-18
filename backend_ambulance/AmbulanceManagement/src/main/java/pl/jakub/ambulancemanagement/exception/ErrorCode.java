@@ -171,6 +171,10 @@ public enum ErrorCode {
     ROUTE_HAS_PENDING_TRANSPORT_ORDERS("ROUTE_HAS_PENDING_TRANSPORT_ORDERS",
             "error.route_has_pending_transport_orders", HttpStatus.BAD_REQUEST),
     INVALID_DATE_TIME("INVALID_DATE_TIME", "error.invalid_date_time", HttpStatus.BAD_REQUEST),
+    INVALID_RECOVERY_ESTIMATED_FUEL_REQUEST("INVALID_RECOVERY_ESTIMATED_FUEL_REQUEST",
+            "error.invalid_recovery_estimated_fuel_request", HttpStatus.BAD_REQUEST),
+    INVALID_RECOVERY_MILEAGE_REQUEST("INVALID_RECOVERY_MILEAGE_REQUEST",
+            "error.invalid_recovery_mileage_request", HttpStatus.BAD_REQUEST),
 
 
 

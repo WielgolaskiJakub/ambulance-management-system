@@ -49,4 +49,7 @@ public class User {
 
     @Column(name = "can_work_as_sanitary", nullable = false)
     private Boolean canWorkAsSanitary = false;
+
+    @Column(name = "can_restore_operations", nullable = false)
+    private Boolean canRestoreOperations = false;
 }
