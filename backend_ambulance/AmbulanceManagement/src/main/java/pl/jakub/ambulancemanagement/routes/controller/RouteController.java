@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pl.jakub.ambulancemanagement.route_orders.dto.ReturnOrderToQueueRequest;
 import pl.jakub.ambulancemanagement.routes.dto.*;
 import pl.jakub.ambulancemanagement.routes.service.RouteService;
 import pl.jakub.ambulancemanagement.transport_orders.dto.CancelTransportOrderRequest;
@@ -125,6 +126,17 @@ public class RouteController {
                         request
                 )
         );
+    }
+
+    @PatchMapping("/{routeId}/transport-orders/{transportOrderId}/return-to-queue")
+    @PreAuthorize("hasAnyRole('DRIVER', 'SANITARY')")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void returnOrderToQueue(
+            @PathVariable Long routeId,
+            @PathVariable Long transportOrderId,
+            @Valid @RequestBody ReturnOrderToQueueRequest request
+            ){
+        routeService.returnOrderToQueue(routeId, transportOrderId, request);
     }
 
     @PatchMapping("/{routeId}/transport-orders/{transportOrderId}/cancel")

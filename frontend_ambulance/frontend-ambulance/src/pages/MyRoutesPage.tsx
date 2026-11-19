@@ -8,6 +8,7 @@ import {
   getMyRoutes,
   type RouteOrderFinishAction,
   cancelTransportOrderInRoute,
+  returnOrderToQueue,
 } from "../api/routesApi";
 
 import type {
@@ -119,6 +120,8 @@ export function MyRoutesPage() {
   const [cancelReason, setCancelReason] = useState("CANCELLED_BY_WARD");
   const [cancelDescription, setCancelDescription] = useState("");
   const [cancellingTransportOrderId, setCancellingTransportOrderId] = useState<number | null>(null);
+
+  const [returningOrderId, setReturningOrderId] = useState<number | null>(null);
 
   function toggleAddMemberForm(routeId: number) {
     setExpandedAddMemberRouteId((previousRouteId) =>
@@ -574,7 +577,38 @@ export function MyRoutesPage() {
     }
   }
 
- 
+  async function handleReturnOrderToQueue(
+    routeId: number,
+    order: RouteTransportOrderReference,
+    note?: string) {
+    if (returningOrderId !== null) {
+      return;
+    }
+
+    setReturningOrderId(order.id);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    try {
+      await returnOrderToQueue(routeId, order.id, note);
+      setSuccessMessage(`Zlecenie ${order.orderNumber} zostało zwrócone do kolejki.`);
+      const [updatedRoutes, availableOrders] = await Promise.all([
+        getMyRoutes(),
+        getAvailableTransportOrdersForCrew(),
+      ]);
+
+      setRoutes(updatedRoutes);
+      setAvailableTransportOrders(availableOrders);
+    } catch (error) {
+      const message = axios.isAxiosError(error)
+        ? `Bład komunikacji z serwerem: ${error.response?.status ?? "brak odpowiedzi"}`
+        : "Wystąpił nieoczekiwany błąd";
+      setErrorMessage(message);
+    } finally {
+      setReturningOrderId(null);
+    }
+  }
+
   if (loading) {
     return (
       <main className="my-routes-page">
@@ -681,6 +715,10 @@ export function MyRoutesPage() {
                   onReorder={(event) => handleTransportOrderDragEnd(route, event)}
                   onCancelTransportOrder={(order) =>
                     openCancelRouteOrderModal(route.id, order)
+                  }
+                  returningOrderId={returningOrderId}
+                  onReturnOrder={(order, note) =>
+                    handleReturnOrderToQueue(route.id, order, note)
                   }
                 />
 

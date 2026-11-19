@@ -10,7 +10,11 @@ import pl.jakub.ambulancemanagement.audit.model.AuditEntityType;
 import pl.jakub.ambulancemanagement.audit.service.AuditService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.recovery.dto.RecoverActiveShiftRequest;
 import pl.jakub.ambulancemanagement.recovery.dto.RestoreAmbulanceStateRequest;
+import pl.jakub.ambulancemanagement.shifts.model.Shift;
+import pl.jakub.ambulancemanagement.shifts.model.ShiftType;
+import pl.jakub.ambulancemanagement.shifts.service.ShiftService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -22,20 +26,21 @@ public class RecoveryService {
 
     private final AmbulanceService ambulanceService;
     private final AuditService auditService;
+    private final ShiftService shiftService;
 
     @Transactional
-    public void restoreAmbulanceState(RestoreAmbulanceStateRequest request, Long id){
+    public void restoreAmbulanceState(RestoreAmbulanceStateRequest request, Long id) {
 
         Ambulance ambulance = ambulanceService.getAmbulanceById(id);
 
-        if(request.estimatedFuelLiters().compareTo(ambulance.getTankCapacityLiters()) > 0) {
+        if (request.estimatedFuelLiters().compareTo(ambulance.getTankCapacityLiters()) > 0) {
             throw new ApiException(ErrorCode.INVALID_RECOVERY_ESTIMATED_FUEL_REQUEST);
         }
-        if(request.mileage() < ambulance.getMileage()){
+        if (request.mileage() < ambulance.getMileage()) {
             throw new ApiException(ErrorCode.INVALID_RECOVERY_MILEAGE_REQUEST);
         }
 
-     Map<String,Object> details = new HashMap<>();
+        Map<String, Object> details = new HashMap<>();
         details.put("registrationPlates", ambulance.getRegistrationPlates());
         details.put("previousMileage", ambulance.getMileage());
         details.put("newMileage", request.mileage());
@@ -53,8 +58,11 @@ public class RecoveryService {
                 details,
                 request.reason().trim()
         );
-
     }
 
+    @Transactional
+    public void recoverActiveShift(RecoverActiveShiftRequest request) {
 
+
+    }
 }

@@ -5,14 +5,19 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
+import pl.jakub.ambulancemanagement.audit.model.AuditAction;
+import pl.jakub.ambulancemanagement.audit.model.AuditEntityType;
+import pl.jakub.ambulancemanagement.audit.service.AuditService;
 import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
+import pl.jakub.ambulancemanagement.recovery.dto.FinishRouteAfterOutageRequest;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMemberRole;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMemberSource;
 import pl.jakub.ambulancemanagement.route_members.repository.RouteMemberRepository;
+import pl.jakub.ambulancemanagement.route_orders.dto.ReturnOrderToQueueRequest;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrder;
 import pl.jakub.ambulancemanagement.route_orders.model.RouteOrderStatus;
 import pl.jakub.ambulancemanagement.route_orders.repository.RouteOrderRepository;
@@ -55,6 +60,7 @@ public class RouteService {
     private final RouteMemberRepository routeMemberRepository;
     private final CurrentUserService currentUserService;
     private final ShiftDefaultMemberRepository shiftDefaultMemberRepository;
+    private final AuditService auditService;
 
     public List<Route> getAllRoutes() {
         return routeRepository.findAll();
@@ -95,7 +101,7 @@ public class RouteService {
 
         validateCurrentUserCanUseShift(shift);
         validateShiftHasNoActiveRoutes(shift);
-        
+
         Route route = new Route();
         route.setShift(shift);
         route.setStartAddress(request.getStartAddress());
@@ -252,13 +258,13 @@ public class RouteService {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
         }
 
-        for(int index = 0; index < routeOrders.size(); index++) {
+        for (int index = 0; index < routeOrders.size(); index++) {
             RouteOrder routeOrder = routeOrders.get(index);
 
             boolean isLocked = routeOrder.getStatus() != RouteOrderStatus.PENDING;
 
-            if(isLocked
-            && !routeOrder.getTransportOrder().getId().equals(requestedTransportOrdersIds.get(index))) {
+            if (isLocked
+                    && !routeOrder.getTransportOrder().getId().equals(requestedTransportOrdersIds.get(index))) {
                 throw new ApiException(ErrorCode.ROUTE_TRANSPORT_ORDER_CANNOT_BE_REORDERED);
             }
         }
@@ -466,32 +472,32 @@ public class RouteService {
     ) {
         Route route = getRouteForCurrentUser(routeId);
 
-        if(route.getStatus() != RouteStatus.IN_PROGRESS
-        && route.getStatus() != RouteStatus.CREATED) {
+        if (route.getStatus() != RouteStatus.IN_PROGRESS
+                && route.getStatus() != RouteStatus.CREATED) {
             throw new ApiException(ErrorCode.ROUTE_TRANSPORT_ORDER_CANNOT_BE_CANCELLED);
         }
 
         RouteOrder routeOrder = routeOrderRepository.findByRoute_IdAndTransportOrder_Id(
-                routeId,
-                transportOrderId)
+                        routeId,
+                        transportOrderId)
                 .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE));
 
-        if(routeOrder.getStatus() != RouteOrderStatus.PENDING){
+        if (routeOrder.getStatus() != RouteOrderStatus.PENDING) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_CANNOT_BE_CANCELLED);
         }
 
         TransportOrder transportOrder = routeOrder.getTransportOrder();
 
-        if(transportOrder.getStatus() == TransportStatus.CANCELLED){
+        if (transportOrder.getStatus() == TransportStatus.CANCELLED) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_CANCELLED);
         }
-        if(transportOrder.getStatus() == TransportStatus.COMPLETED){
+        if (transportOrder.getStatus() == TransportStatus.COMPLETED) {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_COMPLETED);
         }
 
         User cancelledBy = currentUserService.getCurrentUser();
 
-        if(!Boolean.TRUE.equals(cancelledBy.getActive())){
+        if (!Boolean.TRUE.equals(cancelledBy.getActive())) {
             throw new ApiException(ErrorCode.USER_NOT_ACTIVE);
         }
 
@@ -512,21 +518,73 @@ public class RouteService {
     }
 
     @Transactional
+    public void returnOrderToQueue(
+            Long routeId,
+            Long transportOrderId,
+            ReturnOrderToQueueRequest request
+    ){
+        Route route = getRouteForCurrentUser(routeId);
+
+        if(route.getStatus() != RouteStatus.CREATED){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_CANNOT_BE_RETURNED_TO_QUEUE);
+        }
+
+        RouteOrder routeOrder = routeOrderRepository.findByRoute_IdAndTransportOrder_Id(routeId, transportOrderId)
+                .orElseThrow(() -> new ApiException(ErrorCode.TRANSPORT_ORDER_NOT_IN_ROUTE));
+
+        TransportOrder transportOrder = routeOrder.getTransportOrder();
+
+        if(routeOrder.getStatus() != RouteOrderStatus.PENDING ||
+        transportOrder.getStatus() != TransportStatus.IN_PROGRESS){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_CANNOT_BE_RETURNED_TO_QUEUE);
+        }
+
+        String note = normalizeNullableText(request.note());
+        if(note != null){
+            String description = transportOrder.getDescription();
+            String returnNote = "Zwrot do kolejki: " + note;
+
+            transportOrder.setDescription(
+                    description == null || description.isBlank()
+                    ? returnNote
+                            :description + "\n" + returnNote
+            );
+        }
+
+        transportOrder.setStatus(TransportStatus.NEW);
+        routeOrderRepository.delete(routeOrder);
+
+        List<RouteOrder> pendingOrders = routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(
+                routeId, RouteOrderStatus.PENDING
+        );
+
+        if(pendingOrders.isEmpty()){
+            route.setStatus(RouteStatus.CANCELLED);
+        }
+
+        auditService.record(
+                AuditAction.TRANSPORT_ORDER_RETURNED_TO_QUEUE,
+                AuditEntityType.TRANSPORT_ORDER,
+                transportOrder.getId(),
+                Map.of(
+                        "orderNumber", transportOrder.getOrderNumber(),
+                        "routeId", route.getId(),
+                        "registrationPlates", route.getShift().getAmbulance().getRegistrationPlates(),
+                        "routeStatusAfterReturn", route.getStatus().name()
+        ),
+                note
+        );
+    }
+
+    @Transactional
     public Route finishRoute(Long id, RouteFinishRequest request) {
         Route route = getRouteForCurrentUser(id);
 
         if (route.getStatus() != RouteStatus.IN_PROGRESS) {
             throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_FINISHED);
         }
-        List<RouteOrder> routeOrders =
-                routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(
-                        route.getId(),
-                        RouteOrderStatus.PENDING
-                );
 
-        if (!routeOrders.isEmpty()) {
-            throw new ApiException(ErrorCode.ROUTE_HAS_PENDING_TRANSPORT_ORDERS);
-        }
+        validateNoPendingOrder(route.getId());
 
         Integer startOdometerKm = route.getStartOdometerKm();
         if (startOdometerKm == null) {
@@ -538,26 +596,9 @@ public class RouteService {
         int finishOdometerKm = calculateFullOdometerFromLastThreeDigits(
                 startOdometerKm, request.getFinishOdometerLastThree());
 
-        int distanceKM = finishOdometerKm - startOdometerKm;
-
-        if (distanceKM < 0) {
-            throw new ApiException(ErrorCode.INVALID_FINISH_ODOMETER);
-        }
-        LocalDateTime now = LocalDateTime.now();
-
-        route.setFinishOdometerKm(finishOdometerKm);
-        route.setDistanceKm(distanceKM);
-        route.setFinishedAt(now);
-        route.setStatus(RouteStatus.COMPLETED);
+        BigDecimal estimatedFuelConsumed = completeRoute(route, finishOdometerKm, LocalDateTime.now());
 
         Ambulance ambulance = route.getShift().getAmbulance();
-
-        BigDecimal fuelConsumptionNorm = getCurrentFuelConsumptionNorm(ambulance);
-        BigDecimal estimatedFuelConsumed = calculateEstimatedFuelConsumed(distanceKM, fuelConsumptionNorm);
-
-        route.setFuelConsumptionNormUsed(fuelConsumptionNorm);
-        route.setEstimatedFuelConsumedLiters(estimatedFuelConsumed);
-
         ambulance.setMileage(finishOdometerKm);
         subtractEstimatedFuelAfterRoute(ambulance, estimatedFuelConsumed);
 
@@ -566,8 +607,37 @@ public class RouteService {
             route.setNotes(normalizeNullableText(request.getNotes()));
         }
 
-
         return routeRepository.save(route);
+    }
+
+    @Transactional
+    public void finishRouteAfterOutage(Long routeId, FinishRouteAfterOutageRequest request){
+        Route route = getRouteById(routeId);
+
+        if(route.getStatus() != RouteStatus.IN_PROGRESS){
+            throw new ApiException(ErrorCode.ROUTE_CANNOT_BE_FINISHED);
+        }
+
+        LocalDateTime startedAt = route.getStartedAt();
+        if(startedAt == null || request.finishedAt().isBefore(startedAt)){
+            throw new ApiException(ErrorCode.INVALID_DATE_TIME);
+        }
+        validateNoPendingOrder(route.getId());
+        completeRoute(route, request.finishOdometerKm(), request.finishedAt());
+
+        auditService.record(
+                AuditAction.ROUTE_FINISHED_AFTER_OUTAGE,
+                AuditEntityType.ROUTE,
+                route.getId(),
+                Map.of(
+                        "registrationPlates", route.getShift().getAmbulance().getRegistrationPlates(),
+                        "startedAt", startedAt.toString(),
+                        "finishedAt", route.getFinishedAt().toString(),
+                        "finishOdometerKm", route.getFinishOdometerKm(),
+                        "distanceKm", route.getDistanceKm()
+                ),
+                null
+        );
     }
 
     public RouteDetailsResponse getRouteDetailsById(Long id) {
@@ -598,6 +668,41 @@ public class RouteService {
                         .toList();
 
         return RouteDetailsResponse.fromEntity(route, transportOrders, routeMembers);
+    }
+
+
+    private BigDecimal completeRoute(Route route, int finishOdometerKm, LocalDateTime finishedAt) {
+
+        Integer startOdometerKm = route.getStartOdometerKm();
+        if (startOdometerKm == null) {
+            throw new ApiException(ErrorCode.ODOMETER_BASE_VALUE_REQUIRED);
+        }
+        if (finishOdometerKm < startOdometerKm) {
+            throw new ApiException(ErrorCode.INVALID_FINISH_ODOMETER);
+        }
+
+        int distanceKm = finishOdometerKm - startOdometerKm;
+        Ambulance ambulance = route.getShift().getAmbulance();
+        BigDecimal fuelConsumptionNorm = getCurrentFuelConsumptionNorm(ambulance);
+        BigDecimal estimatedFuelConsumed = calculateEstimatedFuelConsumed(distanceKm, fuelConsumptionNorm);
+
+        route.setFinishOdometerKm(finishOdometerKm);
+        route.setDistanceKm(distanceKm);
+        route.setFinishedAt(finishedAt);
+        route.setStatus(RouteStatus.COMPLETED);
+        route.setFuelConsumptionNormUsed(fuelConsumptionNorm);
+        route.setEstimatedFuelConsumedLiters(estimatedFuelConsumed);
+
+        return estimatedFuelConsumed;
+    }
+
+    private void validateNoPendingOrder(Long routeId){
+        List<RouteOrder> pendingOrders =
+                routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(routeId, RouteOrderStatus.PENDING);
+
+        if(!pendingOrders.isEmpty()){
+            throw new ApiException(ErrorCode.ROUTE_HAS_PENDING_TRANSPORT_ORDERS);
+        }
     }
 
     private String normalizeNullableText(String value) {

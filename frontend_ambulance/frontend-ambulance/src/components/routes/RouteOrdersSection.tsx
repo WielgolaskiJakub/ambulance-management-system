@@ -39,6 +39,8 @@ type RouteOrdersSectionProps = {
     onAddTransportOrder: () => void;
     onReorder: (event: DragEndEvent) => void;
     onCancelTransportOrder: ( order: RouteTransportOrderReference) => void;
+    returningOrderId: number | null;
+    onReturnOrder: (order: RouteTransportOrderReference, note?: string) => Promise<void>;
 };
 
 function getRouteOrderStatusLabel(
@@ -66,6 +68,10 @@ type SortableRouteOrderProps = {
   canCancel: boolean;
   isCancelling: boolean;
   onCancel: () => void;
+  canReturnToQueue: boolean,
+  returnInProgress: boolean,
+  isReturning: boolean,
+  onReturnToQueue: (note?: string) => Promise<void>,
 };
 
 function SortableRouteOrder({
@@ -76,6 +82,10 @@ function SortableRouteOrder({
   canCancel,
   isCancelling,
   onCancel,
+  canReturnToQueue,
+  returnInProgress,
+  isReturning,
+  onReturnToQueue,
 }: SortableRouteOrderProps) {
   const {
     attributes,
@@ -107,18 +117,50 @@ function SortableRouteOrder({
         .filter(Boolean)
         .join(" ")}
     >
-      <div className="my-route-card__order-actions">
-        {canCancel && (
-          <button
-            type="button"
-            className="my-route-card__order-cancel-button"
-            disabled={isCancelling}
-            onClick={onCancel}
-          >
-            {isCancelling ? "Anulowanie..." : "Anuluj"}
-          </button>
-        )}
-      </div>
+   <div className="my-route-card__order-actions">
+  {canReturnToQueue && (
+    <details className="my-route-card__return-order">
+      <summary>Zwróć do kolejki</summary>
+
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          const note = new FormData(event.currentTarget).get("note");
+          void onReturnToQueue(typeof note === "string" ? note : undefined);
+        }}
+      >
+        <label>
+          Uwaga dla kolejnej załogi (opcjonalnie)
+          <input
+            type="text"
+            name="note"
+            placeholder="Np. oddział prosi o powrót po 14:00"
+            disabled={returnInProgress || isCancelling}
+          />
+        </label>
+
+        <button
+          type="submit"
+          className="my-route-card__secondary-button"
+          disabled={returnInProgress || isCancelling}
+        >
+          {isReturning ? "Zwracanie..." : "Potwierdź zwrot"}
+        </button>
+      </form>
+    </details>
+  )}
+
+  {canCancel && (
+    <button
+      type="button"
+      className="my-route-card__order-cancel-button"
+      disabled={isCancelling || isReturning}
+      onClick={onCancel}
+    >
+      {isCancelling ? "Anulowanie..." : "Anuluj"}
+    </button>
+  )}
+</div>
 
       <div className="my-route-card__order-details">
         <div className="my-route-card__order-heading">
@@ -173,6 +215,8 @@ export function RouteOrdersSection({
   onAddTransportOrder,
   onReorder,
   onCancelTransportOrder,
+  returningOrderId,
+  onReturnOrder,
 }: RouteOrdersSectionProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -227,6 +271,12 @@ export function RouteOrdersSection({
                         route.status === "IN_PROGRESS") &&
                       order.routeOrderStatus === "PENDING";
 
+                      const canReturnToQueue =
+                      route.status === "CREATED" &&
+                      order.routeOrderStatus === "PENDING" &&
+                      order.transportOrderStatus === "IN_PROGRESS";
+
+
                     return (
                       <SortableRouteOrder
                         key={order.id}
@@ -239,6 +289,10 @@ export function RouteOrdersSection({
                           cancellingTransportOrderId === order.id
                         }
                         onCancel={() => onCancelTransportOrder(order)}
+                  canReturnToQueue={canReturnToQueue}
+                  returnInProgress={returningOrderId !== null}
+                  isReturning={returningOrderId === order.id}
+                  onReturnToQueue={(note) => onReturnOrder(order, note)}
                       />
                     );
                   })}

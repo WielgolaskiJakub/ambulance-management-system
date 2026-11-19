@@ -119,3 +119,14 @@ export async function cancelTransportOrderInRoute(
   );
   return response.data;
 }
+
+export async function returnOrderToQueue(
+  routeId: number,
+  transportOrderId: number,
+  note?: string
+): Promise<void> {
+  await axiosClient.patch<void>(
+    `/api/v1/routes/${routeId}/transport-orders/${transportOrderId}/return-to-queue`,
+    { note: note?.trim() || undefined }
+  );
+}
