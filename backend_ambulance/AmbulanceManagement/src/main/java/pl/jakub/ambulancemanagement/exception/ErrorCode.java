@@ -177,6 +177,8 @@ public enum ErrorCode {
             "error.invalid_recovery_mileage_request", HttpStatus.BAD_REQUEST),
     TRANSPORT_ORDER_CANNOT_BE_RETURNED_TO_QUEUE("TRANSPORT_ORDER_CANNOT_BE_RETURNED_TO_QUEUE",
             "error.transport_order_cannot_be_returned_to_queue", HttpStatus.CONFLICT),
+    TRANSPORT_ORDER_PREVIOUS_STATUS_UNKNOWN("TRANSPORT_ORDER_PREVIOUS_STATUS_UNKNOWN",
+            "error.transport_order_previous_status_unknown", HttpStatus.CONFLICT),
 
 
 

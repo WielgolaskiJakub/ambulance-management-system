@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.transport_orders.model.TransportOrder;
+import pl.jakub.ambulancemanagement.transport_orders.model.TransportStatus;
 
 
 import java.time.LocalDateTime;
@@ -42,6 +43,10 @@ public class RouteOrder {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private RouteOrderStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "transport_status_before_assignment", length = 32)
+    private TransportStatus transportStatusBeforeAssignment;
 
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;

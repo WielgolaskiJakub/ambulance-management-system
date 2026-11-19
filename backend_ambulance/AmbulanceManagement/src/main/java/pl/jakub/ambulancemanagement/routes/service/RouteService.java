@@ -133,11 +133,13 @@ public class RouteService {
                 throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
             }
 
+            TransportStatus statusBeforeAssignment = transportOrder.getStatus();
             // Zlecenie jest IN_PROGRESS od momentu przyjęcia przez załogę
             // i utworzenia trasy, nawet jeśli karetka jeszcze nie ruszyła.
             transportOrder.setStatus(TransportStatus.IN_PROGRESS);
 
             RouteOrder routeOrder = new RouteOrder();
+            routeOrder.setTransportStatusBeforeAssignment(statusBeforeAssignment);
             routeOrder.setRoute(savedRoute);
             routeOrder.setTransportOrder(transportOrder);
             routeOrder.setPosition(position++);
@@ -192,6 +194,7 @@ public class RouteService {
             throw new ApiException(ErrorCode.TRANSPORT_ORDER_ALREADY_ASSIGNED_TO_ACTIVE_ROUTE);
         }
 
+        TransportStatus statusBeforeAssignment = transportOrder.getStatus();
         transportOrder.setStatus(TransportStatus.IN_PROGRESS);
         Route route = new Route();
         route.setShift(shift);
@@ -203,6 +206,7 @@ public class RouteService {
         Route savedRoute = routeRepository.save(route);
 
         RouteOrder routeOrder = new RouteOrder();
+        routeOrder.setTransportStatusBeforeAssignment(statusBeforeAssignment);
         routeOrder.setRoute(savedRoute);
         routeOrder.setTransportOrder(transportOrder);
         routeOrder.setPosition(1);
@@ -329,6 +333,7 @@ public class RouteService {
                 : routeOrders.get(routeOrders.size() - 1).getPosition() + 1;
 
         RouteOrder routeOrder = new RouteOrder();
+        routeOrder.setTransportStatusBeforeAssignment(transportOrder.getStatus());
         routeOrder.setRoute(route);
         routeOrder.setTransportOrder(transportOrder);
         routeOrder.setPosition(nextPosition);
@@ -551,7 +556,14 @@ public class RouteService {
             );
         }
 
-        transportOrder.setStatus(TransportStatus.NEW);
+        TransportStatus statusBeforeAssignment = routeOrder.getTransportStatusBeforeAssignment();
+
+        if(statusBeforeAssignment == null){
+            throw new ApiException(ErrorCode.TRANSPORT_ORDER_PREVIOUS_STATUS_UNKNOWN);
+        }
+
+        transportOrder.setStatus(statusBeforeAssignment);
+
         routeOrderRepository.delete(routeOrder);
 
         List<RouteOrder> pendingOrders = routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(
@@ -570,7 +582,8 @@ public class RouteService {
                         "orderNumber", transportOrder.getOrderNumber(),
                         "routeId", route.getId(),
                         "registrationPlates", route.getShift().getAmbulance().getRegistrationPlates(),
-                        "routeStatusAfterReturn", route.getStatus().name()
+                        "routeStatusAfterReturn", route.getStatus().name(),
+                        "restoredTransportStatus", statusBeforeAssignment.name()
         ),
                 note
         );
@@ -683,7 +696,7 @@ public class RouteService {
 
         int distanceKm = finishOdometerKm - startOdometerKm;
         Ambulance ambulance = route.getShift().getAmbulance();
-        BigDecimal fuelConsumptionNorm = getCurrentFuelConsumptionNorm(ambulance);
+        BigDecimal fuelConsumptionNorm = getCurrentFuelConsumptionNorm(ambulance, route.getStartedAt().toLocalDate());
         BigDecimal estimatedFuelConsumed = calculateEstimatedFuelConsumed(distanceKm, fuelConsumptionNorm);
 
         route.setFinishOdometerKm(finishOdometerKm);
@@ -733,8 +746,8 @@ public class RouteService {
     }
 
 
-    private BigDecimal getCurrentFuelConsumptionNorm(Ambulance ambulance) {
-        Month currentMonth = LocalDate.now().getMonth();
+    private BigDecimal getCurrentFuelConsumptionNorm(Ambulance ambulance, LocalDate departureDate) {
+        Month currentMonth = departureDate.getMonth();
 
         boolean winterSeason = currentMonth == Month.OCTOBER
                 || currentMonth == Month.NOVEMBER
