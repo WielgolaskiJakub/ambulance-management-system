@@ -21,6 +21,7 @@ export type RouteResponse = {
   startAddress: string;
   actualDestinationAddress: string;
   distanceKm: number | null;
+  startOdometerKm: number | null;
   startedAt: string | null;
   finishedAt: string | null;
   notes: string | null;
@@ -28,3 +29,28 @@ export type RouteResponse = {
   fuelConsumptionNormUsed: number | null;
   estimatedFuelConsumedLiters: number | null;
 };
+
+export type RecoveryOrderResultRequest = 
+  | {
+    transportOrderId: number;
+    action: "COMPLETE" | "WAITING_FOR_PICKUP";
+  }
+  | {
+    transportOrderId: number;
+    action: "CANCEL";
+    cancelReason: string;
+    cancelDescription?: string;
+  };
+
+  export type FinishRouteAfterOutageRequest = {
+    finishedAt: string;
+    finishOdometerKm: number;
+    orderResults: RecoveryOrderResultRequest[];
+  };
+
+  export type RecoveryRouteSummaryResponse = {
+    routeId: number;
+    registrationPlates: string;
+    driverFullName: string;
+    startedAt: string;
+  };

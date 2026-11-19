@@ -16,6 +16,7 @@ export type UserResponse ={
     active: boolean;
     mustChangePassword: boolean;
     canWorkAsSanitary: boolean;
+    canRestoreOperations: boolean;
 }
 
 export type UserCreateResponse = {

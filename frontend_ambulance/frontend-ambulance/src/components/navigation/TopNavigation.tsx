@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import "./TopNavigation.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   disableNewOrderSound,
   enableNewOrderSound,
@@ -8,6 +8,8 @@ import {
 } from "../../utils/newOrderSound";
 import { getCurrentUserRole } from "../../utils/auth";
 import { KeyRound, LogOut, UserRound } from "lucide-react";
+import { getRecoveryAccess } from "../../api/recoveryApi";
+
 
 export function TopNavigation() {
   const navigate = useNavigate();
@@ -20,6 +22,27 @@ export function TopNavigation() {
 
   const isCrewUser = userRole === "DRIVER" || userRole === "SANITARY";
   const isManagerUser = userRole === "MANAGER" || userRole === "ADMIN";
+
+  const [hasRecoveryAccess, setHasRecoveryAccess] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadRecoveryAccess() {
+      try {
+        const allowed = await getRecoveryAccess();
+        if (active) setHasRecoveryAccess(allowed);
+      } catch {
+        if (active) setHasRecoveryAccess(false);
+      }
+    }
+
+    void loadRecoveryAccess();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function handleToggleSound() {
     try {
@@ -78,39 +101,44 @@ export function TopNavigation() {
         )}
 
         {isManagerUser && (
-            <>
-          <NavLink className="top-navigation__link" to="/manager/dashboard">
-            Harmonogram
-          </NavLink>
-       
-          <NavLink
-            className="top-navigation__link"
-            to="/manager/transport-orders/create"
-          >
-            Utwórz zlecenie
-          </NavLink>
+          <>
+            <NavLink className="top-navigation__link" to="/manager/dashboard">
+              Harmonogram
+            </NavLink>
 
-           <NavLink className="top-navigation__link" to="/manager/users">
-            Pracownicy
-          </NavLink>
+            <NavLink
+              className="top-navigation__link"
+              to="/manager/transport-orders/create"
+            >
+              Utwórz zlecenie
+            </NavLink>
 
-           <NavLink className="top-navigation__link" to="/manager/ambulances">
-            Pojazdy
-          </NavLink>
+            <NavLink className="top-navigation__link" to="/manager/users">
+              Pracownicy
+            </NavLink>
 
-          <NavLink className="top-navigation__link" to="/manager/reports">
-            Raporty
-          </NavLink>
+            <NavLink className="top-navigation__link" to="/manager/ambulances">
+              Pojazdy
+            </NavLink>
+
+            <NavLink className="top-navigation__link" to="/manager/reports">
+              Raporty
+            </NavLink>
+
+             {hasRecoveryAccess && (
+              <NavLink className="top-navigation__link" to="/recovery/routes">
+                Rozliczenie po awarii
+              </NavLink>
+            )}
           </>
-          
+
         )}
       </nav>
 
       <div className="top-navigation__actions">
         <button
-          className={`top-navigation__sound-button ${
-            soundEnabled ? "top-navigation__sound-button--enabled" : ""
-          }`}
+          className={`top-navigation__sound-button ${soundEnabled ? "top-navigation__sound-button--enabled" : ""
+            }`}
           type="button"
           onClick={handleToggleSound}
           title={
@@ -127,40 +155,40 @@ export function TopNavigation() {
           {soundEnabled ? "🔊" : "🔇"}
         </button>
 
-          <div className="top-navigation__account-menu">
-            <button
+        <div className="top-navigation__account-menu">
+          <button
             className="top-navigation__account-button"
             type="button"
             onClick={() => setAccountMenuOpen((current) => !current)}
             aria-label="Menu konta"
             aria-expanded={accountMenuOpen}
             title="Menu konta"
-            >
-              <UserRound size={20} aria-hidden="true"/>
-            </button>
+          >
+            <UserRound size={20} aria-hidden="true" />
+          </button>
 
-            {accountMenuOpen && (
-              <div className="top-navigation__account-dropdown">
-                <NavLink
+          {accountMenuOpen && (
+            <div className="top-navigation__account-dropdown">
+              <NavLink
                 className="top-navigation__account-action"
                 to="/change-password"
                 onClick={() => setAccountMenuOpen(false)}
-                >
-                  <KeyRound size={17} aria-hidden="true"/>
-                  Zmień hasło
-                </NavLink>
+              >
+                <KeyRound size={17} aria-hidden="true" />
+                Zmień hasło
+              </NavLink>
 
-                <button
+              <button
                 className="top-navigation__account-action"
                 type="button"
                 onClick={handleLogout}
-                >
-                  <LogOut size={17} aria-hidden="true"/>
-                  Wyloguj
-                </button>
-                </div>
-            )}
-          </div>
+              >
+                <LogOut size={17} aria-hidden="true" />
+                Wyloguj
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {soundError && (

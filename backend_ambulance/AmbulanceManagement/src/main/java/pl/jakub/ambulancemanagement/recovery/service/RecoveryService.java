@@ -11,13 +11,15 @@ import pl.jakub.ambulancemanagement.audit.service.AuditService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.recovery.dto.RecoverActiveShiftRequest;
+import pl.jakub.ambulancemanagement.recovery.dto.RecoveryRouteSummaryResponse;
 import pl.jakub.ambulancemanagement.recovery.dto.RestoreAmbulanceStateRequest;
-import pl.jakub.ambulancemanagement.shifts.model.Shift;
-import pl.jakub.ambulancemanagement.shifts.model.ShiftType;
-import pl.jakub.ambulancemanagement.shifts.service.ShiftService;
+import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
+import pl.jakub.ambulancemanagement.routes.repository.RouteRepository;
+
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -26,7 +28,7 @@ public class RecoveryService {
 
     private final AmbulanceService ambulanceService;
     private final AuditService auditService;
-    private final ShiftService shiftService;
+    private final RouteRepository routeRepository;
 
     @Transactional
     public void restoreAmbulanceState(RestoreAmbulanceStateRequest request, Long id) {
@@ -63,6 +65,13 @@ public class RecoveryService {
     @Transactional
     public void recoverActiveShift(RecoverActiveShiftRequest request) {
 
+    }
 
+    @Transactional
+    public List<RecoveryRouteSummaryResponse> getRoutesForRecovery(){
+        return routeRepository.findByStatusOrderByStartedAtDesc(RouteStatus.IN_PROGRESS)
+                .stream()
+                .map(RecoveryRouteSummaryResponse::fromEntity)
+                .toList();
     }
 }

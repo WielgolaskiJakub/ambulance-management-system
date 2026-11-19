@@ -1,0 +1,92 @@
+.recovery-routes-page {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  padding: 32px 24px;
+  color: #f1f5f9;
+}
+
+.recovery-routes-page h1 {
+  margin: 0 0 24px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.recovery-routes-page__list {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recovery-routes-page__card,
+.recovery-routes-page > p {
+  padding: 20px 24px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #182235;
+}
+
+.recovery-routes-page__card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.recovery-routes-page__details {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.recovery-routes-page__details strong {
+  font-size: 1.125rem;
+}
+
+.recovery-routes-page__details span:last-child {
+  color: #b6c3d5;
+  font-size: 0.9rem;
+}
+
+.recovery-routes-page__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding-inline: 18px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.recovery-routes-page__link:hover {
+  background: #1d4ed8;
+}
+
+.recovery-routes-page__link:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+.recovery-routes-page > p[role="alert"] {
+  color: #fecaca;
+}
+
+@media (max-width: 640px) {
+  .recovery-routes-page {
+    padding: 20px 12px;
+  }
+
+  .recovery-routes-page__card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+}

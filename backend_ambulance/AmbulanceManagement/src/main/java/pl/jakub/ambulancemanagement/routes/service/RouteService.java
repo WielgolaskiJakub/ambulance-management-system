@@ -752,7 +752,7 @@ public class RouteService {
                 routeOrder.setStatus(RouteOrderStatus.CANCELLED);
             }
         }
-        
+
         routeOrder.setResolvedAt(resolvedAt);
     }
 

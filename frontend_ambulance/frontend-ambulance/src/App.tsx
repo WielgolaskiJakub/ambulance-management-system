@@ -23,6 +23,8 @@ import { ManagerReportsPage } from "./pages/ManagerReportsPage";
 import { ManagerDailyReportPage } from "./pages/ManagerDailyReportPage";
 import { ReportsLayout } from "./layouts/ReportsLayout";
 import { ManagerDriverReportPage } from "./pages/ManagerDriverReportPage";
+import { RecoveryRoutePage } from "./pages/RecoveryRoutePage";
+import { RecoveryRoutesPage } from "./pages/RecoveryRoutesPage";
 
 function App() {
   return (
@@ -41,7 +43,12 @@ function App() {
             path="/transport-orders/:orderId/details"
             element={<TransportOrderDetailsPage />}
           />
-          <Route path="/change-password" element={<ChangePasswordPage/>} />
+          <Route path="/change-password" element={<ChangePasswordPage />} />
+          <Route
+            path="/recovery/routes/:routeId"
+            element={<RecoveryRoutePage />}
+          />
+          <Route path="/recovery/routes" element={<RecoveryRoutesPage />} />
         </Route>
       </Route>
 
@@ -71,13 +78,13 @@ function App() {
 
           <Route path="/manager/users" element={<ManagerUsersPage />} />
           <Route path="/manager/ambulances" element={<ManagerAmbulancesPage />} />
-        
-      <Route path="/manager/reports" element={<ReportsLayout />}>
-        <Route index element={<ManagerReportsPage />} />
-        <Route path="daily" element={<ManagerDailyReportPage />} />
-        <Route path="drivers" element={<ManagerDriverReportPage />} />
-        </Route>
-          
+
+          <Route path="/manager/reports" element={<ReportsLayout />}>
+            <Route index element={<ManagerReportsPage />} />
+            <Route path="daily" element={<ManagerDailyReportPage />} />
+            <Route path="drivers" element={<ManagerDriverReportPage />} />
+          </Route>
+
 
 
         </Route>

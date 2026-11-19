@@ -1,0 +1,149 @@
+.recovery-route-form {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  padding: 32px 24px;
+  color: #f1f5f9;
+  color-scheme: dark;
+}
+
+.recovery-route-form h2 {
+  margin: 0 0 24px;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.recovery-route-form h3 {
+  margin: 0 0 12px;
+  font-size: 1.125rem;
+}
+
+.recovery-route-form ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recovery-route-form li,
+.recovery-route-form fieldset {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #182235;
+}
+
+.recovery-route-form li {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.recovery-route-form__order-heading {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+}
+
+.recovery-route-form__order-heading span {
+  color: #b6c3d5;
+  overflow-wrap: anywhere;
+}
+
+/* Uwagi zajmują całą szerokość karty pod powodem anulowania. */
+.recovery-route-form li label:has(textarea) {
+  grid-column: 1 / -1;
+}
+
+.recovery-route-form label {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.recovery-route-form :is(input, select, textarea) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background: #111827;
+  color: #f1f5f9;
+  font: inherit;
+  font-weight: 400;
+}
+
+.recovery-route-form textarea {
+  resize: vertical;
+}
+
+.recovery-route-form :is(input, select, textarea, button):focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.recovery-route-form fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0 16px;
+}
+
+.recovery-route-form legend {
+  padding-inline: 6px;
+  font-weight: 700;
+}
+
+.recovery-route-form button[type="submit"] {
+  display: block;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 10px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.recovery-route-form button[type="submit"]:hover:enabled {
+  background: #1d4ed8;
+}
+
+.recovery-route-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.recovery-route-form [role="alert"] {
+  color: #fecaca;
+}
+
+.recovery-route-form [role="status"] {
+  color: #86efac;
+}
+
+@media (max-width: 640px) {
+  .recovery-route-form {
+    padding: 20px 12px;
+  }
+
+  .recovery-route-form li,
+  .recovery-route-form fieldset {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+
+  .recovery-route-form button[type="submit"] {
+    width: 100%;
+  }
+}
