@@ -12,6 +12,8 @@ import pl.jakub.ambulancemanagement.auth.security.CurrentUserService;
 import pl.jakub.ambulancemanagement.exception.ApiException;
 import pl.jakub.ambulancemanagement.exception.ErrorCode;
 import pl.jakub.ambulancemanagement.recovery.dto.FinishRouteAfterOutageRequest;
+import pl.jakub.ambulancemanagement.recovery.dto.RecoveryOrderAction;
+import pl.jakub.ambulancemanagement.recovery.dto.RecoveryOrderResultRequest;
 import pl.jakub.ambulancemanagement.route_members.dto.RouteMemberResponse;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMember;
 import pl.jakub.ambulancemanagement.route_members.model.RouteMemberRole;
@@ -635,7 +637,24 @@ public class RouteService {
         if(startedAt == null || request.finishedAt().isBefore(startedAt)){
             throw new ApiException(ErrorCode.INVALID_DATE_TIME);
         }
+
+        List<RouteOrder> pendingOrders = routeOrderRepository.findByRoute_IdAndStatusOrderByPositionAsc(routeId, RouteOrderStatus.PENDING);
+
+        List<RecoveryOrderResultRequest> results = request.orderResults() == null ? List.of() : request.orderResults();
+
+        validateRecoveryOrderResult(pendingOrders,results);
+
+        Map<Long, RouteOrder> pendingByTransportOrderId = new HashMap<>();
+        for(RouteOrder routeOrder: pendingOrders){
+            pendingByTransportOrderId.put(routeOrder.getTransportOrder().getId(), routeOrder);
+        }
+        for(RecoveryOrderResultRequest result: results){
+            RouteOrder routeOrder = pendingByTransportOrderId.get(result.transportOrderId());
+            applyRecoveryOrderResult(routeOrder, result, request.finishedAt());
+        }
+
         validateNoPendingOrder(route.getId());
+
         completeRoute(route, request.finishOdometerKm(), request.finishedAt());
 
         auditService.record(
@@ -681,6 +700,60 @@ public class RouteService {
                         .toList();
 
         return RouteDetailsResponse.fromEntity(route, transportOrders, routeMembers);
+    }
+
+    private void validateRecoveryOrderResult(
+            List<RouteOrder> pendingOrders,
+            List<RecoveryOrderResultRequest> results
+    ){
+        Set<Long> remainingIds = new HashSet<>();
+        for(RouteOrder pendingOrder : pendingOrders){
+            remainingIds.add(pendingOrder.getTransportOrder().getId());
+        }
+
+        for(RecoveryOrderResultRequest result: results){
+            if(!remainingIds.remove(result.transportOrderId())){
+                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+            }
+
+            if(result.action() == RecoveryOrderAction.CANCEL && result.cancelReason() == null){
+                throw new ApiException(ErrorCode.TRANSPORT_ORDER_INVALID_REQUEST);
+            }
+        }
+
+        if(!remainingIds.isEmpty()){
+            throw new ApiException(ErrorCode.ROUTE_HAS_PENDING_TRANSPORT_ORDERS);
+        }
+    }
+
+    private void applyRecoveryOrderResult(
+            RouteOrder routeOrder,
+            RecoveryOrderResultRequest result,
+            LocalDateTime resolvedAt
+    ){
+        TransportOrder order = routeOrder.getTransportOrder();
+
+        switch(result.action()){
+            case COMPLETE -> {
+                order.setStatus(TransportStatus.COMPLETED);
+                order.setCompletedAt(resolvedAt);
+                routeOrder.setStatus(RouteOrderStatus.COMPLETED);
+            }
+            case WAITING_FOR_PICKUP -> {
+                order.setStatus(TransportStatus.WAITING_FOR_PICKUP);
+                routeOrder.setStatus(RouteOrderStatus.COMPLETED);
+            }
+            case CANCEL -> {
+                order.setStatus(TransportStatus.CANCELLED);
+                order.setCancelledAt(resolvedAt);
+                order.setCancelledBy(currentUserService.getCurrentUser());
+                order.setCancelReason(result.cancelReason());
+                order.setCancelDescription(normalizeNullableText(result.cancelDescription()));
+                routeOrder.setStatus(RouteOrderStatus.CANCELLED);
+            }
+        }
+        
+        routeOrder.setResolvedAt(resolvedAt);
     }
 
 
