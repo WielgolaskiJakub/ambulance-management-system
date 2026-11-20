@@ -112,7 +112,7 @@ public class UserController {
     public void updateRestoreOperationsPermission(
             @PathVariable Long id,
             @Valid @RequestBody UserRestoreOperationsPermissionRequest request){
-        userService.updateRestoreOperationsPermissions(id, request);
+        userService.updateRestoreOperationsPermissions(id, request) ;
     }
 
 }

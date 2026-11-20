@@ -124,15 +124,14 @@ export function TopNavigation() {
             <NavLink className="top-navigation__link" to="/manager/reports">
               Raporty
             </NavLink>
+          </>
 
-             {hasRecoveryAccess && (
+        )}
+          {hasRecoveryAccess && (
               <NavLink className="top-navigation__link" to="/recovery/routes">
                 Rozliczenie po awarii
               </NavLink>
             )}
-          </>
-
-        )}
       </nav>
 
       <div className="top-navigation__actions">

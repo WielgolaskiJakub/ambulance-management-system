@@ -9,6 +9,7 @@ import {
     getAllUsers,
     updateUserByPatchAdmin,
     resetTemporaryPasswordByAdmin,
+    updateRestoreOperationsPermission,
 } from "../api/userApi";
 
 import axios from "axios";
@@ -38,6 +39,7 @@ type EmployeeEditFormState = {
     userRole: UserRole;
     active: boolean;
     canWorkAsSanitary: boolean;
+    canRestoreOperations: boolean;
 };
 
 const initialFormState: AddNewUserFormState = {
@@ -179,7 +181,8 @@ export function ManagerUsersPage() {
             email: user.email ?? "",
             userRole: user.userRole,
             active: user.active,
-            canWorkAsSanitary: user.canWorkAsSanitary
+            canWorkAsSanitary: user.canWorkAsSanitary,
+            canRestoreOperations: user.canRestoreOperations
         });
         setEditErrorMessage(null);
     }
@@ -230,16 +233,22 @@ export function ManagerUsersPage() {
                 }
             );
 
-            setUsers((currentUsers) =>
-                currentUsers.map((user) =>
-                    user.id === updatedUser.id ? updatedUser : user
-                )
-            );
-            setSelectedUser((currentUser) =>
-                currentUser?.id === updatedUser.id
-                    ? updatedUser
-                    : currentUser
-            );
+            let savedUser = updatedUser;
+
+            if(editForm.canRestoreOperations !== updatedUser.canRestoreOperations){
+                await updateRestoreOperationsPermission(
+                    {canRestoreOperations: editForm.canRestoreOperations},
+                editedUserId)
+            }
+
+            setUsers((currentUsers) => 
+            currentUsers.map((user) => user.id === savedUser.id ? savedUser : user)
+        );
+        
+        setSelectedUser((currentUser) => 
+        currentUser?.id === savedUser.id ? savedUser : currentUser
+    );
+
             showToast(
                 `Dane pracownika ${updatedUser.firstName} ${updatedUser.lastName} zostały zapisane.`,
                 "success")
@@ -280,7 +289,7 @@ export function ManagerUsersPage() {
 
             closeEditForm();
             setResetUserCredentials(resetCredentials);
-        
+
             showToast("Wygenerowano nowe hasło tymczasowe.",
                 "success"
             );
@@ -789,6 +798,14 @@ export function ManagerUsersPage() {
                                     {selectedUser.canWorkAsSanitary ? "Tak" : "Nie"}
                                 </strong>
                             </div>
+                            
+                             <div>
+                                <span>Może wznawiać pracę po awarii</span>
+                                <strong>
+                                    {selectedUser.canRestoreOperations ? "Tak" : "Nie"}
+                                </strong>
+                            </div>
+
                         </div>
 
 
@@ -956,6 +973,20 @@ export function ManagerUsersPage() {
                                         />
                                         Konto aktywne
                                     </label>
+                                    {(editForm.userRole === "DRIVER" || editForm.userRole === "SANITARY") && (
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={editForm.canRestoreOperations}
+                                                onChange={(event) => {
+                                                    const checked = event.currentTarget.checked;
+                                                    setEditForm((current) =>
+                                                        current ? { ...current, canRestoreOperations: checked } : current);
+                                                }}
+                                            />
+                                            Może wznawiać pracę po awarii
+                                        </label>
+                                    )}
                                     {editForm.userRole === "DRIVER" && (
                                         <label>
                                             <input

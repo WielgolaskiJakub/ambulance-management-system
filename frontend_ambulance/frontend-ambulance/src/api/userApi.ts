@@ -34,6 +34,10 @@ export type UserChangePasswordRequest = {
     newPassword: string;
 };
 
+export type UserRestoreOperationsPermissionRequest = {
+    canRestoreOperations: boolean;
+}
+
 export async function createUser(
     request: CreateUserRequest
 ): Promise<UserCreateResponse> {
@@ -97,9 +101,19 @@ export async function changeTemporaryPassword(
 
 export async function changePasswordByUser(
     request: UserChangePasswordRequest
-):Promise<void>{
+): Promise<void> {
     await axiosClient.patch(
         "/api/v1/users/me/password",
+        request
+    );
+}
+
+export async function updateRestoreOperationsPermission(
+    request: UserRestoreOperationsPermissionRequest,
+    id: number
+): Promise<void> {
+    await axiosClient.patch<void>(
+        `/api/v1/users/${id}/restore-operations-permission`,
         request
     );
 }

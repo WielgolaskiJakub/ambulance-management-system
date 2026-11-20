@@ -18,7 +18,7 @@ public class UserResponse {
     private Boolean active;
     private Boolean mustChangePassword;
     private Boolean canWorkAsSanitary;
-    private Boolean canRestoreOperation;
+    private Boolean canRestoreOperations;
 
 
     public static UserResponse fromEntity(User user) {

@@ -29,7 +29,7 @@ public class RecoveryController {
     public boolean hasRecoveryAccess() {
         return recoveryAccessService.canRestoreOperations();
     }
-    
+
     @GetMapping("/routes")
     @PreAuthorize("@recoveryAccessService.canRestoreOperations()")
     public List<RecoveryRouteSummaryResponse> getRoutesForRecovery() {
