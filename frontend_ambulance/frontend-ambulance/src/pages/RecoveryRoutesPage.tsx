@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getRoutesForRecovery } from "../api/recoveryApi";
 import type { RecoveryRouteSummaryResponse } from "../types/route";
 import "./RecoveryRoutesPage.css";
+import { RestoreAmbulanceStateSection } from "../components/recovery/RestoreAmbulanceStateSection";
 
 export function RecoveryRoutesPage() {
     const [routes, setRoutes] = useState<RecoveryRouteSummaryResponse[]>([]);
@@ -34,6 +35,7 @@ export function RecoveryRoutesPage() {
         <main className="recovery-routes-page">
             <h1>Rozliczenie tras po awarii</h1>
 
+        <RestoreAmbulanceStateSection />
             {loading ? (
                 <p role="status">Ładowanie tras…</p>
             ) : errorMessage ? (

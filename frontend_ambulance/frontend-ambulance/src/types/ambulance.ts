@@ -25,3 +25,9 @@ export type AmbulanceResponse = {
     status: AmbulanceStatus;
     active: boolean;
 }
+
+export type ResotreAmbulanceStateRequest = {
+    mileage: number;
+    estimatedFuelLiters: number;
+    reason: string;
+};

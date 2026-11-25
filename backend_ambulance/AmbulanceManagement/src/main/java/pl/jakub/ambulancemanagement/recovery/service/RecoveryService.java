@@ -3,6 +3,7 @@ package pl.jakub.ambulancemanagement.recovery.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pl.jakub.ambulancemanagement.ambulances.dto.AmbulanceResponse;
 import pl.jakub.ambulancemanagement.ambulances.model.Ambulance;
 import pl.jakub.ambulancemanagement.ambulances.service.AmbulanceService;
 import pl.jakub.ambulancemanagement.audit.model.AuditAction;
@@ -29,6 +30,14 @@ public class RecoveryService {
     private final AmbulanceService ambulanceService;
     private final AuditService auditService;
     private final RouteRepository routeRepository;
+
+    @Transactional(readOnly = true)
+    public List<AmbulanceResponse> getAmbulancesForRecovery(){
+        return ambulanceService.getAllAmbulances()
+                .stream()
+                .map(AmbulanceResponse::fromEntity)
+                .toList();
+    }
 
     @Transactional
     public void restoreAmbulanceState(RestoreAmbulanceStateRequest request, Long id) {

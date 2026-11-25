@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import pl.jakub.ambulancemanagement.ambulances.dto.AmbulanceResponse;
 import pl.jakub.ambulancemanagement.recovery.dto.FinishRouteAfterOutageRequest;
 import pl.jakub.ambulancemanagement.recovery.dto.RecoveryRouteSummaryResponse;
 import pl.jakub.ambulancemanagement.recovery.dto.RestoreAmbulanceStateRequest;
@@ -30,6 +31,11 @@ public class RecoveryController {
         return recoveryAccessService.canRestoreOperations();
     }
 
+    @GetMapping("/ambulances")
+    @PreAuthorize("@recoveryAccessService.canRestoreOperations()")
+    public List<AmbulanceResponse> getAmbulancesForRecovery(){
+        return recoveryService.getAmbulancesForRecovery();
+    }
     @GetMapping("/routes")
     @PreAuthorize("@recoveryAccessService.canRestoreOperations()")
     public List<RecoveryRouteSummaryResponse> getRoutesForRecovery() {
