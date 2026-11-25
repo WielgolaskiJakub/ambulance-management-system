@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import pl.jakub.ambulancemanagement.routes.model.Route;
 import pl.jakub.ambulancemanagement.routes.model.RouteStatus;
-import pl.jakub.ambulancemanagement.shifts.model.Shift;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,10 +47,10 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
             Long shiftId,
             List<RouteStatus> statuses);
 
-    List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanAndStatusInAndShift_Ambulance_Id(LocalDateTime startedAtFrom,
-                                                                                                         LocalDateTime startedAtToExclusive,
-                                                                                                         List<RouteStatus> statuses,
-                                                                                                         Long ambulanceId);
+    List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanAndStatusInAndShift_Ambulance_IdOrderByStartedAtAscIdAsc(LocalDateTime startedAtFrom,
+                                                                                                                                 LocalDateTime startedAtToExclusive,
+                                                                                                                                 List<RouteStatus> statuses,
+                                                                                                                                 Long ambulanceId);
 
     List<Route> findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanOrderByStartedAtAsc(LocalDateTime startedAtFrom, LocalDateTime startedAtToExclusive);
 

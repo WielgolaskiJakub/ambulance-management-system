@@ -7,6 +7,8 @@ export type AmbulanceReportResponse = {
     registrationPlates: string;
     dateFrom: string;
     dateTo: string;
+    firstStartOdometerKm: number | null;
+    lastFinishOdometerKm: number | null;
     totalDistanceKm: number;
     completedRoutesCount: number;
     totalEstimatedFuelConsumptionLiters: number;
@@ -32,6 +34,8 @@ export type RouteReportResponse = {
     startedAt: string;
     finishedAt: string | null;
     status: RouteStatus;
+    startOdometerKm: number | null;
+    finishOdometerKm: number | null;
     distanceKm: number | null;
     estimatedFuelConsumedLiters: number | null;
     transportOrders: RouteTransportOrderReference[];

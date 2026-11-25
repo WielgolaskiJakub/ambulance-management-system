@@ -59,12 +59,19 @@ public class ReportService {
 
         for (Ambulance ambulance : ambulances) {
 
-            List<Route> routes = routeRepository.findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanAndStatusInAndShift_Ambulance_Id(
+            List<Route> routes = routeRepository.findRouteByStartedAtGreaterThanEqualAndStartedAtLessThanAndStatusInAndShift_Ambulance_IdOrderByStartedAtAscIdAsc(
                     startedAtFrom,
                     startedAtToExclusive,
                     List.of(RouteStatus.COMPLETED),
                     ambulance.getId());
 
+            Integer firstStartOdometerKm = null;
+            Integer lastFinishOdometerKm = null;
+
+            if(!routes.isEmpty()){
+                firstStartOdometerKm = routes.getFirst().getStartOdometerKm();
+                lastFinishOdometerKm = routes.getLast().getFinishOdometerKm();
+            }
             int completedRoutesCount = routes.size();
             long totalDistanceKm = 0;
             BigDecimal totalEstimatedFuelConsumptionLiters = BigDecimal.ZERO;
@@ -80,6 +87,8 @@ public class ReportService {
                     ambulance.getRegistrationPlates(),
                     request.dateFrom(),
                     request.dateTo(),
+                    firstStartOdometerKm,
+                    lastFinishOdometerKm,
                     totalDistanceKm,
                     completedRoutesCount,
                     totalEstimatedFuelConsumptionLiters));
@@ -248,6 +257,8 @@ public class ReportService {
                     startedAt,
                     finishedAt,
                     status,
+                    route.getStartOdometerKm(),
+                    route.getFinishOdometerKm(),
                     distanceKm,
                     estimatedFuelConsumedLiters,
                     transportOrders,

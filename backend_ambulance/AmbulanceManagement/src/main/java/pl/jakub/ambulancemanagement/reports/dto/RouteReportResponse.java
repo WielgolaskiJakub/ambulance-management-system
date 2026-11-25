@@ -15,6 +15,8 @@ public record RouteReportResponse(
         LocalDateTime startedAt,
         LocalDateTime finishedAt,
         RouteStatus status,
+        Integer startOdometerKm,
+        Integer finishOdometerKm,
         Integer distanceKm,
         BigDecimal estimatedFuelConsumedLiters,
         List<RouteTransportOrderReferenceResponse> transportOrders,

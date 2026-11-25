@@ -9,6 +9,8 @@ public record AmbulanceReportResponse(
          String registrationPlates,
          LocalDate dateFrom,
          LocalDate dateTo,
+         Integer firstStartOdometerKm,
+         Integer lastFinishOdometerKm,
          long totalDistanceKm,
          int completedRoutesCount,
          BigDecimal totalEstimatedFuelConsumptionLiters

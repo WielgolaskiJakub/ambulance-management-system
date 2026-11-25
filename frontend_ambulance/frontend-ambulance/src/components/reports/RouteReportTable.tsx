@@ -54,7 +54,9 @@ export function RouteReportTable({ routes }: Props) {
             <th scope="col">Wyjazd</th>
             <th scope="col">Powrót</th>
             <th scope="col">Status</th>
-            <th scope="col">Kilometry</th>
+            <th scope="col">Licznik przy wyjeździe [km]</th>
+            <th scope="col">Licznik przy powrocie [km]</th>
+            <th scope="col">Dystans [km]</th>
             <th scope="col">Paliwo [l]</th>
             <th scope="col">Szczegóły</th>
           </tr>
@@ -76,9 +78,9 @@ export function RouteReportTable({ routes }: Props) {
                 </span>
               </td>
 
-              <td>
-                {route.distanceKm?.toLocaleString("pl-PL") ?? "—"}
-              </td>
+              <td>{route.startOdometerKm?.toLocaleString("pl-PL") ?? "—"}</td>
+              <td>{route.finishOdometerKm?.toLocaleString("pl-PL") ?? "—"}</td>
+              <td>{route.distanceKm?.toLocaleString("pl-PL") ?? "—"}</td>
 
               <td>
                 {route.estimatedFuelConsumedLiters?.toLocaleString(

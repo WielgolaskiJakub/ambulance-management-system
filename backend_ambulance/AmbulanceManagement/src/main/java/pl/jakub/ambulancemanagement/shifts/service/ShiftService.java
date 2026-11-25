@@ -226,22 +226,8 @@ public class ShiftService {
     @Transactional
     public Shift finishShift(long id) {
         Shift shift = getMyShiftById(id);
-        if (shift.getStatus() != ShiftStatus.ACTIVE) {
-            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
-        }
 
-        boolean hasUnfinishedRoutes = routeRepository.existsByShift_IdAndStatusIn(
-                shift.getId(),
-                List.of(
-                        RouteStatus.CREATED,
-                        RouteStatus.IN_PROGRESS,
-                        RouteStatus.WAITING
-                )
-        );
-
-        if(hasUnfinishedRoutes){
-            throw new ApiException(ErrorCode.SHIFT_HAS_ACTIVE_ROUTES);
-        }
+        validateShiftCanBeFinished(shift);
 
         shift.setStatus(ShiftStatus.FINISHED);
         shift.getAmbulance().setStatus(AmbulanceStatus.AVAILABLE);
@@ -262,6 +248,26 @@ public class ShiftService {
         shift.setStatus(ShiftStatus.CANCELLED);
         shift.getAmbulance().setStatus(AmbulanceStatus.AVAILABLE);
         return shiftRepository.save(shift);
+    }
+
+    private void validateShiftCanBeFinished(Shift shift){
+
+        if(shift.getStatus() != ShiftStatus.ACTIVE){
+            throw new ApiException(ErrorCode.SHIFT_NOT_ACTIVE);
+        }
+
+        boolean hasUnfinishedRoutes = routeRepository.existsByShift_IdAndStatusIn(
+                shift.getId(),
+                List.of(
+                        RouteStatus.CREATED,
+                        RouteStatus.IN_PROGRESS,
+                        RouteStatus.WAITING
+                )
+        );
+
+        if(hasUnfinishedRoutes){
+            throw new ApiException(ErrorCode.SHIFT_HAS_ACTIVE_ROUTES);
+        }
     }
 
     private LocalDateTime calculateStartTime(LocalDate date, ShiftType type) {
